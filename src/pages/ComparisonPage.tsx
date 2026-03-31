@@ -16,11 +16,11 @@ export function ComparisonPage() {
 
   useEffect(() => {
     if (records.length > 0) {
-      // default: split by earlyseason22 < 60 / >= 60
+      // default: split by early < 60 / >= 60
       const lowGroup: ComparisonGroup = { name: '< 60 days (early-maturing)', cultivars: [] };
       const highGroup: ComparisonGroup = { name: '≥ 60 days (late-maturing)', cultivars: [] };
       records.forEach((r) => {
-        const v = r.daysToHeading.earlyseason22;
+        const v = r.daysToHeading.early;
         if (v === null) return;
         if (v < 60) lowGroup.cultivars.push(r.cultivar);
         else highGroup.cultivars.push(r.cultivar);

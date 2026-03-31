@@ -1,4 +1,6 @@
-import Papa from 'papaparse';
+import { collection, getDocs } from 'firebase/firestore';
+import { db } from '@/lib/firebase';
+import type { CultivarDoc } from '@/types/cultivar';
 import type { PhenotypeRecord, PhenotypeField, PhenotypeDatasetSummary } from '@/types/phenotype';
 import { PHENOTYPE_FIELDS, computeDatasetSummary } from './utils';
 
@@ -8,50 +10,45 @@ interface DataService {
   getDatasetSummary(): Promise<PhenotypeDatasetSummary>;
 }
 
-function parseNum(val: string): number | null {
-  if (!val || val.trim() === '') return null;
-  const n = parseFloat(val.trim());
-  return isNaN(n) ? null : n;
-}
+function cultivarToRecord(doc: CultivarDoc): PhenotypeRecord {
+  const blb = doc.resistance.bacterialLeafBlight;
+  const blbCount = [blb.k1, blb.k2, blb.k3, blb.k3a].filter(Boolean).length;
 
-type CsvRow = Record<string, string>;
-
-function mapCsvRow(row: CsvRow): PhenotypeRecord {
   return {
-    cultivar: row['Cultivar']?.trim() ?? '',
+    cultivar: doc.name,
     daysToHeading: {
-      earlyseason22: parseNum(row["22' Early season Days to heading (days)"]),
-      lateseason22: parseNum(row["22' late season Days to heading (days)"]),
-      earlyseason23: parseNum(row["23' early season Days to heading (days)"]),
-      normalseason23: parseNum(row["23' normal season Days to heading (days)"]),
-      lateseason23: parseNum(row["23' late season Days to heading (days)"]),
+      early: doc.daysToHeading.early,
+      normal: doc.daysToHeading.normal,
+      late: doc.daysToHeading.late,
     },
-    culmLength: parseNum(row['Culm Length (cm)']),
-    panicleLength: parseNum(row['Panicle Length (cm)']),
-    panicleNumber: parseNum(row['Panicle Number']),
-    spikeletsPerPanicle: parseNum(row['Spikelets per Panicle']),
-    ripeningRate: parseNum(row['Ripening Rate (%)']),
-    grainWeight1000: parseNum(row['"1,000-Grain Weight of Brown Rice (g)"'] ?? row['1,000-Grain Weight of Brown Rice (g)']),
-    preHarvestSprouting: parseNum(row['Pre-harvest Sprouting (%)']),
-    bacterialLeafBlight: parseNum(row['Bacterial Leaf Blight (The number of resistant strains)']),
+    culmLength: doc.morphology.culmLength,
+    panicleLength: doc.morphology.panicleLength,
+    panicleNumber: doc.morphology.panicleNumber,
+    spikeletsPerPanicle: doc.yield.spikeletsPerPanicle,
+    ripeningRate: doc.yield.ripeningRate,
+    grainWeight1000: doc.quality.grainWeight,
+    preHarvestSprouting: doc.quality.preHarvestSprouting,
+    bacterialLeafBlight: blbCount,
+    bacterialLeafBlightDetail: {
+      k1: blb.k1,
+      k2: blb.k2,
+      k3: blb.k3,
+      k3a: blb.k3a,
+    },
+    crossInformation: doc.crossInformation ?? '',
   };
 }
 
-class CsvDataService implements DataService {
+class FirestoreDataService implements DataService {
   private cache: PhenotypeRecord[] | null = null;
 
   async getPhenotypeRecords(): Promise<PhenotypeRecord[]> {
     if (this.cache) return this.cache;
 
-    const response = await fetch('/data/phenotype_table.csv');
-    const text = await response.text();
-
-    const result = Papa.parse<CsvRow>(text, {
-      header: true,
-      skipEmptyLines: true,
-    });
-
-    this.cache = result.data.map(mapCsvRow).filter((r) => r.cultivar !== '');
+    const snap = await getDocs(collection(db, 'cultivars'));
+    this.cache = snap.docs
+      .map((d) => cultivarToRecord(d.data() as CultivarDoc))
+      .sort((a, b) => a.cultivar.localeCompare(b.cultivar));
     return this.cache;
   }
 
@@ -65,5 +62,4 @@ class CsvDataService implements DataService {
   }
 }
 
-// Swap to FirestoreDataService when ready
-export const dataService: DataService = new CsvDataService();
+export const dataService: DataService = new FirestoreDataService();

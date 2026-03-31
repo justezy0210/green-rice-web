@@ -1,3 +1,4 @@
+import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import type { PhenotypeRecord } from "@/types/phenotype";
 import { PHENOTYPE_FIELDS, getNumericValue } from "@/lib/utils";
@@ -6,15 +7,9 @@ interface MissingDataHeatmapProps {
   records: PhenotypeRecord[];
 }
 
-const HEADING_KEYS = [
-  "earlyseason22",
-  "lateseason22",
-  "earlyseason23",
-  "normalseason23",
-  "lateseason23",
-];
+const HEADING_KEYS = ["early", "normal", "late"];
+const BLB_KEY = "bacterialLeafBlight";
 
-// 출수일 5개를 하나의 컬럼으로 묶고, 나머지는 개별 컬럼
 const COLUMNS: { key: string; label: string; keys: string[] }[] = [
   { key: "__heading__", label: "Days to Heading", keys: HEADING_KEYS },
   ...PHENOTYPE_FIELDS.filter((f) => f.category !== "heading").map((f) => ({
@@ -24,10 +19,21 @@ const COLUMNS: { key: string; label: string; keys: string[] }[] = [
   })),
 ];
 
+function blbStatus(record: PhenotypeRecord): "all" | "partial" | "none" | "missing" {
+  const d = record.bacterialLeafBlightDetail;
+  if (!d) return "missing";
+  const values = [d.k1, d.k2, d.k3, d.k3a];
+  if (values.every((v) => v === null)) return "missing";
+  const count = values.filter(Boolean).length;
+  if (count === 4) return "all";
+  if (count > 0) return "partial";
+  return "none";
+}
+
 export function MissingDataHeatmap({ records }: MissingDataHeatmapProps) {
+  const navigate = useNavigate();
   const displayed = records.slice(0, 30);
 
-  // 컬럼의 존재 여부: 묶인 컬럼은 하나라도 값 있으면 존재
   function hasValue(record: PhenotypeRecord, keys: string[]): boolean {
     return keys.some((k) => getNumericValue(record, k) !== null);
   }
@@ -40,8 +46,10 @@ export function MissingDataHeatmap({ records }: MissingDataHeatmapProps) {
       <CardContent className="overflow-visible">
         <div className="flex items-center gap-4 mb-3 text-xs text-gray-500">
           <span className="flex items-center gap-1">
-            <span className="w-3 h-3 rounded-sm bg-green-400 inline-block" />{" "}
-            Present
+            <span className="w-3 h-3 rounded-sm bg-green-400 inline-block" /> Present
+          </span>
+          <span className="flex items-center gap-1">
+            <span className="w-3 h-3 rounded-sm bg-amber-300 inline-block" /> Partial
           </span>
           <span className="flex items-center gap-1">
             <span className="w-3 h-3 rounded-sm bg-red-200 inline-block" /> Missing
@@ -51,10 +59,31 @@ export function MissingDataHeatmap({ records }: MissingDataHeatmapProps) {
           <tbody>
             {displayed.map((record) => (
               <tr key={record.cultivar} className="hover:bg-gray-50">
-                <td className="sticky left-0 bg-white pr-4 py-0.5 text-gray-700 font-medium whitespace-nowrap">
+                <td
+                  className="sticky left-0 bg-white pr-4 py-0.5 text-gray-700 font-medium whitespace-nowrap hover:text-green-600 cursor-pointer"
+                  onClick={() => navigate(`/cultivar/${encodeURIComponent(record.cultivar)}`)}
+                >
                   {record.cultivar}
                 </td>
                 {COLUMNS.map((col) => {
+                  if (col.key === BLB_KEY) {
+                    const status = blbStatus(record);
+                    const colorClass =
+                      status === "all" ? "bg-green-400" :
+                      status === "partial" ? "bg-amber-300" :
+                      status === "none" ? "bg-red-200" :
+                      "bg-gray-200";
+                    const title =
+                      status === "all" ? "All resistant (4/4)" :
+                      status === "partial" ? "Partial resistance" :
+                      status === "none" ? "No resistance (0/4)" :
+                      "Missing";
+                    return (
+                      <td key={col.key} className="px-1 py-0.5 text-center">
+                        <div className={`w-5 h-5 rounded-sm mx-auto ${colorClass}`} title={title} />
+                      </td>
+                    );
+                  }
                   const present = hasValue(record, col.keys);
                   return (
                     <td key={col.key} className="px-1 py-0.5 text-center">

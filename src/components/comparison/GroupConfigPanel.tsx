@@ -12,7 +12,7 @@ interface GroupConfigPanelProps {
 }
 
 export function GroupConfigPanel({ records, onGroupsChange }: GroupConfigPanelProps) {
-  const [groupByField, setGroupByField] = useState('earlyseason22');
+  const [groupByField, setGroupByField] = useState('early');
   const [threshold, setThreshold] = useState(60);
 
   const handleChange = useCallback(

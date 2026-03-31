@@ -7,11 +7,9 @@ export function cn(...inputs: ClassValue[]) {
 }
 
 export const PHENOTYPE_FIELDS: PhenotypeField[] = [
-  { key: 'earlyseason22', label: "Days to Heading (2022 Early)", unit: 'days', category: 'heading' },
-  { key: 'lateseason22', label: "Days to Heading (2022 Late)", unit: 'days', category: 'heading' },
-  { key: 'earlyseason23', label: "Days to Heading (2023 Early)", unit: 'days', category: 'heading' },
-  { key: 'normalseason23', label: "Days to Heading (2023 Normal)", unit: 'days', category: 'heading' },
-  { key: 'lateseason23', label: "Days to Heading (2023 Late)", unit: 'days', category: 'heading' },
+  { key: 'early', label: 'Days to Heading (Early)', unit: 'days', category: 'heading' },
+  { key: 'normal', label: 'Days to Heading (Normal)', unit: 'days', category: 'heading' },
+  { key: 'late', label: 'Days to Heading (Late)', unit: 'days', category: 'heading' },
   { key: 'culmLength', label: 'Culm Length', unit: 'cm', category: 'morphology' },
   { key: 'panicleLength', label: 'Panicle Length', unit: 'cm', category: 'morphology' },
   { key: 'panicleNumber', label: 'Panicle Number', unit: '', category: 'morphology' },
@@ -19,11 +17,13 @@ export const PHENOTYPE_FIELDS: PhenotypeField[] = [
   { key: 'ripeningRate', label: 'Ripening Rate', unit: '%', category: 'yield' },
   { key: 'grainWeight1000', label: '1,000-Grain Weight', unit: 'g', category: 'yield' },
   { key: 'preHarvestSprouting', label: 'Pre-harvest Sprouting', unit: '%', category: 'quality' },
-  { key: 'bacterialLeafBlight', label: 'Bacterial Leaf Blight', unit: '', category: 'resistance' },
+  { key: 'bacterialLeafBlight', label: 'Bacterial Leaf Blight', unit: 'resistant strains (K1–K3a)', category: 'resistance' },
 ];
 
+const HEADING_KEYS = new Set(['early', 'normal', 'late']);
+
 export function getNumericValue(record: PhenotypeRecord, key: string): number | null {
-  if (key.includes('season')) {
+  if (HEADING_KEYS.has(key)) {
     return record.daysToHeading[key as keyof typeof record.daysToHeading] ?? null;
   }
   return record[key as keyof Omit<PhenotypeRecord, 'cultivar' | 'daysToHeading'>] ?? null;

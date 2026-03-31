@@ -1,7 +1,8 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
+import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { BarChartWrapper } from "@/components/charts/BarChartWrapper";
-import { BoxPlotWrapper } from "@/components/charts/BoxPlotWrapper";
+import { DotChartWrapper } from "@/components/charts/DotChartWrapper";
 import type { PhenotypeRecord } from "@/types/phenotype";
 import { PHENOTYPE_FIELDS, getNumericValue, cn } from "@/lib/utils";
 
@@ -9,16 +10,10 @@ interface PhenotypeDistributionChartProps {
   records: PhenotypeRecord[];
 }
 
-const SEASON_GROUPS = [
-  { key: "early",  label: "Early Season",  keys: ["earlyseason22",  "earlyseason23"] },
-  { key: "normal", label: "Normal Season", keys: ["normalseason23"] },
-  { key: "late",   label: "Late Season",   keys: ["lateseason22",   "lateseason23"] },
-] as const;
-
-const SEASON_COLORS = [
-  { bg: "rgba(34, 197, 94, 0.6)",  border: "rgba(34, 197, 94, 0.9)"  },
-  { bg: "rgba(251, 191, 36, 0.6)", border: "rgba(251, 191, 36, 0.9)" },
-  { bg: "rgba(59, 130, 246, 0.6)", border: "rgba(59, 130, 246, 0.9)" },
+const HEADING_SEASONS = [
+  { key: "early",  label: "Early",  color: { bg: 'rgba(34, 197, 94, 0.65)',  border: 'rgba(34, 197, 94, 0.9)' },  btnActive: 'bg-green-600 text-white border-green-600',  btnInactive: 'bg-green-50 text-green-700 border-green-200 hover:bg-green-100' },
+  { key: "normal", label: "Normal", color: { bg: 'rgba(251, 191, 36, 0.65)', border: 'rgba(251, 191, 36, 0.9)' }, btnActive: 'bg-amber-500 text-white border-amber-500',   btnInactive: 'bg-amber-50 text-amber-700 border-amber-200 hover:bg-amber-100' },
+  { key: "late",   label: "Late",   color: { bg: 'rgba(59, 130, 246, 0.65)', border: 'rgba(59, 130, 246, 0.9)' }, btnActive: 'bg-blue-600 text-white border-blue-600',      btnInactive: 'bg-blue-50 text-blue-700 border-blue-200 hover:bg-blue-100' },
 ];
 
 const TRAIT_OPTIONS = [
@@ -59,26 +54,51 @@ function traitButtonClass(category: string, isActive: boolean): string {
   return '';
 }
 
-export function PhenotypeDistributionChart({ records }: PhenotypeDistributionChartProps) {
-  const [selectedKey, setSelectedKey] = useState("days_to_heading");
-
-  const isBoxplot = selectedKey === "days_to_heading";
-  const field = PHENOTYPE_FIELDS.find((f) => f.key === selectedKey);
-  const selectedOption = TRAIT_OPTIONS.find((o) => o.key === selectedKey)!;
-  const color = CATEGORY_CHART_COLOR[selectedOption.category];
-
-  const headingLabels = records.map((r) => r.cultivar);
-  const headingDatasets = SEASON_GROUPS.map((sg, i) => ({
-    label: sg.label,
-    data: records.map((r) =>
-      sg.keys.map((k) => getNumericValue(r, k)).filter((v): v is number => v !== null),
-    ),
-    backgroundColor: SEASON_COLORS[i].bg,
-    borderColor: SEASON_COLORS[i].border,
+function sortedByValue(records: PhenotypeRecord[], fieldKey: string) {
+  const pairs = records.map((r) => ({
+    label: r.cultivar,
+    value: getNumericValue(r, fieldKey),
   }));
+  pairs.sort((a, b) => {
+    if (a.value === null && b.value === null) return 0;
+    if (a.value === null) return 1;
+    if (b.value === null) return -1;
+    return b.value - a.value;
+  });
+  return { labels: pairs.map((p) => p.label), values: pairs.map((p) => p.value) };
+}
 
-  const barValues = field ? records.map((r) => getNumericValue(r, field.key)) : [];
-  const barLabels = records.map((r) => r.cultivar);
+export function PhenotypeDistributionChart({ records }: PhenotypeDistributionChartProps) {
+  const navigate = useNavigate();
+  const [selectedKey, setSelectedKey] = useState("days_to_heading");
+  const [headingSeason, setHeadingSeason] = useState("early");
+
+  const goToCultivar = (name: string) => navigate(`/cultivar/${encodeURIComponent(name)}`);
+
+  const isHeading = selectedKey === "days_to_heading";
+  const activeFieldKey = isHeading ? headingSeason : selectedKey;
+  const selectedOption = TRAIT_OPTIONS.find((o) => o.key === selectedKey)!;
+  const activeSeason = HEADING_SEASONS.find((s) => s.key === headingSeason)!;
+  const color = isHeading ? activeSeason.color : CATEGORY_CHART_COLOR[selectedOption.category];
+
+  const { labels, values } = useMemo(
+    () => sortedByValue(records, activeFieldKey),
+    [records, activeFieldKey]
+  );
+
+  const mean = useMemo(() => {
+    const nums = values.filter((v): v is number => v !== null);
+    return nums.length > 0 ? nums.reduce((a, b) => a + b, 0) / nums.length : undefined;
+  }, [values]);
+
+  // BLB grid용: 저항 개수 내림차순 정렬
+  const sortedRecords = useMemo(() => {
+    return [...records].sort((a, b) => (b.bacterialLeafBlight ?? -1) - (a.bacterialLeafBlight ?? -1));
+  }, [records]);
+
+  const chartLabel = isHeading
+    ? `Days to Heading — ${activeSeason.label} (days)`
+    : `${selectedOption.label}${selectedOption.unit ? ` (${selectedOption.unit})` : ""}`;
 
   return (
     <Card className="h-full flex flex-col">
@@ -101,33 +121,114 @@ export function PhenotypeDistributionChart({ records }: PhenotypeDistributionCha
             );
           })}
         </div>
+
+        {isHeading && (
+          <div className="flex gap-1 mt-2">
+            {HEADING_SEASONS.map((s) => (
+              <button
+                key={s.key}
+                onClick={() => setHeadingSeason(s.key)}
+                className={cn(
+                  "px-2 py-0.5 text-xs rounded border font-medium transition-colors cursor-pointer",
+                  headingSeason === s.key ? s.btnActive : s.btnInactive
+                )}
+              >
+                {s.label}
+              </button>
+            ))}
+          </div>
+        )}
       </CardHeader>
       <CardContent className="flex-1">
-        {isBoxplot ? (
-          <>
-            <p className="text-xs text-gray-400 mb-2">
-              Box: median · IQR · outliers across cultivars
-            </p>
-            <BoxPlotWrapper
-              labels={headingLabels}
-              datasets={headingDatasets}
-              yLabel="Days to Heading (days)"
-              height={360}
-            />
-          </>
+        {isHeading ? (
+          <DotChartWrapper
+            labels={labels}
+            datasets={[{
+              label: chartLabel,
+              data: values,
+              backgroundColor: color.bg,
+              borderColor: color.border,
+            }]}
+            yLabel={selectedOption.unit}
+            height={360}
+            meanLine={mean}
+            onClickLabel={goToCultivar}
+          />
+        ) : selectedKey === 'bacterialLeafBlight' ? (
+          <ResistanceGrid records={sortedRecords} onClickCultivar={goToCultivar} />
         ) : (
           <BarChartWrapper
-            labels={barLabels}
+            labels={labels}
             datasets={[{
-              label: `${selectedOption.label}${selectedOption.unit ? ` (${selectedOption.unit})` : ""}`,
-              data: barValues,
+              label: chartLabel,
+              data: values,
               backgroundColor: color.bg,
             }]}
             yLabel={selectedOption.unit}
             height={360}
+            meanLine={mean}
+            onClickLabel={goToCultivar}
           />
         )}
       </CardContent>
     </Card>
+  );
+}
+
+const BLB_STRAINS = ['k1', 'k2', 'k3', 'k3a'] as const;
+
+function ResistanceGrid({ records, onClickCultivar }: { records: PhenotypeRecord[]; onClickCultivar?: (name: string) => void }) {
+  return (
+    <div>
+      <div className="flex items-center gap-4 mb-3 text-xs text-gray-500">
+        <span className="flex items-center gap-1">
+          <span className="w-3 h-3 rounded-sm bg-green-400 inline-block" /> Resistant
+        </span>
+        <span className="flex items-center gap-1">
+          <span className="w-3 h-3 rounded-sm bg-red-200 inline-block" /> Susceptible
+        </span>
+      </div>
+      <table className="text-xs border-collapse w-full">
+        <thead>
+          <tr>
+            <th className="text-left pr-4 py-1 text-gray-500 font-medium">Cultivar</th>
+            {BLB_STRAINS.map((s) => (
+              <th key={s} className="px-2 py-1 text-center text-gray-500 font-medium">{s.toUpperCase()}</th>
+            ))}
+            <th className="px-2 py-1 text-center text-gray-500 font-medium">Total</th>
+          </tr>
+        </thead>
+        <tbody>
+          {records.map((r) => {
+            const detail = r.bacterialLeafBlightDetail;
+            return (
+              <tr key={r.cultivar} className="hover:bg-gray-50">
+                <td
+                  className="pr-4 py-1 text-gray-700 font-medium whitespace-nowrap hover:text-green-600 cursor-pointer"
+                  onClick={() => onClickCultivar?.(r.cultivar)}
+                >{r.cultivar}</td>
+                {BLB_STRAINS.map((s) => {
+                  const val = detail?.[s];
+                  return (
+                    <td key={s} className="px-2 py-1 text-center">
+                      <div
+                        className={cn(
+                          "w-6 h-6 rounded-sm mx-auto",
+                          val === true ? "bg-green-400" : val === false ? "bg-red-200" : "bg-gray-100"
+                        )}
+                        title={val === true ? "Resistant" : val === false ? "Susceptible" : "Unknown"}
+                      />
+                    </td>
+                  );
+                })}
+                <td className="px-2 py-1 text-center font-medium text-gray-600">
+                  {r.bacterialLeafBlight ?? '–'}<span className="text-gray-400">/4</span>
+                </td>
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
+    </div>
   );
 }

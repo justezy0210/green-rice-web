@@ -1,5 +1,6 @@
 import { Link, useLocation } from 'react-router-dom';
 import { cn } from '@/lib/utils';
+import { useAuthContext } from '@/context/AuthContext';
 
 const NAV_ITEMS = [
   { path: '/', label: 'Dashboard' },
@@ -8,6 +9,7 @@ const NAV_ITEMS = [
 
 export function Header() {
   const { pathname } = useLocation();
+  const { user, signOut } = useAuthContext();
 
   return (
     <header className="bg-white sticky top-0 z-10 shadow-sm">
@@ -32,12 +34,34 @@ export function Header() {
               {item.label}
             </Link>
           ))}
-          <Link
-            to="/login"
-            className="ml-4 px-3 py-1.5 rounded-md text-sm font-medium text-white bg-green-600 hover:bg-green-700 transition-colors"
-          >
-            Login
-          </Link>
+          {user && (
+            <Link
+              to="/admin"
+              className={cn(
+                'px-3 py-1.5 rounded-md text-sm font-medium transition-colors',
+                pathname === '/admin'
+                  ? 'bg-green-50 text-green-700'
+                  : 'text-gray-600 hover:bg-gray-100'
+              )}
+            >
+              Admin
+            </Link>
+          )}
+          {user ? (
+            <button
+              onClick={() => signOut()}
+              className="ml-4 px-3 py-1.5 rounded-md text-sm font-medium text-white bg-green-600 hover:bg-green-700 transition-colors"
+            >
+              Sign Out
+            </button>
+          ) : (
+            <Link
+              to="/login"
+              className="ml-4 px-3 py-1.5 rounded-md text-sm font-medium text-white bg-green-600 hover:bg-green-700 transition-colors"
+            >
+              Login
+            </Link>
+          )}
         </nav>
       </div>
     </header>

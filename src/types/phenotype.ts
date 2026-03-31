@@ -1,11 +1,9 @@
 export interface PhenotypeRecord {
   cultivar: string;
   daysToHeading: {
-    earlyseason22: number | null;
-    lateseason22: number | null;
-    earlyseason23: number | null;
-    normalseason23: number | null;
-    lateseason23: number | null;
+    early: number | null;
+    normal: number | null;
+    late: number | null;
   };
   culmLength: number | null;
   panicleLength: number | null;
@@ -15,6 +13,13 @@ export interface PhenotypeRecord {
   grainWeight1000: number | null;
   preHarvestSprouting: number | null;
   bacterialLeafBlight: number | null;
+  bacterialLeafBlightDetail?: {
+    k1: boolean | null;
+    k2: boolean | null;
+    k3: boolean | null;
+    k3a: boolean | null;
+  };
+  crossInformation?: string;
 }
 
 export interface PhenotypeField {
@@ -45,11 +50,9 @@ export interface PhenotypeFieldSummary {
 // Flat record for table display
 export interface PhenotypeFlat {
   cultivar: string;
-  earlyseason22: number | null;
-  lateseason22: number | null;
-  earlyseason23: number | null;
-  normalseason23: number | null;
-  lateseason23: number | null;
+  early: number | null;
+  normal: number | null;
+  late: number | null;
   culmLength: number | null;
   panicleLength: number | null;
   panicleNumber: number | null;
