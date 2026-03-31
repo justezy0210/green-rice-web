@@ -1,5 +1,5 @@
 import { useState, useMemo } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { BarChartWrapper } from "@/components/charts/BarChartWrapper";
 import { DotChartWrapper } from "@/components/charts/DotChartWrapper";
@@ -70,8 +70,16 @@ function sortedByValue(records: PhenotypeRecord[], fieldKey: string) {
 
 export function PhenotypeDistributionChart({ records }: PhenotypeDistributionChartProps) {
   const navigate = useNavigate();
-  const [selectedKey, setSelectedKey] = useState("days_to_heading");
-  const [headingSeason, setHeadingSeason] = useState("early");
+  const [searchParams, setSearchParams] = useSearchParams();
+  const selectedKey = searchParams.get("trait") || "days_to_heading";
+  const headingSeason = searchParams.get("season") || "early";
+
+  const setSelectedKey = (key: string) => {
+    setSearchParams((prev) => { prev.set("trait", key); return prev; }, { replace: true });
+  };
+  const setHeadingSeason = (season: string) => {
+    setSearchParams((prev) => { prev.set("season", season); return prev; }, { replace: true });
+  };
 
   const goToCultivar = (name: string) => navigate(`/cultivar/${encodeURIComponent(name)}`);
 

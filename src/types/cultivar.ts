@@ -1,3 +1,5 @@
+import type { GenomeSummary } from './genome';
+
 export interface CultivarDoc {
   name: string;
   daysToHeading: {
@@ -27,6 +29,7 @@ export interface CultivarDoc {
     };
   };
   crossInformation: string;
+  genomeSummary?: GenomeSummary;
 }
 
 export type CultivarForm = CultivarDoc;

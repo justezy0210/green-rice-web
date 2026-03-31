@@ -9,5 +9,16 @@
   },
   "auth": {
     "providers": {}
+  },
+  "functions": [
+    {
+      "source": "functions",
+      "codebase": "default",
+      "ignore": ["node_modules", ".git"],
+      "predeploy": ["npm --prefix \"$RESOURCE_DIR\" run build"]
+    }
+  ],
+  "storage": {
+    "rules": "storage.rules"
   }
 }

@@ -54,8 +54,8 @@ export function DashboardPage() {
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col items-center py-8 gap-2">
+    <div className="space-y-6 pb-8">
+      <div className="flex flex-col items-center pt-4 pb-6 gap-2">
         <h1 className="text-2xl font-bold text-gray-900">Korean Rice Cultivar DB</h1>
         <p className="text-sm text-gray-500">{records.length} cultivars registered</p>
         <div className="relative w-full max-w-md mt-3">
