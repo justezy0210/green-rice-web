@@ -1,8 +1,11 @@
 import { useState } from 'react';
 import { useCultivars } from '@/hooks/useCultivars';
+import { useGenomeSummary } from '@/hooks/useGenomeSummary';
 import { addCultivar, updateCultivar, deleteCultivar } from '@/lib/cultivar-service';
 import { CultivarTable } from '@/components/admin/CultivarTable';
 import { CultivarForm } from '@/components/admin/CultivarForm';
+import { GenomeUploadPanel } from '@/components/admin/GenomeUploadPanel';
+import { OrthofinderUploadPanel } from '@/components/admin/OrthofinderUploadPanel';
 import type { CultivarDoc, CultivarForm as CultivarFormType } from '@/types/cultivar';
 
 type View = { mode: 'list' } | { mode: 'add' } | { mode: 'edit'; cultivar: CultivarDoc & { id: string } };
@@ -31,6 +34,8 @@ export function AdminPage() {
 
   return (
     <div className="space-y-6">
+      {view.mode === 'list' && <OrthofinderUploadPanel />}
+
       <div className="flex items-center justify-between">
         <h1 className="text-xl font-bold text-gray-900">Admin — Cultivars</h1>
         {view.mode === 'list' && (
@@ -67,13 +72,21 @@ export function AdminPage() {
       )}
 
       {view.mode === 'edit' && (
-        <CultivarForm
-          initial={view.cultivar}
-          isEdit
-          onSubmit={handleUpdate}
-          onCancel={() => setView({ mode: 'list' })}
-        />
+        <>
+          <CultivarForm
+            initial={view.cultivar}
+            isEdit
+            onSubmit={handleUpdate}
+            onCancel={() => setView({ mode: 'list' })}
+          />
+          <GenomeUploadSection cultivarId={view.cultivar.id} />
+        </>
       )}
     </div>
   );
+}
+
+function GenomeUploadSection({ cultivarId }: { cultivarId: string }) {
+  const { summary } = useGenomeSummary(cultivarId);
+  return <GenomeUploadPanel cultivarId={cultivarId} genomeSummary={summary} />;
 }

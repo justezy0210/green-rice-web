@@ -1,4 +1,5 @@
 export interface PhenotypeRecord {
+  cultivarId: string;
   cultivar: string;
   daysToHeading: {
     early: number | null;

@@ -31,3 +31,10 @@ dist-ssr
 # Firebase
 .firebase/
 .firebaserc
+service-account.json
+*-service-account*.json
+
+# Python venv (for functions-python)
+functions-python/venv/
+functions-python/__pycache__/
+functions-python/**/__pycache__/

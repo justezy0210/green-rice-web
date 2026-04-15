@@ -4,7 +4,7 @@ import { useAuthContext } from '@/context/AuthContext';
 
 const NAV_ITEMS = [
   { path: '/', label: 'Dashboard' },
-  { path: '/comparison', label: 'Comparison' },
+  { path: '/explore', label: 'Explore' },
 ];
 
 export function Header() {

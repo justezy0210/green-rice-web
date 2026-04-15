@@ -16,6 +16,12 @@
       "codebase": "default",
       "ignore": ["node_modules", ".git"],
       "predeploy": ["npm --prefix \"$RESOURCE_DIR\" run build"]
+    },
+    {
+      "source": "functions-python",
+      "codebase": "grouping",
+      "runtime": "python312",
+      "ignore": ["venv", "__pycache__", ".git"]
     }
   ],
   "firestore": {

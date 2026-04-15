@@ -2,7 +2,7 @@ import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { AuthProvider } from '@/context/AuthContext';
 import { Layout } from '@/components/layout/Layout';
 import { DashboardPage } from '@/pages/DashboardPage';
-import { ComparisonPage } from '@/pages/ComparisonPage';
+import { ExplorePage } from '@/pages/ExplorePage';
 import { LoginPage } from '@/pages/LoginPage';
 import { AdminPage } from '@/pages/AdminPage';
 import { CultivarDetailPage } from '@/pages/CultivarDetailPage';
@@ -15,7 +15,7 @@ export default function App() {
         <Layout>
           <Routes>
             <Route path="/" element={<DashboardPage />} />
-            <Route path="/comparison" element={<ComparisonPage />} />
+            <Route path="/explore" element={<ExplorePage />} />
             <Route path="/login" element={<LoginPage />} />
             <Route path="/cultivar/:name" element={<CultivarDetailPage />} />
             <Route path="/admin" element={<ProtectedRoute><AdminPage /></ProtectedRoute>} />

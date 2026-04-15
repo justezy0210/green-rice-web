@@ -2,19 +2,21 @@ import { collection, getDocs } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import type { CultivarDoc } from '@/types/cultivar';
 import type { PhenotypeRecord, PhenotypeField, PhenotypeDatasetSummary } from '@/types/phenotype';
-import { PHENOTYPE_FIELDS, computeDatasetSummary } from './utils';
+import { PHENOTYPE_FIELDS, computeDatasetSummary } from '@/lib/utils';
 
 interface DataService {
   getPhenotypeRecords(): Promise<PhenotypeRecord[]>;
   getPhenotypeFields(): PhenotypeField[];
   getDatasetSummary(): Promise<PhenotypeDatasetSummary>;
+  invalidateCache(): void;
 }
 
-function cultivarToRecord(doc: CultivarDoc): PhenotypeRecord {
+function cultivarToRecord(id: string, doc: CultivarDoc): PhenotypeRecord {
   const blb = doc.resistance.bacterialLeafBlight;
   const blbCount = [blb.k1, blb.k2, blb.k3, blb.k3a].filter(Boolean).length;
 
   return {
+    cultivarId: id,
     cultivar: doc.name,
     daysToHeading: {
       early: doc.daysToHeading.early,
@@ -45,11 +47,16 @@ class FirestoreDataService implements DataService {
   async getPhenotypeRecords(): Promise<PhenotypeRecord[]> {
     if (this.cache) return this.cache;
 
-    const snap = await getDocs(collection(db, 'cultivars'));
-    this.cache = snap.docs
-      .map((d) => cultivarToRecord(d.data() as CultivarDoc))
-      .sort((a, b) => a.cultivar.localeCompare(b.cultivar));
-    return this.cache;
+    try {
+      const snap = await getDocs(collection(db, 'cultivars'));
+      this.cache = snap.docs
+        .map((d) => cultivarToRecord(d.id, d.data() as CultivarDoc))
+        .sort((a, b) => a.cultivar.localeCompare(b.cultivar));
+      return this.cache;
+    } catch (err) {
+      console.error('Failed to load phenotype data:', err);
+      throw new Error('Failed to load phenotype data.');
+    }
   }
 
   getPhenotypeFields(): PhenotypeField[] {
@@ -59,6 +66,10 @@ class FirestoreDataService implements DataService {
   async getDatasetSummary(): Promise<PhenotypeDatasetSummary> {
     const records = await this.getPhenotypeRecords();
     return computeDatasetSummary(records);
+  }
+
+  invalidateCache(): void {
+    this.cache = null;
   }
 }
 

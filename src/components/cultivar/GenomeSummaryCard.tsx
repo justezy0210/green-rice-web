@@ -64,7 +64,7 @@ function CompleteGenomeSummary({ summary, cultivarName }: { summary: GenomeSumma
     );
   }, [rawValues, averages]);
 
-  const { assembly, geneAnnotation, repeatAnnotation } = summary;
+  const { assembly, repeatAnnotation } = summary;
 
   const REPEAT_CLASSES = ['LTR', 'DNA transposon', 'LINE', 'SINE'] as const;
   const repeatEntries = REPEAT_CLASSES.map((cls) => [cls, repeatAnnotation.classDistribution[cls] ?? 0] as const);

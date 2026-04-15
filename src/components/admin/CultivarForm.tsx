@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import type { CultivarForm as CultivarFormType } from '@/types/cultivar';
-import { emptyCultivarForm } from '@/types/cultivar';
+import { emptyCultivarForm } from '@/lib/cultivar-helpers';
 
 interface Props {
   initial?: CultivarFormType;

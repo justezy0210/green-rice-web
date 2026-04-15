@@ -8,7 +8,7 @@ import {
   Tooltip,
   Legend,
 } from 'chart.js';
-import type { Plugin } from 'chart.js';
+import type { ChartEvent, Plugin } from 'chart.js';
 import { Radar } from 'react-chartjs-2';
 
 ChartJS.register(RadialLinearScale, PointElement, LineElement, Filler, Tooltip, Legend);
@@ -60,9 +60,10 @@ export function RadarChartWrapper({ labels, datasets, height = 360, comparisonDa
   };
 
   const handleHover = useCallback(
-    (event: { native: MouseEvent | null }) => {
+    (event: ChartEvent) => {
       if (!onLabelHover || !event.native) return;
-      const canvas = event.native.target as HTMLCanvasElement;
+      const nativeEvent = event.native as MouseEvent;
+      const canvas = nativeEvent.target as HTMLCanvasElement;
       const chart = ChartJS.getChart(canvas);
       if (!chart) return;
 
@@ -73,8 +74,8 @@ export function RadarChartWrapper({ labels, datasets, height = 360, comparisonDa
       if (!items) return;
 
       const rect = canvas.getBoundingClientRect();
-      const mx = event.native.clientX - rect.left;
-      const my = event.native.clientY - rect.top;
+      const mx = nativeEvent.clientX - rect.left;
+      const my = nativeEvent.clientY - rect.top;
       const pad = 8;
 
       let found = -1;
@@ -151,9 +152,10 @@ export function RadarChartWrapper({ labels, datasets, height = 360, comparisonDa
         pointLabels: {
           font: { size: 11, weight: 'bold' as const },
           color: comparisonData
-            ? comparisonData.map((v) =>
-                v > 100 ? 'rgba(220, 38, 38, 0.8)' : v < 100 ? 'rgba(59, 130, 246, 0.8)' : '#6b7280'
-              )
+            ? (ctx: { index: number }) => {
+                const v = comparisonData[ctx.index];
+                return v > 100 ? 'rgba(220, 38, 38, 0.8)' : v < 100 ? 'rgba(59, 130, 246, 0.8)' : '#6b7280';
+              }
             : '#6b7280',
         },
       },
@@ -162,8 +164,11 @@ export function RadarChartWrapper({ labels, datasets, height = 360, comparisonDa
       legend: { position: 'top' as const },
       tooltip: {
         callbacks: {
-          label: (ctx: { dataset: { label: string }; raw: number }) =>
-            `${ctx.dataset.label}: ${ctx.raw.toFixed(0)}%`,
+          label: (ctx: { dataset: { label?: string }; raw: unknown }) => {
+            const label = ctx.dataset.label ?? '';
+            const raw = typeof ctx.raw === 'number' ? ctx.raw : 0;
+            return `${label}: ${raw.toFixed(0)}%`;
+          },
         },
       },
     },

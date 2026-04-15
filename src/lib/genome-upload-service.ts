@@ -1,7 +1,7 @@
 import { ref, uploadBytesResumable, type UploadTask } from 'firebase/storage';
 import { doc, updateDoc } from 'firebase/firestore';
-import { storage, db } from './firebase';
-import { emptyGenomeSummary } from '@/types/genome';
+import { storage, db } from '@/lib/firebase';
+import { emptyGenomeSummary } from '@/lib/genome-helpers';
 import type { FileUploadStatus, GenomeSummary } from '@/types/genome';
 
 export type GenomeFileType = 'genomeFasta' | 'geneGff3' | 'repeatGff';
@@ -62,16 +62,26 @@ async function updateFileStatus(
   fileType: GenomeFileType,
   status: FileUploadStatus,
 ) {
-  const cultivarRef = doc(db, 'cultivars', cultivarId);
-  await updateDoc(cultivarRef, {
-    [`genomeSummary.files.${fileType}`]: status,
-    'genomeSummary.status': 'pending',
-    'genomeSummary.updatedAt': new Date().toISOString(),
-  });
+  try {
+    const cultivarRef = doc(db, 'cultivars', cultivarId);
+    await updateDoc(cultivarRef, {
+      [`genomeSummary.files.${fileType}`]: status,
+      'genomeSummary.status': 'pending',
+      'genomeSummary.updatedAt': new Date().toISOString(),
+    });
+  } catch (err) {
+    console.error('Failed to update file status:', err);
+    throw new Error('Failed to update file status.');
+  }
 }
 
 export async function initGenomeSummaryIfNeeded(cultivarId: string, current?: GenomeSummary) {
   if (current) return;
-  const cultivarRef = doc(db, 'cultivars', cultivarId);
-  await updateDoc(cultivarRef, { genomeSummary: emptyGenomeSummary() });
+  try {
+    const cultivarRef = doc(db, 'cultivars', cultivarId);
+    await updateDoc(cultivarRef, { genomeSummary: emptyGenomeSummary() });
+  } catch (err) {
+    console.error('Failed to initialize genome summary:', err);
+    throw new Error('Failed to initialize genome summary.');
+  }
 }

@@ -1,8 +1,8 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { usePhenotypeData } from '@/hooks/usePhenotypeData';
 import { PhenotypeDistributionChart } from '@/components/dashboard/PhenotypeDistributionChart';
-import { MissingDataHeatmap } from '@/components/dashboard/MissingDataHeatmap';
+import { TraitQualityOverview } from '@/components/dashboard/TraitQualityOverview';
 
 export function DashboardPage() {
   const { records, loading, error } = usePhenotypeData();
@@ -92,6 +92,12 @@ export function DashboardPage() {
             </ul>
           )}
         </div>
+        <Link
+          to="/explore"
+          className="text-sm text-green-700 hover:text-green-800 mt-2 inline-flex items-center gap-1"
+        >
+          Explore candidate orthogroups <span aria-hidden>→</span>
+        </Link>
       </div>
 
       <div className="grid grid-cols-6 gap-6 items-stretch">
@@ -99,7 +105,7 @@ export function DashboardPage() {
           <PhenotypeDistributionChart records={records} />
         </div>
         <div className="col-span-2">
-          <MissingDataHeatmap records={records} />
+          <TraitQualityOverview records={records} />
         </div>
       </div>
     </div>

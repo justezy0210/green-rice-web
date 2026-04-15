@@ -26,7 +26,8 @@ export function getNumericValue(record: PhenotypeRecord, key: string): number | 
   if (HEADING_KEYS.has(key)) {
     return record.daysToHeading[key as keyof typeof record.daysToHeading] ?? null;
   }
-  return record[key as keyof Omit<PhenotypeRecord, 'cultivar' | 'daysToHeading'>] ?? null;
+  const v = (record as unknown as Record<string, unknown>)[key];
+  return typeof v === 'number' ? v : null;
 }
 
 export function computeDatasetSummary(records: PhenotypeRecord[]): PhenotypeDatasetSummary {

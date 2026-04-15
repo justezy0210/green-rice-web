@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { dataService } from '@/lib/data-service';
 import type { PhenotypeRecord, PhenotypeDatasetSummary } from '@/types/phenotype';
 import type { LoadingState } from '@/types/common';
@@ -8,6 +8,7 @@ interface UsePhenotypeDataResult {
   summary: PhenotypeDatasetSummary | null;
   loading: LoadingState;
   error: string | null;
+  refresh: () => Promise<void>;
 }
 
 export function usePhenotypeData(): UsePhenotypeDataResult {
@@ -16,21 +17,29 @@ export function usePhenotypeData(): UsePhenotypeDataResult {
   const [loading, setLoading] = useState<LoadingState>('idle');
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
+  const load = useCallback(async () => {
     setLoading('loading');
-    dataService
-      .getPhenotypeRecords()
-      .then(async (recs) => {
-        setRecords(recs);
-        const sum = await dataService.getDatasetSummary();
-        setSummary(sum);
-        setLoading('success');
-      })
-      .catch((err: Error) => {
-        setError(err.message);
-        setLoading('error');
-      });
+    setError(null);
+    try {
+      const recs = await dataService.getPhenotypeRecords();
+      setRecords(recs);
+      const sum = await dataService.getDatasetSummary();
+      setSummary(sum);
+      setLoading('success');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to load data');
+      setLoading('error');
+    }
   }, []);
 
-  return { records, summary, loading, error };
+  const refresh = useCallback(async () => {
+    dataService.invalidateCache();
+    await load();
+  }, [load]);
+
+  useEffect(() => {
+    load();
+  }, [load]);
+
+  return { records, summary, loading, error, refresh };
 }

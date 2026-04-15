@@ -6,7 +6,7 @@ import tseslint from 'typescript-eslint'
 import { defineConfig, globalIgnores } from 'eslint/config'
 
 export default defineConfig([
-  globalIgnores(['dist']),
+  globalIgnores(['dist', 'src/dataconnect-generated', 'scripts']),
   {
     files: ['**/*.{ts,tsx}'],
     extends: [
@@ -18,6 +18,53 @@ export default defineConfig([
     languageOptions: {
       ecmaVersion: 2020,
       globals: globals.browser,
+    },
+    rules: {
+      // -- Harness: Import 제약 --
+      'no-restricted-imports': ['error', {
+        patterns: [
+          {
+            group: ['../../*'],
+            message: 'Use @/ path alias instead of relative parent imports.',
+          },
+        ],
+      }],
+
+      // -- Harness: 시크릿 하드코딩 금지 --
+      'no-restricted-syntax': ['error',
+        {
+          selector: 'Property[key.name="apiKey"] > Literal',
+          message: 'API key를 하드코딩하지 마세요. 환경변수(import.meta.env.VITE_*)를 사용하세요.',
+        },
+        {
+          selector: 'VariableDeclarator[id.name=/(?:api[_]?key|secret|password|token|credential)/i] > Literal',
+          message: '시크릿을 하드코딩하지 마세요. 환경변수를 사용하세요.',
+        },
+        {
+          selector: 'Property[key.name=/(?:api[_]?key|secret|password|token|credential)/i] > Literal',
+          message: '시크릿을 하드코딩하지 마세요. 환경변수를 사용하세요.',
+        },
+      ],
+
+      // -- Harness: 코드 품질 --
+      'no-console': ['warn', { allow: ['warn', 'error'] }],
+      '@typescript-eslint/no-explicit-any': 'warn',
+      '@typescript-eslint/consistent-type-imports': ['error', {
+        prefer: 'type-imports',
+        fixStyle: 'inline-type-imports',
+      }],
+
+      // -- Harness: 네이밍 --
+      '@typescript-eslint/naming-convention': ['warn',
+        {
+          selector: 'interface',
+          format: ['PascalCase'],
+        },
+        {
+          selector: 'typeAlias',
+          format: ['PascalCase'],
+        },
+      ],
     },
   },
 ])

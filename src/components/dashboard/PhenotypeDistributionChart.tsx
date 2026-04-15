@@ -1,9 +1,13 @@
-import { useState, useMemo } from "react";
+import { useMemo } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { BarChartWrapper } from "@/components/charts/BarChartWrapper";
 import { DotChartWrapper } from "@/components/charts/DotChartWrapper";
+import { useGroupings } from "@/hooks/useGroupings";
+import { ResistanceGrid } from "@/components/dashboard/ResistanceGrid";
+import { buildGroupColorMap, traitButtonClass, UNASSIGNED_COLOR } from "@/components/dashboard/distribution-helpers";
 import type { PhenotypeRecord } from "@/types/phenotype";
+import { FIELD_TO_TRAIT_ID, type PhenotypeFieldKey } from "@/types/grouping";
 import { PHENOTYPE_FIELDS, getNumericValue, cn } from "@/lib/utils";
 
 interface PhenotypeDistributionChartProps {
@@ -29,30 +33,6 @@ const CATEGORY_CHART_COLOR: Record<string, { bg: string; border: string }> = {
   quality:    { bg: 'rgba(245, 158, 11, 0.65)', border: 'rgba(245, 158, 11, 0.9)' },
   resistance: { bg: 'rgba(220, 38, 38, 0.65)',  border: 'rgba(220, 38, 38, 0.9)' },
 };
-
-function traitButtonClass(category: string, isActive: boolean): string {
-  if (category === 'heading')
-    return isActive
-      ? 'bg-blue-600 text-white border-blue-600 hover:bg-blue-700'
-      : 'bg-blue-50 text-blue-700 border-blue-200 hover:bg-blue-100';
-  if (category === 'morphology')
-    return isActive
-      ? 'bg-purple-600 text-white border-purple-600 hover:bg-purple-700'
-      : 'bg-purple-50 text-purple-700 border-purple-200 hover:bg-purple-100';
-  if (category === 'yield')
-    return isActive
-      ? 'bg-green-600 text-white border-green-600 hover:bg-green-700'
-      : 'bg-green-50 text-green-700 border-green-200 hover:bg-green-100';
-  if (category === 'quality')
-    return isActive
-      ? 'bg-amber-500 text-white border-amber-500 hover:bg-amber-600'
-      : 'bg-amber-50 text-amber-700 border-amber-200 hover:bg-amber-100';
-  if (category === 'resistance')
-    return isActive
-      ? 'bg-red-600 text-white border-red-600 hover:bg-red-700'
-      : 'bg-red-50 text-red-700 border-red-200 hover:bg-red-100';
-  return '';
-}
 
 function sortedByValue(records: PhenotypeRecord[], fieldKey: string) {
   const pairs = records.map((r) => ({
@@ -98,6 +78,118 @@ export function PhenotypeDistributionChart({ records }: PhenotypeDistributionCha
     const nums = values.filter((v): v is number => v !== null);
     return nums.length > 0 ? nums.reduce((a, b) => a + b, 0) / nums.length : undefined;
   }, [values]);
+
+  // --- Auto-grouping colors ---
+  const cultivarNameMap = useMemo(() => {
+    const m: Record<string, string> = {};
+    for (const r of records) m[r.cultivarId] = r.cultivar;
+    return m;
+  }, [records]);
+
+  const cultivarIdByName = useMemo(() => {
+    const m: Record<string, string> = {};
+    for (const r of records) m[r.cultivar] = r.cultivarId;
+    return m;
+  }, [records]);
+
+  const traitId = FIELD_TO_TRAIT_ID[activeFieldKey as PhenotypeFieldKey] ?? null;
+  const { assignments, summary } = useGroupings(traitId, cultivarNameMap);
+
+  const groupColorMap = useMemo(() => buildGroupColorMap(assignments), [assignments]);
+
+  const hasGrouping = summary?.method !== 'none' && Object.keys(groupColorMap).length >= 2;
+
+  const perCultivarColors = useMemo<{ bg: string[]; border: string[] } | null>(() => {
+    if (!hasGrouping) return null;
+    const bg: string[] = [];
+    const border: string[] = [];
+    for (const name of labels) {
+      const cid = cultivarIdByName[name];
+      const a = cid ? assignments[cid] : undefined;
+      // Borderline cultivars render in gray, not their group color.
+      const c = a && !a.borderline
+        ? groupColorMap[a.groupLabel] ?? UNASSIGNED_COLOR
+        : UNASSIGNED_COLOR;
+      bg.push(c.bg);
+      border.push(c.border);
+    }
+    return { bg, border };
+  }, [labels, cultivarIdByName, assignments, groupColorMap, hasGrouping]);
+
+  // Map cultivar name → solid color for text/dot display (used by ResistanceGrid).
+  // Uses `border` color since `bg` is semi-transparent and too light on white text backgrounds.
+  const cultivarNameToColor = useMemo<Record<string, string>>(() => {
+    if (!hasGrouping) return {};
+    const map: Record<string, string> = {};
+    for (const r of records) {
+      const a = assignments[r.cultivarId];
+      if (!a) continue;
+      if (a.borderline) {
+        map[r.cultivar] = UNASSIGNED_COLOR.border;
+        continue;
+      }
+      const c = groupColorMap[a.groupLabel];
+      if (c) map[r.cultivar] = c.border;
+    }
+    return map;
+  }, [records, assignments, groupColorMap, hasGrouping]);
+
+  const legendItems = useMemo(() => {
+    if (!hasGrouping) return [];
+    const counts: Record<string, number> = {};
+    let borderlineCount = 0;
+    for (const a of Object.values(assignments)) {
+      if (a.borderline) {
+        borderlineCount++;
+        continue;
+      }
+      counts[a.groupLabel] = (counts[a.groupLabel] ?? 0) + 1;
+    }
+    const items: { label: string; color: string; count: number }[] = Object.entries(
+      groupColorMap,
+    ).map(([lbl, c]) => ({ label: lbl, color: c.bg, count: counts[lbl] ?? 0 }));
+    if (borderlineCount > 0) {
+      items.push({ label: 'borderline', color: UNASSIGNED_COLOR.bg, count: borderlineCount });
+    }
+    return items;
+  }, [hasGrouping, groupColorMap, assignments]);
+
+  const methodLabel = useMemo(() => {
+    if (!summary) return '';
+    if (summary.method === 'gmm') return 'GMM';
+    if (summary.method === 'fixed-class') return 'fixed-class';
+    return '';
+  }, [summary]);
+
+  // Per-group mean lines for GMM groupings on the currently displayed phenotype values.
+  // Fixed-class (BLB) groupings skip this since means are not meaningful for binary data.
+  const groupMeanLines = useMemo(() => {
+    if (!hasGrouping || summary?.method !== 'gmm') return null;
+
+    const byLabel: Record<string, number[]> = {};
+    for (let i = 0; i < labels.length; i++) {
+      const v = values[i];
+      if (v === null) continue;
+      const cid = cultivarIdByName[labels[i]];
+      const a = cid ? assignments[cid] : undefined;
+      if (!a || a.borderline) continue;
+      if (!byLabel[a.groupLabel]) byLabel[a.groupLabel] = [];
+      byLabel[a.groupLabel].push(v);
+    }
+
+    const lines: { value: number; color?: string; label?: string }[] = [];
+    for (const [lbl, vs] of Object.entries(byLabel)) {
+      if (vs.length === 0) continue;
+      const m = vs.reduce((a, b) => a + b, 0) / vs.length;
+      const c = groupColorMap[lbl];
+      lines.push({
+        value: m,
+        color: c?.border,
+        label: `${lbl} avg ${m.toFixed(1)}`,
+      });
+    }
+    return lines.length > 0 ? lines : null;
+  }, [hasGrouping, summary, labels, values, cultivarIdByName, assignments, groupColorMap]);
 
   // BLB grid용: 저항 개수 내림차순 정렬
   const sortedRecords = useMemo(() => {
@@ -148,95 +240,56 @@ export function PhenotypeDistributionChart({ records }: PhenotypeDistributionCha
         )}
       </CardHeader>
       <CardContent className="flex-1">
+        {legendItems.length > 0 && (
+          <div className="flex items-center gap-3 mb-2 text-xs text-gray-600">
+            <span className="text-gray-400">
+              Auto group{methodLabel ? ` (${methodLabel})` : ''}:
+            </span>
+            {legendItems.map((it) => (
+              <span key={it.label} className="flex items-center gap-1.5">
+                <span className="w-3 h-3 rounded-sm inline-block" style={{ backgroundColor: it.color }} />
+                {it.label} <span className="text-gray-400">({it.count})</span>
+              </span>
+            ))}
+          </div>
+        )}
         {isHeading ? (
           <DotChartWrapper
             labels={labels}
             datasets={[{
               label: chartLabel,
               data: values,
-              backgroundColor: color.bg,
-              borderColor: color.border,
+              backgroundColor: perCultivarColors?.bg ?? color.bg,
+              borderColor: perCultivarColors?.border ?? color.border,
             }]}
             yLabel={selectedOption.unit}
             height={360}
-            meanLine={mean}
+            meanLine={groupMeanLines ? undefined : mean}
+            meanLines={groupMeanLines ?? undefined}
             onClickLabel={goToCultivar}
           />
         ) : selectedKey === 'bacterialLeafBlight' ? (
-          <ResistanceGrid records={sortedRecords} onClickCultivar={goToCultivar} />
+          <ResistanceGrid
+            records={sortedRecords}
+            onClickCultivar={goToCultivar}
+            cultivarNameToColor={cultivarNameToColor}
+          />
         ) : (
           <BarChartWrapper
             labels={labels}
             datasets={[{
               label: chartLabel,
               data: values,
-              backgroundColor: color.bg,
+              backgroundColor: perCultivarColors?.bg ?? color.bg,
             }]}
             yLabel={selectedOption.unit}
             height={360}
-            meanLine={mean}
+            meanLine={groupMeanLines ? undefined : mean}
+            meanLines={groupMeanLines ?? undefined}
             onClickLabel={goToCultivar}
           />
         )}
       </CardContent>
     </Card>
-  );
-}
-
-const BLB_STRAINS = ['k1', 'k2', 'k3', 'k3a'] as const;
-
-function ResistanceGrid({ records, onClickCultivar }: { records: PhenotypeRecord[]; onClickCultivar?: (name: string) => void }) {
-  return (
-    <div>
-      <div className="flex items-center gap-4 mb-3 text-xs text-gray-500">
-        <span className="flex items-center gap-1">
-          <span className="w-3 h-3 rounded-sm bg-green-400 inline-block" /> Resistant
-        </span>
-        <span className="flex items-center gap-1">
-          <span className="w-3 h-3 rounded-sm bg-red-200 inline-block" /> Susceptible
-        </span>
-      </div>
-      <table className="text-xs border-collapse w-full">
-        <thead>
-          <tr>
-            <th className="text-left pr-4 py-1 text-gray-500 font-medium">Cultivar</th>
-            {BLB_STRAINS.map((s) => (
-              <th key={s} className="px-2 py-1 text-center text-gray-500 font-medium">{s.toUpperCase()}</th>
-            ))}
-            <th className="px-2 py-1 text-center text-gray-500 font-medium">Total</th>
-          </tr>
-        </thead>
-        <tbody>
-          {records.map((r) => {
-            const detail = r.bacterialLeafBlightDetail;
-            return (
-              <tr key={r.cultivar} className="hover:bg-gray-50">
-                <td
-                  className="pr-4 py-1 text-gray-700 font-medium whitespace-nowrap hover:text-green-600 cursor-pointer"
-                  onClick={() => onClickCultivar?.(r.cultivar)}
-                >{r.cultivar}</td>
-                {BLB_STRAINS.map((s) => {
-                  const val = detail?.[s];
-                  return (
-                    <td key={s} className="px-2 py-1 text-center">
-                      <div
-                        className={cn(
-                          "w-6 h-6 rounded-sm mx-auto",
-                          val === true ? "bg-green-400" : val === false ? "bg-red-200" : "bg-gray-100"
-                        )}
-                        title={val === true ? "Resistant" : val === false ? "Susceptible" : "Unknown"}
-                      />
-                    </td>
-                  );
-                })}
-                <td className="px-2 py-1 text-center font-medium text-gray-600">
-                  {r.bacterialLeafBlight ?? '–'}<span className="text-gray-400">/4</span>
-                </td>
-              </tr>
-            );
-          })}
-        </tbody>
-      </table>
-    </div>
   );
 }
