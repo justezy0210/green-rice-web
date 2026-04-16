@@ -1,13 +1,34 @@
 """
 TEMPORARY gene annotation via baegilmi GFF3.
 To be replaced with proper functional annotation (InterProScan / KEGG / etc.) later.
+
+Two entry points:
+  - load_baegilmi_gene_annotation()  : live read from genomes/baegilmi/gene.gff3 (used at commit time)
+  - load_annotation_for_version(N)   : read the versioned snapshot artifact (used by diff recompute + drawer)
 """
 
 import re
 from firebase_admin import storage
 
+from . import uploader
+
 BAEGILMI_GFF3_PATH = "genomes/baegilmi/gene.gff3"
 TRANSCRIPT_SUFFIX_RE = re.compile(r"\.t\d+$")
+
+
+def version_annotation_path(version: int) -> str:
+    return f"orthofinder/v{version}/baegilmi_gene_annotation.json"
+
+
+def load_annotation_for_version(version: int) -> dict:
+    """
+    Load the versioned GFF3 snapshot artifact.
+    Returns empty dict if the artifact is missing (legacy version without snapshot).
+    """
+    try:
+        return uploader.download_json(version_annotation_path(version))
+    except Exception:
+        return {}
 
 
 def parse_gff3_attributes(col9: str) -> dict[str, str]:
@@ -82,51 +103,8 @@ def load_baegilmi_gene_annotation() -> dict[str, dict]:
     return {"genes": genes, "transcript_to_gene": transcript_to_gene}
 
 
-def resolve_to_gene_id(transcript_or_gene_id: str, annotation: dict) -> str | None:
-    """
-    Given an OrthoFinder gene ID (which is usually a transcript ID like "baegilmi_g123.t1"),
-    resolve to a gene ID present in the annotation dict.
-    """
-    if not annotation:
-        return None
-    genes = annotation.get("genes", {})
-    tmap = annotation.get("transcript_to_gene", {})
+# Note: representative lookup (baegilmi-based) has been removed.
+# Representatives now come from IRGSP descriptions in og_descriptions.json.
+# The baegilmi GFF3 annotation artifact is still produced and consumed by the
+# frontend drawer to show gene locations per-cultivar when drilling into an OG.
 
-    # Direct hit
-    if transcript_or_gene_id in genes:
-        return transcript_or_gene_id
-    # Via transcript map
-    if transcript_or_gene_id in tmap:
-        gid = tmap[transcript_or_gene_id]
-        return gid if gid in genes else None
-    # Fall back to stripping ".tN" suffix
-    stripped = TRANSCRIPT_SUFFIX_RE.sub("", transcript_or_gene_id)
-    if stripped in genes:
-        return stripped
-    return None
-
-
-def lookup_representative(
-    baegilmi_genes: list[str], annotation: dict
-) -> dict | None:
-    """
-    Given baegilmi gene IDs from an orthogroup, return the first resolvable gene's annotation dict.
-    Returns None if no annotation available or no match.
-    """
-    if not annotation or not baegilmi_genes:
-        return None
-    genes = annotation.get("genes", {})
-    for gene_ref in baegilmi_genes:
-        gene_id = resolve_to_gene_id(gene_ref, annotation)
-        if gene_id and gene_id in genes:
-            info = genes[gene_id]
-            return {
-                "source": "baegilmi_gff3",
-                "geneId": gene_id,
-                "chromosome": info["chromosome"],
-                "start": info["start"],
-                "end": info["end"],
-                "strand": info["strand"],
-                "attributes": info["attributes"],
-            }
-    return None

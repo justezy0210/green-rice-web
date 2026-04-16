@@ -3,9 +3,8 @@ import { useState, useMemo, useCallback } from 'react';
 import { usePhenotypeData } from '@/hooks/usePhenotypeData';
 import { useGenomeSummary } from '@/hooks/useGenomeSummary';
 import { RadarChartWrapper } from '@/components/charts/RadarChartWrapper';
-import { GenomeRadarSection } from '@/components/cultivar/GenomeRadarSection';
-import { GenomeTableSection } from '@/components/cultivar/GenomeTableSection';
 import { MiniSearch } from '@/components/cultivar/MiniSearch';
+import { GenomeDownloadSection } from '@/components/cultivar/GenomeDownloadSection';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { PHENOTYPE_FIELDS, getNumericValue } from '@/lib/utils';
 import { cultivarNameToId } from '@/lib/cultivar-helpers';
@@ -64,8 +63,6 @@ export function CultivarDetailPage() {
   const rawValues = cultivar ? getRadarValues(cultivar) : null;
   const [hoveredIdx, setHoveredIdx] = useState(-1);
   const onLabelHover = useCallback((i: number) => setHoveredIdx(i), []);
-  const [genomeHoveredIdx, setGenomeHoveredIdx] = useState(-1);
-  const onGenomeLabelHover = useCallback((i: number) => setGenomeHoveredIdx(i), []);
 
   if (loading === 'loading') {
     return <div className="flex items-center justify-center h-64 text-gray-400">Loading...</div>;
@@ -109,15 +106,13 @@ export function CultivarDetailPage() {
       <Card>
         <CardHeader className="pb-2">
           <CardTitle className="text-base">
-            Cultivar Profile
+            Phenotype Profile
             <span className="ml-2 text-sm font-normal text-gray-500">vs. Average (100%)</span>
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="relative grid grid-cols-1 lg:grid-cols-2 gap-x-6 gap-y-10">
-            <div className="hidden lg:block absolute left-1/2 top-[5%] bottom-[5%] w-px bg-gray-200" />
-            <div className="order-1 lg:order-none">
-              <h3 className="text-sm font-semibold text-gray-500 mb-2 px-2">Phenotype</h3>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-x-6 gap-y-4 items-center">
+            <div>
               <RadarChartWrapper
                 labels={RADAR_LABELS}
                 datasets={[
@@ -141,20 +136,18 @@ export function CultivarDetailPage() {
                 activeIndex={hoveredIdx}
               />
             </div>
-
-            <div className="order-3 lg:order-none">
-              <h3 className="text-sm font-semibold text-gray-500 mb-2 px-2">Genome</h3>
-              <GenomeRadarSection genomeSummary={genomeSummary} cultivarName={cultivar.cultivar} onLabelHover={onGenomeLabelHover} activeIndex={genomeHoveredIdx} highlightColor="rgba(96, 165, 250, 0.8)" />
-            </div>
-
-            <PhenotypeTable labels={RADAR_LABELS} rawValues={rawValues} averages={averages} hoveredIdx={hoveredIdx} setHoveredIdx={setHoveredIdx} />
-
-            <div className="order-4 lg:order-none pt-4 px-18">
-              <GenomeTableSection genomeSummary={genomeSummary} hoveredIdx={genomeHoveredIdx} setHoveredIdx={setGenomeHoveredIdx} />
-            </div>
+            <PhenotypeTable
+              labels={RADAR_LABELS}
+              rawValues={rawValues}
+              averages={averages}
+              hoveredIdx={hoveredIdx}
+              setHoveredIdx={setHoveredIdx}
+            />
           </div>
         </CardContent>
       </Card>
+
+      <GenomeDownloadSection genomeSummary={genomeSummary} />
     </div>
   );
 }
@@ -167,7 +160,7 @@ function PhenotypeTable({ labels, rawValues, averages, hoveredIdx, setHoveredIdx
   setHoveredIdx: (i: number) => void;
 }) {
   return (
-    <div className="order-2 lg:order-none divide-y divide-gray-100 pt-4 px-18">
+    <div className="divide-y divide-gray-100">
       {labels.map((label, i) => {
         const val = rawValues[i];
         const avg = averages[i];

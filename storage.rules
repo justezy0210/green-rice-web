@@ -11,8 +11,16 @@ service firebase.storage {
       allow read: if request.auth != null && request.auth.token.admin == true;
       allow write: if request.auth != null && request.auth.token.admin == true;
     }
-    // Committed orthofinder versions: public read for matrix/gene drilldown.
-    match /orthofinder/v{version}/{file} {
+    // Committed orthofinder versions: public read for every non-staging top-level dir
+    // under /orthofinder (i.e. v0, v1, v2, ...). Recursive match so nested artifacts
+    // like og-members/chunk_000.json are allowed. Writes are always denied.
+    match /orthofinder/{versionDir}/{path=**} {
+      allow read: if versionDir != 'staging';
+      allow write: if false;
+    }
+
+    // Orthogroup diff payloads (public read; written server-side only).
+    match /orthogroup_diffs/{path=**} {
       allow read: if true;
       allow write: if false;
     }

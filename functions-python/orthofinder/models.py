@@ -3,24 +3,22 @@ Python mirror of src/types/orthogroup.ts.
 Must stay in sync with the TypeScript canonical source.
 """
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from typing import Literal
 
 Strand = Literal["+", "-", "."]
 OrthofinderStatus = Literal["idle", "uploading", "processing", "complete", "error"]
 LockStatus = Literal["idle", "running"]
-RepresentativeSource = Literal["baegilmi_gff3"]
+RepresentativeSource = Literal["irgsp"]
+
+DIFF_SCHEMA_VERSION = 1
 
 
 @dataclass
 class OrthogroupRepresentative:
     source: RepresentativeSource
-    geneId: str
-    chromosome: str
-    start: int
-    end: int
-    strand: Strand
-    attributes: dict  # str → str
+    transcripts: list  # IRGSP transcript ids, e.g. ["Os01t0391600-00", ...]
+    descriptions: dict  # transcript_id → description text (may include "NA")
 
 
 @dataclass
@@ -43,16 +41,35 @@ SelectionMode = Literal["strict", "relaxed", "top_n_fallback"]
 
 @dataclass
 class OrthogroupDiffDocument:
+    """Firestore-side metadata only. Full entries live in the Storage payload."""
     traitId: str
     groupLabels: list
-    top: list  # OrthogroupDiffEntry
     selectionMode: SelectionMode
-    thresholds: dict   # {"qValue": float, "meanDiff": float}
+    thresholds: dict   # {"pValue": float, "meanDiff": float}
     totalTested: int
     passedCount: int
+    entryCount: int
     computedAt: str
     groupingVersion: int
     orthofinderVersion: int
+    storagePath: str
+    schemaVersion: int = DIFF_SCHEMA_VERSION
+
+
+@dataclass
+class OrthogroupDiffPayload:
+    """Storage-side full entries bundle."""
+    traitId: str
+    groupLabels: list
+    entries: list  # OrthogroupDiffEntry
+    entryCount: int
+    passedCount: int
+    selectionMode: SelectionMode
+    thresholds: dict
+    computedAt: str
+    groupingVersion: int
+    orthofinderVersion: int
+    schemaVersion: int = DIFF_SCHEMA_VERSION
 
 
 @dataclass
@@ -100,12 +117,8 @@ def diff_entry_to_dict(e: OrthogroupDiffEntry) -> dict:
         r = e.representative
         d["representative"] = {
             "source": r.source,
-            "geneId": r.geneId,
-            "chromosome": r.chromosome,
-            "start": r.start,
-            "end": r.end,
-            "strand": r.strand,
-            "attributes": r.attributes,
+            "transcripts": r.transcripts,
+            "descriptions": r.descriptions,
         }
     return d
 
@@ -114,12 +127,37 @@ def diff_document_to_dict(doc: OrthogroupDiffDocument) -> dict:
     return {
         "traitId": doc.traitId,
         "groupLabels": doc.groupLabels,
-        "top": [diff_entry_to_dict(e) for e in doc.top],
         "selectionMode": doc.selectionMode,
         "thresholds": doc.thresholds,
         "totalTested": doc.totalTested,
         "passedCount": doc.passedCount,
+        "entryCount": doc.entryCount,
         "computedAt": doc.computedAt,
         "groupingVersion": doc.groupingVersion,
         "orthofinderVersion": doc.orthofinderVersion,
+        "storagePath": doc.storagePath,
+        "schemaVersion": doc.schemaVersion,
     }
+
+
+def diff_payload_to_dict(payload: OrthogroupDiffPayload) -> dict:
+    return {
+        "traitId": payload.traitId,
+        "groupLabels": payload.groupLabels,
+        "entries": [diff_entry_to_dict(e) for e in payload.entries],
+        "entryCount": payload.entryCount,
+        "passedCount": payload.passedCount,
+        "selectionMode": payload.selectionMode,
+        "thresholds": payload.thresholds,
+        "computedAt": payload.computedAt,
+        "groupingVersion": payload.groupingVersion,
+        "orthofinderVersion": payload.orthofinderVersion,
+        "schemaVersion": payload.schemaVersion,
+    }
+
+
+def diff_storage_path(orthofinder_version: int, grouping_version: int, trait_id: str) -> str:
+    """Immutable versioned path for a diff payload."""
+    return (
+        f"orthogroup_diffs/v{orthofinder_version}/g{grouping_version}/{trait_id}.json"
+    )

@@ -3,7 +3,7 @@ import { httpsCallable } from 'firebase/functions';
 import { storage, functions } from '@/lib/firebase';
 
 const GENE_COUNT_FILE = 'Orthogroups.GeneCount.tsv';
-const GENES_FILE = 'Orthogroups.tsv';
+const GENES_FILE = 'Orthogroups_with_description.tsv';
 
 export interface UploadProgress {
   phase: 'uploading' | 'processing';

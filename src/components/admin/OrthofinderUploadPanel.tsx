@@ -75,7 +75,7 @@ export function OrthofinderUploadPanel() {
         disabled={busy}
       />
       <FileInput
-        label="Orthogroups.tsv"
+        label="Orthogroups_with_description.tsv"
         file={genesFile}
         onChange={setGenesFile}
         disabled={busy}

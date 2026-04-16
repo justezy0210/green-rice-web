@@ -3,6 +3,7 @@ import { AuthProvider } from '@/context/AuthContext';
 import { Layout } from '@/components/layout/Layout';
 import { DashboardPage } from '@/pages/DashboardPage';
 import { ExplorePage } from '@/pages/ExplorePage';
+import { DownloadPage } from '@/pages/DownloadPage';
 import { LoginPage } from '@/pages/LoginPage';
 import { AdminPage } from '@/pages/AdminPage';
 import { CultivarDetailPage } from '@/pages/CultivarDetailPage';
@@ -16,9 +17,10 @@ export default function App() {
           <Routes>
             <Route path="/" element={<DashboardPage />} />
             <Route path="/explore" element={<ExplorePage />} />
+            <Route path="/download" element={<DownloadPage />} />
             <Route path="/login" element={<LoginPage />} />
             <Route path="/cultivar/:name" element={<CultivarDetailPage />} />
-            <Route path="/admin" element={<ProtectedRoute><AdminPage /></ProtectedRoute>} />
+            <Route path="/admin" element={<ProtectedRoute requireAdmin><AdminPage /></ProtectedRoute>} />
           </Routes>
         </Layout>
       </BrowserRouter>

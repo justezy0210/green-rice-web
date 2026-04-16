@@ -1,5 +1,5 @@
 import { useEffect, useState, useMemo } from 'react';
-import { subscribeGrouping, assignmentsToComparisonGroups } from '@/lib/grouping-service';
+import { subscribeGrouping } from '@/lib/grouping-service';
 import type {
   TraitId,
   GroupingDocument,
@@ -7,10 +7,8 @@ import type {
   TraitQuality,
   CultivarGroupAssignment,
 } from '@/types/grouping';
-import type { ComparisonGroup } from '@/types/common';
 
 interface UseGroupingsResult {
-  comparisonGroups: ComparisonGroup[];
   assignments: Record<string, CultivarGroupAssignment>;
   summary: GroupingSummary | null;
   quality: TraitQuality | null;
@@ -42,23 +40,16 @@ export function useGroupings(
   const result = useMemo(() => {
     if (!document) {
       return {
-        comparisonGroups: [],
         assignments: {},
         summary: null,
         quality: null,
         staleCultivars: [],
       };
     }
-    const comparisonGroups = assignmentsToComparisonGroups(
-      document.assignments,
-      cultivarNameMap,
-    );
-    // Identify cultivars in grouping that are no longer in nameMap
     const staleCultivars = Object.keys(document.assignments).filter(
       (cid) => !cultivarNameMap[cid],
     );
     return {
-      comparisonGroups,
       assignments: document.assignments,
       summary: document.summary,
       quality: document.quality,

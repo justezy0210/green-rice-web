@@ -1,15 +1,18 @@
 import { Link, useLocation } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 import { useAuthContext } from '@/context/AuthContext';
+import { useAdminClaim } from '@/hooks/useAdminClaim';
 
 const NAV_ITEMS = [
   { path: '/', label: 'Dashboard' },
   { path: '/explore', label: 'Explore' },
+  { path: '/download', label: 'Download' },
 ];
 
 export function Header() {
   const { pathname } = useLocation();
   const { user, signOut } = useAuthContext();
+  const { isAdmin } = useAdminClaim();
 
   return (
     <header className="bg-white sticky top-0 z-10 shadow-sm">
@@ -34,7 +37,7 @@ export function Header() {
               {item.label}
             </Link>
           ))}
-          {user && (
+          {isAdmin && (
             <Link
               to="/admin"
               className={cn(

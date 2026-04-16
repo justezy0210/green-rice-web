@@ -17,6 +17,22 @@
 - [x] data-service.ts switched to Firestore
 - [x] Auth provider setup and test (Email/Password, Google)
 
+## Phase 6: Orthogroup → Gene Drilldown (DONE — code complete)
+- [x] Streaming parser (`iter_orthogroups_rows`)
+- [x] StreamingChunkWriter (memory-bounded chunking by 1000-OG boundary)
+- [x] Baegilmi gene annotation snapshot as versioned artifact
+- [x] Pre-commit vs post-commit orphan cleanup policy
+- [x] Storage rules recursive match (`orthofinder/v{N}/{path=**}`)
+- [x] pytest fixtures (parser + chunker, 12 tests)
+- [x] Frontend service + hook (resolved-data cache, AbortController)
+- [x] OgDrawer with a11y (focus trap, ESC, scroll lock, focus restore)
+- [x] ExplorePage `?trait=&og=` URL contract
+- [x] First-cell button for keyboard accessibility
+- [x] Storage artifacts documented (`docs/generated/orthofinder-artifacts.md`)
+- [ ] Deployment (`firebase deploy --only functions:grouping,storage:rules`)
+- [ ] Admin re-uploads TSVs to generate v{N}/ with new chunks + annotation
+- [ ] End-to-end verify: click OG → drawer opens with gene members
+
 ## Phase 5: Orthogroup Differential Analysis (DONE — code complete, deploy pending)
 - [x] Shared types (TS + Python dataclass mirror)
 - [x] OrthoFinder TSV parser (strip `_longest` suffix, extract baegilmi gene members)

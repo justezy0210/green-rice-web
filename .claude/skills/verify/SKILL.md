@@ -1,522 +1,223 @@
 ---
 name: verify
-description: Run Codex CLI as an external review and analysis engine for research-harness projects. Use for build-plan review, analysis-plan review, script review, structure review, and manuscript support review.
+description: Cross-verification by comparing Codex CLI (GPT) and Claude (Lead) on the same question. Supports plan-review, script-review, structure-review, manuscript-support, and general-review modes.
 argument-hint: [mode] [target_path_or_question]
 user-invocable: true
-context: project
-agent: general-purpose
-allowed-tools: Read, Write, Edit, Glob, Grep, Bash
+allowed-tools: Bash, Read, Glob, Grep, Agent
 ---
 
-# Codex Orchestrator
+# Verify — Codex/Claude Cross-Verification
 
-## Purpose
+Collect Codex's analysis of a question/artifact, run Claude's own independent analysis, then synthesize both into a single comparative report.
 
-This skill uses Codex CLI as an external analysis and review engine inside the research harness workflow.
+Generic skill — does not assume any specific project layout. Works on any codebase.
 
-It is designed to help with:
+## Prerequisites
 
-- reviewing build plans
-- reviewing analysis plans
-- reviewing scripts and code
-- reviewing project structure and organization
-- providing technical support review for manuscript sections
-- surfacing an external critical perspective before proceeding
-
-This skill does **not** replace project-level judgment.
-Its job is to obtain Codex's review or analysis and make it usable within the project workflow.
-
-Claude remains the project lead.
-Codex acts as an external reviewer, technical critic, or implementation-oriented analysis partner.
-
-## When to Use
-
-Use this skill when:
-
-- a build plan needs technical review
-- an analysis plan needs external critique
-- a script or workflow should be reviewed
-- the project structure feels messy
-- an output organization check is needed
-- manuscript methods/results need technical cross-checking
-- you want a second model perspective before making a decision
-
-Typical timing:
-
-- after writing a build plan
-- after writing an analysis plan
-- after creating or changing scripts
-- before consolidating outputs
-- before expanding manuscript methods/results
-- when Claude wants external critique from Codex
+- **Codex CLI** installed: `npm install -g @openai/codex`
+- If Codex is not installed, the skill stops and reports `CODEX_NOT_INSTALLED`
 
 ## Modes
 
-This skill supports several working modes.
+Choose the mode that best matches the input:
 
 ### 1. `plan-review`
-Use for:
-- build plans
-- analysis plans
-- strategy documents
-- workflow plans
-
-Goal:
-- check feasibility
-- check missing steps
-- check weak assumptions
-- identify missing QC or validation
-- improve execution clarity
+Build plans, analysis plans, strategy documents, workflow plans.
+Focus: feasibility, missing steps, weak assumptions, QC/validation gaps, reproducibility, outputs clarity.
 
 ### 2. `script-review`
-Use for:
-- Python scripts
-- R scripts
-- shell scripts
-- workflow files
-- notebooks when treated as code artifacts
-
-Goal:
-- review correctness
-- review structure
-- identify reproducibility issues
-- identify path/input/output problems
-- identify maintenance risks
+Python/R/shell scripts, workflow files, notebooks as code artifacts.
+Focus: correctness, fragile assumptions, reproducibility, path handling, hidden coupling, maintainability.
 
 ### 3. `structure-review`
-Use for:
-- folder organization
-- outputs organization
-- research harness layout
-- naming conventions
-- traceability and workflow structure
-
-Goal:
-- detect clutter
-- detect ambiguity
-- improve organization
-- improve reproducibility and clarity
+Folder organization, output layout, naming conventions, traceability, workflow structure.
+Focus: clarity, ambiguity, stage separation, potential future confusion.
 
 ### 4. `manuscript-support`
-Use for:
-- methods/results technical cross-check
-- verifying that described procedures seem executable
-- checking whether the manuscript reflects actual workflow structure
-- identifying weak technical wording or undocumented procedural claims
-
-Goal:
-- provide technical support review
-- improve alignment between documented work and writing
-- catch method/result traceability issues
-
-This mode is **not** a replacement for `manuscript-review`.
-That separate skill remains the main literature-aware manuscript reviewer.
+Manuscript methods/results sections, technical traceability to workflow.
+Focus: whether methods sound executable, whether results are traceable, unclear procedural wording.
+(Not a replacement for a full literature-aware manuscript review.)
 
 ### 5. `general-review`
-Use when the request does not fit neatly into another mode.
+Anything that doesn't fit the above. Open-ended technical critique.
 
-Goal:
-- ask Codex for a broad technical or structural review
-- gather external critique for a specific project question
+If the mode is unclear from user input, prefer the narrowest reasonable mode. When in doubt, use `general-review`.
 
-## Inputs
+## Workflow
 
-Inputs may include:
+### Phase 1 — Determine mode + gather minimal context
 
-- a file path
-- a folder path
-- a research question
-- a build plan
-- an analysis plan
-- one or more scripts
-- a manuscript section
-- a project structure question
-- a user request asking for external critique
+1. Classify the request into one of the five modes
+2. Gather only what Codex needs for that mode:
+   - `plan-review` → the plan file + referenced rule files
+   - `script-review` → the script + related files/logs; add `git diff` if changes exist
+   - `structure-review` → folder tree + naming conventions if documented
+   - `manuscript-support` → the manuscript section + linked experiment/plan docs
+   - `general-review` → whatever the question mentions
+3. Avoid dumping unnecessary content. Narrow, not broad.
 
-Context may also include supporting files such as:
-
-- `README.md`
-- `CLAUDE.md`
-- `docs/ARCHITECTURE.md`, `docs/PLANS.md`, `docs/SECURITY.md`
-- `docs/design-docs/`
-- `docs/exec-plans/active/` (in-progress plans)
-- `docs/exec-plans/completed/`
-- `docs/product-specs/` (product vision, idea notes)
-- `docs/references/` (conventions, dependency layers, golden principles)
-- `src/` (frontend — React/TS)
-- `functions/` (Node.js Cloud Functions — genome parsing)
-- `functions-python/` (Python Cloud Functions — grouping, orthofinder)
-- `scripts/` (check-architecture.ts, admin scripts)
-- `firestore.rules`, `storage.rules`, `firebase.json`
-
-Only include the context actually needed for the current Codex task.
-
-## Outputs
-
-Produce:
-
-1. The Codex response
-2. A short note on what was sent to Codex
-3. A note on limitations, if context was incomplete
-4. Optionally, a saved markdown report for project records
-
-Recommended save locations (this project):
-
-- `docs/exec-plans/reviews/` — for plan reviews (alongside `active/` and `completed/`)
-- `docs/reviews/` — for code/structure reviews
-
-Recommended filename patterns:
-
-- `codex_plan_review_YYYY-MM-DD.md`
-- `codex_script_review_YYYY-MM-DD.md`
-- `codex_structure_review_YYYY-MM-DD.md`
-- `codex_manuscript_support_YYYY-MM-DD.md`
-
-## Execution Rules
-
-### 1. Check whether Codex CLI is installed
-
-Run:
+### Phase 2 — CLI availability check
 
 ```bash
 which codex 2>/dev/null || echo "CODEX_NOT_INSTALLED"
 ```
 
-If Codex is not installed, stop and report:
+If not installed, stop and report. Do not pretend Codex was used.
 
-```text
-CODEX_NOT_INSTALLED: codex CLI is not installed
+### Phase 3 — Compose prompt (mode-specific templates)
+
+#### A. `plan-review`
+```
+Review the following plan as a critical technical reviewer.
+
+Focus on: feasibility, missing steps, weak assumptions, missing QC or validation,
+reproducibility concerns, whether outputs are clearly defined.
+
+Context:
+[concise context]
+
+Plan:
+[plan text]
+
+Return: 1) Major concerns 2) Minor concerns 3) Missing steps 4) Suggested revisions 5) Overall judgment.
+Report ALL issues in one response. Answer in the user's language.
 ```
 
-Do not pretend Codex was used if it was not available.
-
-### 2. Use non-interactive Codex execution
-
-Preferred execution pattern:
-
-```bash
-codex exec --skip-git-repo-check "prompt content"
+#### B. `script-review`
 ```
-
-For long prompts, save the prompt to a temporary file and use:
-
-```bash
-cat /tmp/codex_prompt.txt | codex exec --skip-git-repo-check -
-```
-
-Do not use interactive-only patterns that require a terminal.
-
-### 3. Avoid unsupported flags
-
-Do not use invalid or unsupported commands such as:
-
-- `codex -q`
-- `codex exec -a never`
-- bare `codex "prompt"` if terminal mode is required
-
-Use stable non-interactive execution only.
-
-### 4. Return Codex findings clearly
-
-The Codex output should be preserved faithfully.
-
-You may wrap it with a small amount of project context, but you must not distort its meaning.
-
-If summarizing, keep:
-- Codex raw findings distinguishable
-- Claude interpretation separate
-
-## Workflow
-
-### Step 1. Determine mode
-Classify the request into one of:
-
-- `plan-review`
-- `script-review`
-- `structure-review`
-- `manuscript-support`
-- `general-review`
-
-If unclear, choose the narrowest reasonable mode.
-
-### Step 2. Gather minimal relevant context
-Collect only what Codex needs.
-
-Examples:
-
-#### For `plan-review`
-Include:
-- the plan file
-- relevant research question summary
-- relevant build or analysis context
-- expected outputs if available
-
-#### For `script-review`
-Include:
-- the script itself
-- key supporting files if needed
-- expected input/output behavior
-- related logs or error messages if relevant
-
-#### For `structure-review`
-Include:
-- folder tree
-- naming conventions if documented
-- project stage and purpose
-
-#### For `manuscript-support`
-Include:
-- relevant manuscript section(s)
-- related outputs or experiment logs
-- relevant method or analysis plan documents
-
-Avoid dumping unnecessary project content into the prompt.
-
-### Step 3. Compose a Codex prompt
-The prompt should clearly state:
-
-- task type
-- target artifact(s)
-- relevant project context
-- what kind of feedback is desired
-- desired output style
-
-Typical prompt requirements:
-- be direct
-- include enough context to review meaningfully
-- specify whether critique, missing steps, reproducibility concerns, or restructuring suggestions are desired
-
-### Step 4. Run Codex
-Execute Codex CLI using Bash.
-
-If prompt length is large:
-1. save prompt to `/tmp/codex_prompt.txt`
-2. pipe it into Codex
-
-If execution fails:
-- report the failure honestly
-- include the returned error message
-- do not fabricate results
-
-### Step 5. Integrate Codex findings into the project workflow
-After Codex responds:
-
-- preserve the Codex output
-- optionally save a markdown review artifact
-- identify whether the project should:
-  - proceed
-  - revise the plan
-  - revise the script
-  - reorganize structure
-  - update documentation
-  - escalate to manuscript review or consistency review
-
-Codex output is advisory, not automatically authoritative.
-
-## Prompt Composition Templates
-
-### A. Plan Review Prompt
-
-Use a prompt like:
-
-```text
-Review the following research project plan as a critical technical reviewer.
-
-Focus on:
-- feasibility
-- missing steps
-- weak assumptions
-- missing QC or validation
-- reproducibility concerns
-- whether outputs are clearly defined
-
-Project context:
-[insert concise context]
-
-Plan to review:
-[insert plan text]
-
-Return:
-1. Major concerns
-2. Minor concerns
-3. Missing steps
-4. Suggested revisions
-5. Overall judgment
-```
-
-### B. Script Review Prompt
-
-Use a prompt like:
-
-```text
 Review the following script for correctness, reproducibility, maintainability, and workflow fit.
 
-Focus on:
-- likely bugs
-- fragile assumptions
-- input/output clarity
-- path handling
-- reproducibility issues
-- hidden coupling to undocumented files or folders
+Focus on: likely bugs, fragile assumptions, input/output clarity, path handling,
+reproducibility issues, hidden coupling to undocumented files or folders.
 
-Project context:
-[insert concise context]
+Context:
+[concise context]
 
 Script:
-[insert script]
+[script]
 
-Return:
-1. Likely issues
-2. Reproducibility concerns
-3. Suggested fixes
-4. Overall judgment
+Return: 1) Likely issues 2) Reproducibility concerns 3) Suggested fixes 4) Overall judgment.
+Report ALL issues in one response.
 ```
 
-### C. Structure Review Prompt
+#### C. `structure-review`
+```
+Review the following project folder structure.
 
-Use a prompt like:
+Focus on: clarity, traceability, ambiguity, separation of stages,
+whether outputs and working files are well organized, what could cause future confusion.
 
-```text
-Review the following research project folder structure and organization.
-
-Focus on:
-- clarity
-- traceability
-- ambiguity
-- separation of stages
-- whether outputs and working files are well organized
-- what could cause future confusion
-
-Project context:
-[insert concise context]
+Context:
+[concise context]
 
 Structure:
-[insert tree]
+[tree]
 
-Return:
-1. What works well
-2. What is confusing
-3. Suggested restructuring
-4. Overall judgment
+Return: 1) What works well 2) What is confusing 3) Suggested restructuring 4) Overall judgment.
 ```
 
-### D. Manuscript Support Prompt
+#### D. `manuscript-support`
+```
+Review the following manuscript section from a technical and traceability perspective.
 
-Use a prompt like:
+Focus on: whether methods sound executable, whether results are traceable to the workflow,
+unclear procedural wording, missing technical detail, possible mismatch between described work
+and documented workflow.
 
-```text
-Review the following manuscript section(s) from a technical and workflow-traceability perspective.
-
-Focus on:
-- whether methods sound executable
-- whether results seem traceable to workflow and outputs
-- unclear procedural wording
-- missing technical detail
-- possible mismatch between described work and documented workflow
-
-Project context:
-[insert concise context]
+Context:
+[concise context]
 
 Manuscript content:
-[insert text]
+[text]
 
-Return:
-1. Technical concerns
-2. Missing details
-3. Traceability issues
-4. Suggested revisions
-5. Overall judgment
+Return: 1) Technical concerns 2) Missing details 3) Traceability issues 4) Suggested revisions 5) Overall judgment.
 ```
 
-## Save Format
+#### E. `general-review`
+```
+Provide a technical critique of the following question/artifact.
 
-If saving the review, use markdown with this structure:
+Context:
+[concise context]
 
-# Codex Review Report
+Target:
+[text or file content]
 
-**Date:** [date]  
-**Mode:** [mode]  
-**Target:** [file/folder/question]
+Return a structured critique with concrete observations and recommendations.
+Report ALL issues.
+```
 
-## What Was Sent to Codex
-- brief description of context included
+### Phase 4 — Spawn Codex reviewer
 
-## Codex Findings
-[preserve or quote the Codex output clearly]
+Use the `codex-reviewer` subagent to run Codex in the background while Claude does its own analysis:
 
-## Claude Note
-- how this should affect the project
-- whether to proceed, revise, or re-check
+```
+Agent(
+  description: "Run Codex CLI {mode} analysis",
+  prompt: "<composed prompt from Phase 3>",
+  name: "codex-reviewer",
+  subagent_type: "codex-reviewer",
+  model: "haiku",
+  mode: "dontAsk",
+  run_in_background: true
+)
+```
 
-## Next Action
-- concrete next step
+### Phase 5 — Lead (Claude) independent analysis
 
-Save under:
-- `docs/exec-plans/reviews/` (for plan reviews)
-- `docs/reviews/` (for code/structure/general reviews)
+While Codex is running, analyze the same question independently using the same context. Form concrete findings before seeing Codex's output — preserves independence for synthesis.
 
-## Project Integration (green-rice-web)
+### Phase 6 — Synthesis
 
-This skill fits the harness workflow as follows:
+After Codex completes (or times out), combine both analyses:
 
-### Before major implementation
-- `plan-review` on freshly authored plan in `docs/exec-plans/active/`
+```markdown
+## Cross-Verification Results — {mode}
 
-### After writing services / hooks / Cloud Functions
-- `script-review` on the new files, especially in
-  - `src/lib/*-service.ts`, `src/hooks/use*.ts`
-  - `functions/src/` (Node.js), `functions-python/` (Python)
-  - `scripts/check-architecture.ts`, other harness scripts
+### Consensus (both agree)
+- High-confidence findings that appeared on both sides
 
-### After changing project structure
-- `structure-review` on `src/` layers (Types → Lib → Hooks → Components → Pages),
-  `docs/` organization, or when moving large blocks of files
+### Unique Insights
+- **Codex (GPT):** findings only Codex raised
+- **Claude (Lead):** findings only Claude raised
 
-### Before committing risky changes
-- `general-review` on uncommitted diff for a sanity check
+### Conflicts (disagreements)
+- Per item: Codex's position, Claude's position, Lead's judgment on which is correct and why
 
-### Harness checkpoints to consider
-- After editing `CLAUDE.md` rules
-- After changing `firestore.rules` or `storage.rules`
-- After adding a new Cloud Function trigger or callable
-- Before bumping a `groupings/` or `orthogroup_diffs/` schema
+### Final Conclusion
+- Synthesized recommendation + concrete next actions
+```
 
-`manuscript-support` mode is not used in this project (no manuscript track).
+Keep Codex's raw wording distinguishable from Claude's synthesis. Do not paraphrase Codex away.
 
-## Behavior Rules
+### Phase 7 — Cleanup
 
-- Be honest about Codex availability
-- Use Codex only when it adds real value
-- Keep context relevant and minimal
-- Preserve Codex findings faithfully
-- Separate Codex output from Claude interpretation
+If the agent is still running (e.g. orchestration aborted mid-run):
+
+```
+SendMessage(to: "codex-reviewer", message: {type: "shutdown_request"})
+```
+
+## Error handling
+
+| Scenario | Action |
+|----------|--------|
+| Codex CLI not installed | Report `CODEX_NOT_INSTALLED`, stop |
+| API / model error | Surface verbatim; Lead analysis still proceeds |
+| Timeout (agent no response) | Synthesize with Lead-only findings; note Codex unavailable |
+| Context too large | Narrow to most relevant files; state partial context used |
+| Codex output unparseable | Show raw output; do not fabricate structure |
+
+## Output rules
+
+- Preserve Codex's findings faithfully — do not distort or summarize past meaning
+- Separate Codex raw language from Claude interpretation
 - Do not claim Codex validated something it did not inspect
-- Use Codex as an external technical reviewer, not as the sole decision-maker
+- If saving a report, name the file `verify_YYYY-MM-DD_{mode}_{slug}.md`; save path is user-specified (skill does not hard-code location)
 
-## Failure Handling
+## Customization
 
-If Codex is unavailable:
-- say so explicitly
-
-If Codex errors:
-- return the error message
-- note what likely failed
-
-If context is insufficient:
-- say that Codex review may be incomplete
-
-If the target is too large:
-- reduce scope to the most relevant files
-- state that partial context was used
-
-## Customization Points
-
-You may customize:
-
-- which modes are enabled
-- whether Codex findings are returned raw or summarized
-- whether review reports are always saved
-- whether script review should include git diff automatically
-- whether build-plan review should always include research-question context
-- whether manuscript-support mode should be strict or lightweight
-- whether Codex should be called automatically at specific workflow checkpoints
+Users may override behavior by passing hints:
+- Specific mode: `verify plan-review <path>`
+- Save the report: ask the user for a save path if long-term record is wanted
+- Include diff automatically: for `script-review`, prepend `git diff` output to context

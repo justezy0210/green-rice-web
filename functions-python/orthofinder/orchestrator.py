@@ -6,13 +6,16 @@ Called from:
 """
 
 from . import state, uploader
-from .diff import compute_diff_for_trait, delete_diff_document, write_diff_document
-from .gene_annotation import load_baegilmi_gene_annotation
+from .diff import compute_diff_for_trait, delete_diff_document, write_diff_artifacts
+
+
+def _og_descriptions_path(version: int) -> str:
+    return f"orthofinder/v{version}/og_descriptions.json"
 
 
 def recompute_all_diffs(db, grouping_version: int) -> int:
     """
-    Load current orthofinder state + matrix + gene annotation, then
+    Load current orthofinder state + matrix + IRGSP descriptions, then
     compute diff for every grouping doc present in Firestore.
     Returns number of diff docs written. If no matrix is committed, returns 0.
     """
@@ -28,13 +31,12 @@ def recompute_all_diffs(db, grouping_version: int) -> int:
     matrix_data = uploader.download_json(matrix_path)
     matrix = matrix_data.get("ogs", {})
 
-    baegilmi_path = f"orthofinder/v{active_version}/baegilmi_og_members.json"
+    # IRGSP descriptions — primary representative source.
+    # Empty dict if the artifact is missing (legacy version).
     try:
-        baegilmi_genes_by_og = uploader.download_json(baegilmi_path)
+        og_descriptions = uploader.download_json(_og_descriptions_path(active_version))
     except Exception:
-        baegilmi_genes_by_og = {}
-
-    gene_annotation = load_baegilmi_gene_annotation()
+        og_descriptions = {}
 
     import logging
 
@@ -50,14 +52,12 @@ def recompute_all_diffs(db, grouping_version: int) -> int:
             delete_diff_document(db, trait_id)
             continue
 
-        # A single malformed trait shouldn't abort the entire recompute.
         try:
-            diff_doc = compute_diff_for_trait(
+            result = compute_diff_for_trait(
                 trait_id=trait_id,
                 grouping_assignments=assignments,
                 matrix=matrix,
-                baegilmi_genes_by_og=baegilmi_genes_by_og,
-                gene_annotation=gene_annotation,
+                og_descriptions=og_descriptions,
                 grouping_version=grouping_version,
                 orthofinder_version=active_version,
             )
@@ -65,11 +65,20 @@ def recompute_all_diffs(db, grouping_version: int) -> int:
             logging.exception(f"Diff computation failed for trait={trait_id}; skipping")
             continue
 
-        if diff_doc is None:
+        if result is None:
             delete_diff_document(db, trait_id)
             continue
 
-        write_diff_document(db, diff_doc)
+        meta, payload = result
+        try:
+            write_diff_artifacts(db, uploader, meta, payload)
+        except Exception:
+            # Storage upload or Firestore write failed. Leave any prior doc intact —
+            # do NOT delete; users can still see legacy data until next successful run.
+            logging.exception(
+                f"Diff artifact write failed for trait={trait_id}; leaving prior state"
+            )
+            continue
         written += 1
 
     return written

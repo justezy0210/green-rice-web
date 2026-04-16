@@ -6,17 +6,6 @@ export interface FilterOptions {
   category?: string;
 }
 
-export interface ComparisonConfig {
-  targetField: string;
-  groupByField: string;
-  groups: ComparisonGroup[];
-}
-
-export interface ComparisonGroup {
-  name: string;
-  cultivars: string[];
-}
-
 export interface SortConfig {
   field: string;
   direction: 'asc' | 'desc';

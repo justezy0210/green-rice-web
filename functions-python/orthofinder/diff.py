@@ -8,12 +8,15 @@ from datetime import datetime, timezone
 import numpy as np
 from scipy import stats
 
-from .gene_annotation import lookup_representative
 from .models import (
+    DIFF_SCHEMA_VERSION,
     OrthogroupDiffDocument,
     OrthogroupDiffEntry,
+    OrthogroupDiffPayload,
     OrthogroupRepresentative,
     diff_document_to_dict,
+    diff_payload_to_dict,
+    diff_storage_path,
 )
 from .stats import bh_correction
 
@@ -26,19 +29,28 @@ P_RELAXED = 0.10
 MIN_EFFECT = 0.5
 FALLBACK_MIN_HITS = 5
 FALLBACK_TOP_N = 10
-MAX_CANDIDATES = 200
+# No MAX_CANDIDATES: the Storage payload carries the full selected set.
 
 
 def compute_diff_for_trait(
     trait_id: str,
     grouping_assignments: dict,
     matrix: dict,
-    baegilmi_genes_by_og: dict,
-    gene_annotation: dict,
+    og_descriptions: dict,
     grouping_version: int,
     orthofinder_version: int,
-) -> OrthogroupDiffDocument | None:
-    """Compute filtered significant orthogroups for one trait. Locked to k=2."""
+) -> tuple[OrthogroupDiffDocument, OrthogroupDiffPayload] | None:
+    """
+    Compute filtered significant orthogroups for one trait. Locked to k=2.
+
+    `og_descriptions`: {ogId: {"transcripts": [...], "descriptions": {tid: text}}}
+    from Orthogroups_with_description.tsv. Used to attach IRGSP-based representative
+    to each selected entry.
+
+    Returns (metadata_document, payload) tuple, or None if the trait cannot be tested
+    (not k=2, empty group, etc.). Caller writes payload to Storage first, then metadata
+    to Firestore.
+    """
     group_members: dict[str, list[str]] = {}
     for cid, a in grouping_assignments.items():
         if a.get("borderline"):
@@ -128,19 +140,14 @@ def compute_diff_for_trait(
     selected, mode, thresholds, passed_count = _select_candidates(candidates)
 
     entries: list[OrthogroupDiffEntry] = []
-    for c in selected[:MAX_CANDIDATES]:
+    for c in selected:  # full selected set — no cap
         rep_obj = None
-        baegilmi_genes = baegilmi_genes_by_og.get(c["og_id"], [])
-        rep_dict = lookup_representative(baegilmi_genes, gene_annotation)
-        if rep_dict is not None:
+        irgsp = og_descriptions.get(c["og_id"])
+        if irgsp and (irgsp.get("transcripts") or irgsp.get("descriptions")):
             rep_obj = OrthogroupRepresentative(
-                source=rep_dict["source"],
-                geneId=rep_dict["geneId"],
-                chromosome=rep_dict["chromosome"],
-                start=rep_dict["start"],
-                end=rep_dict["end"],
-                strand=rep_dict["strand"],
-                attributes=rep_dict["attributes"],
+                source="irgsp",
+                transcripts=irgsp.get("transcripts", []),
+                descriptions=irgsp.get("descriptions", {}),
             )
         entries.append(OrthogroupDiffEntry(
             orthogroup=c["og_id"],
@@ -156,18 +163,38 @@ def compute_diff_for_trait(
             representative=rep_obj,
         ))
 
-    return OrthogroupDiffDocument(
+    computed_at = datetime.now(timezone.utc).isoformat()
+    storage_path = diff_storage_path(orthofinder_version, grouping_version, trait_id)
+    entry_count = len(entries)
+
+    meta = OrthogroupDiffDocument(
         traitId=trait_id,
         groupLabels=group_labels,
-        top=entries,
         selectionMode=mode,
         thresholds=thresholds,
         totalTested=total_tested,
         passedCount=passed_count,
-        computedAt=datetime.now(timezone.utc).isoformat(),
+        entryCount=entry_count,
+        computedAt=computed_at,
         groupingVersion=grouping_version,
         orthofinderVersion=orthofinder_version,
+        storagePath=storage_path,
+        schemaVersion=DIFF_SCHEMA_VERSION,
     )
+    payload = OrthogroupDiffPayload(
+        traitId=trait_id,
+        groupLabels=group_labels,
+        entries=entries,
+        entryCount=entry_count,
+        passedCount=passed_count,
+        selectionMode=mode,
+        thresholds=thresholds,
+        computedAt=computed_at,
+        groupingVersion=grouping_version,
+        orthofinderVersion=orthofinder_version,
+        schemaVersion=DIFF_SCHEMA_VERSION,
+    )
+    return meta, payload
 
 
 def _build_count_matrices(
@@ -231,7 +258,8 @@ def _select_candidates(candidates: list[dict]):
         )
 
     # Fallback: show top N by raw p-value regardless of cutoff. passedCount reflects
-    # only those that actually meet the relaxed cutoff.
+    # only those that actually meet the relaxed cutoff (so entryCount != passedCount
+    # is expected for this mode).
     sorted_all = sorted(candidates, key=lambda c: (c["p_value"], -c["mean_diff"]))
     fallback = sorted_all[:FALLBACK_TOP_N]
     return (
@@ -242,8 +270,21 @@ def _select_candidates(candidates: list[dict]):
     )
 
 
-def write_diff_document(db, doc: OrthogroupDiffDocument) -> None:
-    db.collection("orthogroup_diffs").document(doc.traitId).set(diff_document_to_dict(doc))
+def write_diff_artifacts(
+    db,
+    uploader_mod,
+    meta: OrthogroupDiffDocument,
+    payload: OrthogroupDiffPayload,
+) -> None:
+    """
+    Atomic-ish write: Storage payload first, then Firestore metadata.
+    If Storage upload fails, Firestore is not touched → previous state remains.
+    Caller imports `uploader` module and passes it (avoids circular import in tests).
+    """
+    uploader_mod.upload_json(meta.storagePath, diff_payload_to_dict(payload))
+    db.collection("orthogroup_diffs").document(meta.traitId).set(
+        diff_document_to_dict(meta)
+    )
 
 
 def delete_diff_document(db, trait_id: str) -> None:

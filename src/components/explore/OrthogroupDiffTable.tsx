@@ -1,20 +1,72 @@
-import { useState } from 'react';
+import { useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { OrthogroupDiffPagination } from './OrthogroupDiffPagination';
+import { OrthogroupDiffRow } from './OrthogroupDiffRow';
+import {
+  categorizeEntry,
+  getCategoryById,
+  type CategoryId,
+} from '@/lib/og-functional-categories';
+import {
+  extractEntries,
+  filterByQuery,
+  sortEntries,
+  type DiffSortKey,
+} from '@/lib/og-diff-filters';
+import type { OgCategoriesData } from '@/lib/orthogroup-service';
 import type {
+  DiffEntriesState,
   OrthogroupDiffDocument,
-  OrthogroupDiffEntry,
   SelectionMode,
 } from '@/types/orthogroup';
 
+export type { DiffSortKey };
+
 interface Props {
   doc: OrthogroupDiffDocument | null;
+  entriesState: DiffEntriesState;
   isStale: boolean;
+  page: number;
+  pageSize: number;
+  sortKey: DiffSortKey;
+  query: string;
+  category: CategoryId | null;
+  precomputed?: OgCategoriesData | null;
+  onPageChange: (page: number) => void;
+  onSortChange: (key: DiffSortKey) => void;
+  onQueryChange: (q: string) => void;
+  onCategoryChange: (id: CategoryId | null) => void;
+  onSelectOg?: (ogId: string) => void;
 }
 
-const INITIAL_LIMIT = 20;
-
-export function OrthogroupDiffTable({ doc, isStale }: Props) {
-  const [showAll, setShowAll] = useState(false);
+export function OrthogroupDiffTable({
+  doc,
+  entriesState,
+  isStale,
+  page,
+  pageSize,
+  sortKey,
+  query,
+  category,
+  precomputed,
+  onPageChange,
+  onSortChange,
+  onQueryChange,
+  onCategoryChange,
+  onSelectOg,
+}: Props) {
+  const entries = useMemo(() => extractEntries(entriesState), [entriesState]);
+  const byCategory = useMemo(
+    () => (category ? entries.filter((e) => categorizeEntry(e, precomputed).id === category) : entries),
+    [entries, category, precomputed],
+  );
+  const filtered = useMemo(() => filterByQuery(byCategory, query), [byCategory, query]);
+  const sorted = useMemo(() => sortEntries(filtered, sortKey), [filtered, sortKey]);
+  const activeCategoryLabel = category ? getCategoryById(category)?.label ?? category : null;
+  const pageRows = useMemo(
+    () => sorted.slice(page * pageSize, (page + 1) * pageSize),
+    [sorted, page, pageSize],
+  );
 
   if (!doc) {
     return (
@@ -27,9 +79,6 @@ export function OrthogroupDiffTable({ doc, isStale }: Props) {
   }
 
   const groupLabels = doc.groupLabels;
-  const rows = showAll ? doc.top : doc.top.slice(0, INITIAL_LIMIT);
-
-  // Guard against legacy documents (pre-MWU schema) that lack selectionMode/thresholds.
   const hasStats = doc.selectionMode !== undefined && doc.thresholds !== undefined;
   const modeBanner = hasStats
     ? describeMode(doc.selectionMode, doc.thresholds.pValue, doc.thresholds.meanDiff)
@@ -61,7 +110,70 @@ export function OrthogroupDiffTable({ doc, isStale }: Props) {
           </div>
         )}
 
-        {doc.top.length === 0 ? (
+        {entriesState.kind === 'legacy' && (
+          <div className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded px-3 py-2">
+            Showing legacy results stored directly on the Firestore document. Trigger a recompute to
+            migrate to the new paginated Storage-backed format.
+          </div>
+        )}
+
+        <div className="flex items-center gap-2 text-xs flex-wrap">
+          <label className="flex items-center gap-1.5 flex-1 min-w-[220px]">
+            <span className="text-gray-500 shrink-0">Search:</span>
+            <input
+              type="search"
+              value={query}
+              onChange={(e) => onQueryChange(e.target.value)}
+              placeholder="OG id, IRGSP transcript, or description…"
+              className="flex-1 border border-gray-200 rounded px-2 py-1 text-xs focus:outline-none focus:ring-2 focus:ring-green-200 focus:border-green-400"
+            />
+            {query && (
+              <button
+                type="button"
+                onClick={() => onQueryChange('')}
+                className="text-gray-400 hover:text-gray-700"
+                aria-label="Clear search"
+              >
+                ✕
+              </button>
+            )}
+          </label>
+          <div className="flex items-center gap-1">
+            <span className="text-gray-500">Sort:</span>
+            <SortButton current={sortKey} value="p" label="p-value" onClick={onSortChange} />
+            <SortButton current={sortKey} value="meanDiff" label="|Δ mean|" onClick={onSortChange} />
+            <SortButton current={sortKey} value="log2FC" label="|log₂ FC|" onClick={onSortChange} />
+          </div>
+        </div>
+
+        {(activeCategoryLabel || query) && entries.length > 0 && (
+          <div className="flex items-center gap-2 flex-wrap text-[11px]">
+            {activeCategoryLabel && (
+              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded border border-green-200 bg-green-50 text-green-800">
+                Category: <strong>{activeCategoryLabel}</strong>
+                <button
+                  type="button"
+                  onClick={() => onCategoryChange(null)}
+                  className="text-green-700 hover:text-green-900 ml-1"
+                  aria-label="Clear category filter"
+                >
+                  ✕
+                </button>
+              </span>
+            )}
+            <span className="text-gray-500 tabular-nums">
+              {filtered.length.toLocaleString()} of {entries.length.toLocaleString()} OGs
+            </span>
+          </div>
+        )}
+
+        {entriesState.kind === 'loading' ? (
+          <p className="text-sm text-gray-400 py-4 text-center">Loading entries…</p>
+        ) : entriesState.kind === 'error' ? (
+          <p className="text-sm text-red-600 bg-red-50 border border-red-100 rounded px-3 py-2">
+            Failed to load entries: {entriesState.message}
+          </p>
+        ) : sorted.length === 0 ? (
           <p className="text-sm text-gray-400 py-4 text-center">No candidates passed the filter.</p>
         ) : (
           <>
@@ -79,43 +191,76 @@ export function OrthogroupDiffTable({ doc, isStale }: Props) {
                     <th className="text-right py-1.5 px-2 font-medium">Δ presence</th>
                     <th
                       className="text-right py-1.5 px-2 font-medium"
-                      title="Raw two-sided Mann-Whitney U p-value (unadjusted). Used for ranking."
+                      title="Raw two-sided Mann-Whitney U p-value (unadjusted)."
                     >
                       p-value
                     </th>
                     <th className="text-right py-1.5 px-2 font-medium">log₂ FC</th>
                     <th
                       className="text-left py-1.5 pl-2 font-medium"
-                      title="Representative gene from baegilmi GFF3 (temporary)"
+                      title="IRGSP-1.0 reference transcript and description"
                     >
-                      Representative*
+                      IRGSP representative*
                     </th>
                   </tr>
                 </thead>
                 <tbody>
-                  {rows.map((entry) => (
-                    <DiffRow key={entry.orthogroup} entry={entry} groupLabels={groupLabels} />
+                  {pageRows.map((entry) => (
+                    <OrthogroupDiffRow
+                      key={entry.orthogroup}
+                      entry={entry}
+                      groupLabels={groupLabels}
+                      onSelectOg={onSelectOg}
+                    />
                   ))}
                 </tbody>
               </table>
             </div>
 
-            {doc.top.length > INITIAL_LIMIT && !showAll && (
-              <button
-                onClick={() => setShowAll(true)}
-                className="text-xs text-green-700 hover:text-green-800 underline"
-              >
-                Show all {doc.top.length}
-              </button>
-            )}
+            <OrthogroupDiffPagination
+              page={page}
+              pageSize={pageSize}
+              totalItems={sorted.length}
+              onPageChange={onPageChange}
+            />
           </>
         )}
 
         <p className="text-[10px] text-gray-400">
-          * Representative gene annotation is a temporary lookup from baegilmi&apos;s GFF3 and will be replaced with proper functional annotation later.
+          * Representative shows the IRGSP-1.0 (Nipponbare reference) transcript and its
+          published description. &quot;NA&quot; means no description in the source dataset.
+          Click an orthogroup to see per-cultivar gene members.
         </p>
       </CardContent>
     </Card>
+  );
+}
+
+function SortButton({
+  current,
+  value,
+  label,
+  onClick,
+}: {
+  current: DiffSortKey;
+  value: DiffSortKey;
+  label: string;
+  onClick: (k: DiffSortKey) => void;
+}) {
+  const active = current === value;
+  return (
+    <button
+      type="button"
+      onClick={() => onClick(value)}
+      aria-pressed={active}
+      className={`px-2 py-0.5 rounded border ${
+        active
+          ? 'bg-gray-900 text-white border-gray-900'
+          : 'bg-white text-gray-700 border-gray-200 hover:bg-gray-50'
+      }`}
+    >
+      {label}
+    </button>
   );
 }
 
@@ -138,78 +283,3 @@ function describeMode(mode: SelectionMode, p: number, minDiff: number): { text: 
   };
 }
 
-function DiffRow({
-  entry,
-  groupLabels,
-}: {
-  entry: OrthogroupDiffEntry;
-  groupLabels: string[];
-}) {
-  const rep = entry.representative;
-  const primaryAttr = rep ? pickPrimaryAttribute(rep.attributes) : null;
-  const hasP = typeof entry.pValue === 'number';
-  const pStrong = hasP && entry.pValue < 0.01;
-
-  return (
-    <tr className="border-b border-gray-100 hover:bg-gray-50">
-      <td className="py-1 pr-3 font-mono text-gray-900">{entry.orthogroup}</td>
-      {groupLabels.map((lbl) => (
-        <td key={lbl} className="py-1 px-2 text-right tabular-nums text-gray-700">
-          {(entry.meansByGroup[lbl] ?? 0).toFixed(2)}
-        </td>
-      ))}
-      <td className="py-1 px-2 text-right tabular-nums font-medium text-gray-900">
-        {entry.meanDiff.toFixed(2)}
-      </td>
-      <td className="py-1 px-2 text-right tabular-nums text-gray-600">
-        {(entry.presenceDiff * 100).toFixed(0)}%
-      </td>
-      <td className={`py-1 px-2 text-right tabular-nums ${pStrong ? 'font-semibold text-gray-900' : 'text-gray-700'}`}>
-        {hasP ? formatQ(entry.pValue) : '—'}
-      </td>
-      <td className="py-1 px-2 text-right tabular-nums text-gray-600">
-        {entry.log2FoldChange === null ? '—' : entry.log2FoldChange.toFixed(2)}
-      </td>
-      <td className="py-1 pl-2 text-gray-600 max-w-xs truncate">
-        {rep ? (
-          <span title={formatRepresentativeTooltip(rep, primaryAttr)}>
-            <span className="text-gray-400 font-mono text-[10px] mr-1">
-              {rep.chromosome}:{rep.start.toLocaleString()}-{rep.end.toLocaleString()}
-            </span>
-            {primaryAttr ?? <span className="text-gray-400 italic">no attr</span>}
-          </span>
-        ) : (
-          <span className="text-gray-300">—</span>
-        )}
-      </td>
-    </tr>
-  );
-}
-
-function formatQ(q: number | undefined | null): string {
-  if (q === undefined || q === null || Number.isNaN(q)) return '—';
-  if (q < 1e-4) return q.toExponential(1);
-  return q.toFixed(3);
-}
-
-const PRIMARY_ATTR_KEYS = ['Note', 'product', 'Description', 'description', 'function', 'Name'];
-
-function pickPrimaryAttribute(attrs: Record<string, string>): string | null {
-  for (const k of PRIMARY_ATTR_KEYS) {
-    if (attrs[k]) return decodeURIComponent(attrs[k].replace(/\+/g, ' '));
-  }
-  const entries = Object.entries(attrs);
-  return entries.length > 0 ? `${entries[0][0]}=${entries[0][1]}` : null;
-}
-
-function formatRepresentativeTooltip(
-  rep: NonNullable<OrthogroupDiffEntry['representative']>,
-  primary: string | null,
-): string {
-  const lines = [
-    `Gene: ${rep.geneId}`,
-    `Location: ${rep.chromosome}:${rep.start}-${rep.end} (${rep.strand})`,
-  ];
-  if (primary) lines.push(`Annotation: ${primary}`);
-  return lines.join('\n');
-}
