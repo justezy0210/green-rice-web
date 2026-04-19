@@ -83,4 +83,17 @@ export default defineConfig([
       'no-restricted-imports': 'off',
     },
   },
+  // shadcn/ui primitives co-export the `cva` variants with their component.
+  // That is the library's standard pattern; loosening fast-refresh here keeps
+  // us from moving every `*Variants` definition into a separate file.
+  // AuthContext exports both the provider and the context value by design.
+  {
+    files: [
+      'src/components/ui/**/*.{ts,tsx}',
+      'src/context/AuthContext.tsx',
+    ],
+    rules: {
+      'react-refresh/only-export-components': 'off',
+    },
+  },
 ])

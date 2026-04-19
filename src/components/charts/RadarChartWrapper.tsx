@@ -1,4 +1,4 @@
-import { useRef, useCallback, useEffect } from 'react';
+import { useRef, useCallback, useEffect, useMemo } from 'react';
 import {
   Chart as ChartJS,
   RadialLinearScale,
@@ -39,13 +39,16 @@ export function RadarChartWrapper({ labels, datasets, height = 360, comparisonDa
   const lastIndex = useRef(-1);
   const chartRef = useRef<ChartJS<'radar'> | null>(null);
   const activeIndexRef = useRef(activeIndex);
-  activeIndexRef.current = activeIndex;
   const highlightColorRef = useRef(highlightColor);
-  highlightColorRef.current = highlightColor;
 
+  // Keep refs in sync with props so the Chart.js plugin closure reads
+  // current values without being re-created. Must be in an effect — writing
+  // to refs during render is flagged by react-hooks/refs-during-render.
   useEffect(() => {
+    activeIndexRef.current = activeIndex;
+    highlightColorRef.current = highlightColor;
     chartRef.current?.draw();
-  }, [activeIndex]);
+  }, [activeIndex, highlightColor]);
 
   const chartData = {
     labels,
@@ -105,34 +108,37 @@ export function RadarChartWrapper({ labels, datasets, height = 360, comparisonDa
     }
   }, [onLabelHover]);
 
-  const highlightPlugin = useRef<Plugin<'radar'>>({
-    id: 'labelHighlight',
-    afterDraw(chart) {
-      const idx = activeIndexRef.current;
-      if (idx < 0) return;
-      const scale = chart.scales.r as RadialLinearScale & {
-        _pointLabelItems?: { left: number; right: number; top: number; bottom: number }[];
-      };
-      const items = scale._pointLabelItems;
-      if (!items || !items[idx]) return;
+  const highlightPlugin = useMemo<Plugin<'radar'>>(
+    () => ({
+      id: 'labelHighlight',
+      afterDraw(chart) {
+        const idx = activeIndexRef.current;
+        if (idx < 0) return;
+        const scale = chart.scales.r as RadialLinearScale & {
+          _pointLabelItems?: { left: number; right: number; top: number; bottom: number }[];
+        };
+        const items = scale._pointLabelItems;
+        if (!items || !items[idx]) return;
 
-      const it = items[idx];
-      const ctx = chart.ctx;
-      const pad = 4;
-      const x = it.left - pad;
-      const y = it.top - pad;
-      const w = it.right - it.left + pad * 2;
-      const h = it.bottom - it.top + pad * 2;
+        const it = items[idx];
+        const ctx = chart.ctx;
+        const pad = 4;
+        const x = it.left - pad;
+        const y = it.top - pad;
+        const w = it.right - it.left + pad * 2;
+        const h = it.bottom - it.top + pad * 2;
 
-      ctx.save();
-      ctx.strokeStyle = highlightColorRef.current;
-      ctx.lineWidth = 1.5;
-      ctx.beginPath();
-      ctx.roundRect(x, y, w, h, 4);
-      ctx.stroke();
-      ctx.restore();
-    },
-  }).current;
+        ctx.save();
+        ctx.strokeStyle = highlightColorRef.current;
+        ctx.lineWidth = 1.5;
+        ctx.beginPath();
+        ctx.roundRect(x, y, w, h, 4);
+        ctx.stroke();
+        ctx.restore();
+      },
+    }),
+    [],
+  );
 
   const options = {
     responsive: true,

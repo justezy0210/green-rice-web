@@ -75,25 +75,31 @@ function DownloadRow({ entry }: { entry: Entry }) {
   );
 }
 
+type DownloadState = { key: string; url?: string; error?: string };
+
 function DownloadButton({ storagePath, fileName }: { storagePath: string; fileName: string }) {
-  const [url, setUrl] = useState<string | null>(null);
-  const [error, setError] = useState<string | null>(null);
+  const [state, setState] = useState<DownloadState>({ key: '' });
 
   useEffect(() => {
     let cancelled = false;
-    setUrl(null);
-    setError(null);
     getDownloadURL(storageRef(storage, storagePath))
       .then((u) => {
-        if (!cancelled) setUrl(u);
+        if (!cancelled) setState({ key: storagePath, url: u });
       })
       .catch((err) => {
-        if (!cancelled) setError(err instanceof Error ? err.message : 'Unavailable');
+        if (!cancelled) setState({
+          key: storagePath,
+          error: err instanceof Error ? err.message : 'Unavailable',
+        });
       });
     return () => {
       cancelled = true;
     };
   }, [storagePath]);
+
+  const isCurrent = state.key === storagePath;
+  const url = isCurrent ? state.url : undefined;
+  const error = isCurrent ? state.error : undefined;
 
   if (error) {
     return <span className="text-xs text-red-500 shrink-0">Error</span>;

@@ -10,13 +10,11 @@ interface UseAuthResult {
 
 export function useAuth(): UseAuthResult {
   const [user, setUser] = useState<User | null>(null);
-  const [loading, setLoading] = useState(true);
+  // When there is no auth client, we never subscribe — start unloaded.
+  const [loading, setLoading] = useState(() => auth != null);
 
   useEffect(() => {
-    if (!auth) {
-      setLoading(false);
-      return;
-    }
+    if (!auth) return;
     const unsubscribe = onAuthStateChanged(auth, (u) => {
       setUser(u);
       setLoading(false);

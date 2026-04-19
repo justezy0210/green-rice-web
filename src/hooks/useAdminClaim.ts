@@ -6,34 +6,35 @@ interface UseAdminClaimResult {
   loading: boolean;
 }
 
+type State = { uid: string; isAdmin: boolean };
+const EMPTY_STATE: State = { uid: '', isAdmin: false };
+
 export function useAdminClaim(): UseAdminClaimResult {
   const { user, loading: authLoading } = useAuthContext();
-  const [isAdmin, setIsAdmin] = useState(false);
-  const [loading, setLoading] = useState(true);
+  const uid = user?.uid ?? '';
+  const [state, setState] = useState<State>(EMPTY_STATE);
 
   useEffect(() => {
-    if (authLoading) return;
-    if (!user) {
-      setIsAdmin(false);
-      setLoading(false);
-      return;
-    }
+    if (!user) return;
     let cancelled = false;
     user
       .getIdTokenResult()
       .then((res) => {
-        if (!cancelled) setIsAdmin(res.claims.admin === true);
+        if (!cancelled) setState({ uid: user.uid, isAdmin: res.claims.admin === true });
       })
       .catch(() => {
-        if (!cancelled) setIsAdmin(false);
-      })
-      .finally(() => {
-        if (!cancelled) setLoading(false);
+        if (!cancelled) setState({ uid: user.uid, isAdmin: false });
       });
     return () => {
       cancelled = true;
     };
-  }, [user, authLoading]);
+  }, [user]);
 
-  return { isAdmin, loading };
+  if (authLoading) return { isAdmin: false, loading: true };
+  if (!user) return { isAdmin: false, loading: false };
+  const isCurrent = state.uid === uid;
+  return {
+    isAdmin: isCurrent ? state.isAdmin : false,
+    loading: !isCurrent,
+  };
 }

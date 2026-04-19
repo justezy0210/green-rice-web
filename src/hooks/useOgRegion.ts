@@ -2,59 +2,59 @@ import { useEffect, useState } from 'react';
 import { fetchOgRegion, fetchOgRegionManifest } from '@/lib/og-region-service';
 import type { OgRegionManifest, RegionData } from '@/types/orthogroup';
 
+type RegionState = { key: string; data: RegionData | null };
+const EMPTY_REGION: RegionState = { key: '', data: null };
+
 export function useOgRegion(
   ogId: string | null,
   clusterId: string | null,
 ): { data: RegionData | null; loading: boolean } {
-  const [data, setData] = useState<RegionData | null>(null);
-  const [loading, setLoading] = useState(false);
+  const key = ogId && clusterId ? `${ogId}/${clusterId}` : '';
+  const [state, setState] = useState<RegionState>(EMPTY_REGION);
 
   useEffect(() => {
-    if (!ogId || !clusterId) {
-      setData(null);
-      setLoading(false);
-      return;
-    }
+    if (!ogId || !clusterId) return;
     const controller = new AbortController();
-    setLoading(true);
     fetchOgRegion(ogId, clusterId, controller.signal)
       .then((result) => {
-        if (!controller.signal.aborted) {
-          setData(result);
-          setLoading(false);
-        }
+        if (!controller.signal.aborted) setState({ key, data: result });
       })
       .catch(() => {
-        if (!controller.signal.aborted) setLoading(false);
+        if (!controller.signal.aborted) setState({ key, data: null });
       });
     return () => controller.abort();
-  }, [ogId, clusterId]);
+  }, [ogId, clusterId, key]);
 
-  return { data, loading };
+  const isCurrent = state.key === key;
+  return {
+    data: isCurrent ? state.data : null,
+    loading: Boolean(key) && !isCurrent,
+  };
 }
+
+type ManifestState = 'idle' | 'loaded';
 
 export function useOgRegionManifest(): {
   manifest: OgRegionManifest | null;
   loading: boolean;
 } {
   const [manifest, setManifest] = useState<OgRegionManifest | null>(null);
-  const [loading, setLoading] = useState(false);
+  const [status, setStatus] = useState<ManifestState>('idle');
 
   useEffect(() => {
     const controller = new AbortController();
-    setLoading(true);
     fetchOgRegionManifest(controller.signal)
       .then((result) => {
         if (!controller.signal.aborted) {
           setManifest(result);
-          setLoading(false);
+          setStatus('loaded');
         }
       })
       .catch(() => {
-        if (!controller.signal.aborted) setLoading(false);
+        if (!controller.signal.aborted) setStatus('loaded');
       });
     return () => controller.abort();
   }, []);
 
-  return { manifest, loading };
+  return { manifest, loading: status === 'idle' };
 }

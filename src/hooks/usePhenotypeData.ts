@@ -11,35 +11,53 @@ interface UsePhenotypeDataResult {
   refresh: () => Promise<void>;
 }
 
-export function usePhenotypeData(): UsePhenotypeDataResult {
-  const [records, setRecords] = useState<PhenotypeRecord[]>([]);
-  const [summary, setSummary] = useState<PhenotypeDatasetSummary | null>(null);
-  const [loading, setLoading] = useState<LoadingState>('idle');
-  const [error, setError] = useState<string | null>(null);
+type State = {
+  records: PhenotypeRecord[];
+  summary: PhenotypeDatasetSummary | null;
+  loading: LoadingState;
+  error: string | null;
+};
 
-  const load = useCallback(async () => {
-    setLoading('loading');
-    setError(null);
-    try {
-      const recs = await dataService.getPhenotypeRecords();
-      setRecords(recs);
-      const sum = await dataService.getDatasetSummary();
-      setSummary(sum);
-      setLoading('success');
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to load data');
-      setLoading('error');
-    }
-  }, []);
+const INITIAL_STATE: State = {
+  records: [],
+  summary: null,
+  loading: 'loading',
+  error: null,
+};
+
+export function usePhenotypeData(): UsePhenotypeDataResult {
+  const [state, setState] = useState<State>(INITIAL_STATE);
+  const [refreshToken, setRefreshToken] = useState(0);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const recs = await dataService.getPhenotypeRecords();
+        if (cancelled) return;
+        const sum = await dataService.getDatasetSummary();
+        if (cancelled) return;
+        setState({ records: recs, summary: sum, loading: 'success', error: null });
+      } catch (err) {
+        if (cancelled) return;
+        setState({
+          records: [],
+          summary: null,
+          loading: 'error',
+          error: err instanceof Error ? err.message : 'Failed to load data',
+        });
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [refreshToken]);
 
   const refresh = useCallback(async () => {
     dataService.invalidateCache();
-    await load();
-  }, [load]);
+    setState((prev) => ({ ...prev, loading: 'loading', error: null }));
+    setRefreshToken((t) => t + 1);
+  }, []);
 
-  useEffect(() => {
-    load();
-  }, [load]);
-
-  return { records, summary, loading, error, refresh };
+  return { ...state, refresh };
 }

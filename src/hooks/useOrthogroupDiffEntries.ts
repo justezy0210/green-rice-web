@@ -1,6 +1,12 @@
 import { useEffect, useState } from 'react';
 import { fetchOrthogroupDiffPayload } from '@/lib/orthogroup-service';
-import type { DiffEntriesState, OrthogroupDiffDocument } from '@/types/orthogroup';
+import type { DiffEntriesState, OrthogroupDiffDocument, OrthogroupDiffPayload } from '@/types/orthogroup';
+
+type Fetched = {
+  storagePath: string;
+  payload?: OrthogroupDiffPayload;
+  error?: string;
+};
 
 /**
  * Resolve diff entries from either the Storage payload (new) or the legacy
@@ -11,41 +17,38 @@ import type { DiffEntriesState, OrthogroupDiffDocument } from '@/types/orthogrou
 export function useOrthogroupDiffEntries(
   diffDoc: OrthogroupDiffDocument | null,
 ): DiffEntriesState {
-  const [state, setState] = useState<DiffEntriesState>({ kind: 'idle' });
-
   const storagePath = diffDoc?.storagePath ?? null;
   const legacyTop = diffDoc && !storagePath ? diffDoc.top ?? null : null;
 
+  const [fetched, setFetched] = useState<Fetched | null>(null);
+
   useEffect(() => {
-    if (!diffDoc) {
-      setState({ kind: 'idle' });
-      return;
-    }
-    if (!storagePath) {
-      if (legacyTop && legacyTop.length >= 0) {
-        setState({ kind: 'legacy', entries: legacyTop });
-      } else {
-        setState({ kind: 'idle' });
-      }
-      return;
-    }
-
+    if (!storagePath) return;
     const controller = new AbortController();
-    setState({ kind: 'loading', storagePath });
-
     fetchOrthogroupDiffPayload(storagePath, controller.signal)
       .then((payload) => {
-        if (controller.signal.aborted) return;
-        setState({ kind: 'ready', storagePath, payload });
+        if (!controller.signal.aborted) setFetched({ storagePath, payload });
       })
       .catch((err: unknown) => {
         if (controller.signal.aborted) return;
         const message = err instanceof Error ? err.message : 'Failed to load diff entries';
-        setState({ kind: 'error', storagePath, message });
+        setFetched({ storagePath, error: message });
       });
-
     return () => controller.abort();
-  }, [diffDoc, storagePath, legacyTop]);
+  }, [storagePath]);
 
-  return state;
+  if (!diffDoc) return { kind: 'idle' };
+  if (!storagePath) {
+    return legacyTop ? { kind: 'legacy', entries: legacyTop } : { kind: 'idle' };
+  }
+  if (fetched?.storagePath !== storagePath) {
+    return { kind: 'loading', storagePath };
+  }
+  if (fetched.error) {
+    return { kind: 'error', storagePath, message: fetched.error };
+  }
+  if (fetched.payload) {
+    return { kind: 'ready', storagePath, payload: fetched.payload };
+  }
+  return { kind: 'loading', storagePath };
 }

@@ -9,30 +9,45 @@ interface UseOrthofinderStatusResult {
   error: string | null;
 }
 
+type InternalState = {
+  enabled: boolean;
+  value: OrthofinderState | null;
+  error: string | null;
+  resolved: boolean;
+};
+const EMPTY_STATE: InternalState = {
+  enabled: false,
+  value: null,
+  error: null,
+  resolved: false,
+};
+
 export function useOrthofinderStatus(enabled: boolean): UseOrthofinderStatusResult {
-  const [state, setState] = useState<OrthofinderState | null>(null);
-  const [loading, setLoading] = useState(enabled);
-  const [error, setError] = useState<string | null>(null);
+  const [internal, setInternal] = useState<InternalState>(EMPTY_STATE);
 
   useEffect(() => {
-    if (!enabled) {
-      setLoading(false);
-      return;
-    }
-    setLoading(true);
+    if (!enabled) return;
     const unsub = onSnapshot(
       doc(db, '_orthofinder_meta', 'state'),
       (snap) => {
-        setState(snap.exists() ? (snap.data() as OrthofinderState) : null);
-        setLoading(false);
+        setInternal({
+          enabled: true,
+          value: snap.exists() ? (snap.data() as OrthofinderState) : null,
+          error: null,
+          resolved: true,
+        });
       },
       (err) => {
-        setError(err.message);
-        setLoading(false);
+        setInternal({ enabled: true, value: null, error: err.message, resolved: true });
       },
     );
     return unsub;
   }, [enabled]);
 
-  return { state, loading, error };
+  const isCurrent = internal.enabled === enabled;
+  return {
+    state: isCurrent ? internal.value : null,
+    error: isCurrent ? internal.error : null,
+    loading: enabled && (!isCurrent || !internal.resolved),
+  };
 }

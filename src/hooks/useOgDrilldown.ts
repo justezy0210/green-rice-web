@@ -18,64 +18,65 @@ interface UseOgDrilldownResult {
   error: string | null;
 }
 
+type State = {
+  key: string;
+  members: Record<string, string[]> | null;
+  annotation: BaegilmiGeneAnnotation | null;
+  error: string | null;
+};
+const EMPTY_STATE: State = { key: '', members: null, annotation: null, error: null };
+
 export function useOgDrilldown(
   ogId: string | null,
   orthofinderVersion: number | null,
 ): UseOgDrilldownResult {
-  const [members, setMembers] = useState<Record<string, string[]> | null>(null);
-  const [annotation, setAnnotation] = useState<BaegilmiGeneAnnotation | null>(null);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const validVersion = orthofinderVersion != null && orthofinderVersion > 0 ? orthofinderVersion : 0;
+  const key = ogId && validVersion ? `${ogId}|${validVersion}` : '';
+  const [state, setState] = useState<State>(EMPTY_STATE);
 
   useEffect(() => {
-    if (!ogId || orthofinderVersion == null || orthofinderVersion <= 0) {
-      setMembers(null);
-      setAnnotation(null);
-      setLoading(false);
-      setError(null);
-      return;
-    }
+    if (!ogId || !validVersion) return;
 
     const controller = new AbortController();
-    setLoading(true);
-    setError(null);
-
     const chunkKey = chunkKeyForOg(ogId);
 
     Promise.allSettled([
-      fetchOgChunk(orthofinderVersion, chunkKey, controller.signal),
-      fetchBaegilmiAnnotation(orthofinderVersion, controller.signal),
+      fetchOgChunk(validVersion, chunkKey, controller.signal),
+      fetchBaegilmiAnnotation(validVersion, controller.signal),
     ]).then(([chunkResult, annotationResult]) => {
       if (controller.signal.aborted) return;
+
+      let members: Record<string, string[]> | null = null;
+      let error: string | null = null;
 
       // Chunk is required for drilldown; annotation is optional.
       if (chunkResult.status === 'rejected') {
         const err = chunkResult.reason;
         if (err instanceof NotFoundError) {
-          setError('This orthofinder version has no gene-member chunks. Re-upload to enable drilldown.');
+          error = 'This orthofinder version has no gene-member chunks. Re-upload to enable drilldown.';
         } else if (err?.name === 'AbortError') {
           return; // superseded
         } else {
-          setError(err instanceof Error ? err.message : 'Failed to load members');
+          error = err instanceof Error ? err.message : 'Failed to load members';
         }
-        setMembers(null);
       } else {
-        setMembers(extractMembers(chunkResult.value, ogId));
+        members = extractMembers(chunkResult.value, ogId);
       }
 
-      if (annotationResult.status === 'fulfilled') {
-        setAnnotation(annotationResult.value);
-      } else {
-        setAnnotation(null);
-      }
-
-      setLoading(false);
+      const annotation = annotationResult.status === 'fulfilled' ? annotationResult.value : null;
+      setState({ key, members, annotation, error });
     });
 
     return () => controller.abort();
-  }, [ogId, orthofinderVersion]);
+  }, [ogId, validVersion, key]);
 
-  return { members, annotation, loading, error };
+  const isCurrent = state.key === key;
+  return {
+    members: isCurrent ? state.members : null,
+    annotation: isCurrent ? state.annotation : null,
+    loading: Boolean(key) && !isCurrent,
+    error: isCurrent ? state.error : null,
+  };
 }
 
 function extractMembers(chunk: OgMembersChunk, ogId: string): Record<string, string[]> | null {

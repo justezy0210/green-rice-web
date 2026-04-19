@@ -16,26 +16,26 @@ interface UseGroupingsResult {
   staleCultivars: string[];
 }
 
+type State = { key: string; document: GroupingDocument | null; resolved: boolean };
+const EMPTY_STATE: State = { key: '', document: null, resolved: false };
+
 export function useGroupings(
   traitId: TraitId | null,
   cultivarNameMap: Record<string, string>,
 ): UseGroupingsResult {
-  const [document, setDocument] = useState<GroupingDocument | null>(null);
-  const [loading, setLoading] = useState(true);
+  const key = traitId ?? '';
+  const [state, setState] = useState<State>(EMPTY_STATE);
 
   useEffect(() => {
-    if (!traitId) {
-      setDocument(null);
-      setLoading(false);
-      return;
-    }
-    setLoading(true);
+    if (!traitId) return;
     const unsub = subscribeGrouping(traitId, (doc) => {
-      setDocument(doc);
-      setLoading(false);
+      setState({ key, document: doc, resolved: true });
     });
     return unsub;
-  }, [traitId]);
+  }, [traitId, key]);
+
+  const isCurrent = state.key === key;
+  const document = isCurrent ? state.document : null;
 
   const result = useMemo(() => {
     if (!document) {
@@ -57,5 +57,8 @@ export function useGroupings(
     };
   }, [document, cultivarNameMap]);
 
-  return { ...result, loading };
+  return {
+    ...result,
+    loading: Boolean(traitId) && (!isCurrent || !state.resolved),
+  };
 }

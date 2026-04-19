@@ -48,11 +48,6 @@ export function PhenotypeTable({ records, search, visibleFields }: PhenotypeTabl
     setPage(0);
   }
 
-  function SortIcon({ field }: { field: string }) {
-    if (sort.field !== field) return <span className="ml-1 text-gray-300">↕</span>;
-    return <span className="ml-1 text-green-600">{sort.direction === 'asc' ? '↑' : '↓'}</span>;
-  }
-
   return (
     <div className="space-y-2">
       <div className="rounded-md border overflow-x-auto">
@@ -63,7 +58,7 @@ export function PhenotypeTable({ records, search, visibleFields }: PhenotypeTabl
                 className="cursor-pointer select-none sticky left-0 bg-white min-w-32"
                 onClick={() => toggleSort('cultivar')}
               >
-                Cultivar <SortIcon field="cultivar" />
+                Cultivar <SortIcon sort={sort} field="cultivar" />
               </TableHead>
               {fields.map((f) => (
                 <TableHead
@@ -73,7 +68,7 @@ export function PhenotypeTable({ records, search, visibleFields }: PhenotypeTabl
                 >
                   {f.label}
                   <span className="text-xs text-gray-400 ml-0.5">({f.unit})</span>
-                  <SortIcon field={f.key} />
+                  <SortIcon sort={sort} field={f.key} />
                 </TableHead>
               ))}
             </TableRow>
@@ -137,4 +132,9 @@ export function PhenotypeTable({ records, search, visibleFields }: PhenotypeTabl
       </div>
     </div>
   );
+}
+
+function SortIcon({ sort, field }: { sort: SortConfig; field: string }) {
+  if (sort.field !== field) return <span className="ml-1 text-gray-300">↕</span>;
+  return <span className="ml-1 text-green-600">{sort.direction === 'asc' ? '↑' : '↓'}</span>;
 }

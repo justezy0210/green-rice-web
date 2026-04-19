@@ -11,44 +11,61 @@ interface UseOrthogroupDiffResult {
   loading: boolean;
 }
 
+type State = {
+  key: string;
+  doc: OrthogroupDiffDocument | null;
+  groupingDoc: GroupingDocument | null;
+  diffResolved: boolean;
+  groupingResolved: boolean;
+};
+const EMPTY_STATE: State = {
+  key: '',
+  doc: null,
+  groupingDoc: null,
+  diffResolved: false,
+  groupingResolved: false,
+};
+
 export function useOrthogroupDiff(traitId: TraitId | null): UseOrthogroupDiffResult {
-  const [doc, setDoc] = useState<OrthogroupDiffDocument | null>(null);
-  const [groupingDoc, setGroupingDoc] = useState<GroupingDocument | null>(null);
-  const [loading, setLoading] = useState(true);
+  const key = traitId ?? '';
+  const [state, setState] = useState<State>(EMPTY_STATE);
 
   useEffect(() => {
-    if (!traitId) {
-      setDoc(null);
-      setGroupingDoc(null);
-      setLoading(false);
-      return;
-    }
-    setLoading(true);
-    let diffLoaded = false;
-    let groupingLoaded = false;
-    const maybeDone = () => {
-      if (diffLoaded && groupingLoaded) setLoading(false);
-    };
+    if (!traitId) return;
     const unsubDiff = subscribeOrthogroupDiff(traitId, (d) => {
-      setDoc(d);
-      diffLoaded = true;
-      maybeDone();
+      setState((prev) =>
+        prev.key === key
+          ? { ...prev, doc: d, diffResolved: true }
+          : { key, doc: d, groupingDoc: null, diffResolved: true, groupingResolved: false },
+      );
     });
     const unsubGrouping = subscribeGrouping(traitId, (d) => {
-      setGroupingDoc(d);
-      groupingLoaded = true;
-      maybeDone();
+      setState((prev) =>
+        prev.key === key
+          ? { ...prev, groupingDoc: d, groupingResolved: true }
+          : { key, doc: null, groupingDoc: d, diffResolved: false, groupingResolved: true },
+      );
     });
     return () => {
       unsubDiff();
       unsubGrouping();
     };
-  }, [traitId]);
+  }, [traitId, key]);
+
+  const isCurrent = state.key === key;
+  const doc = isCurrent ? state.doc : null;
+  const groupingDoc = isCurrent ? state.groupingDoc : null;
 
   const isStale = useMemo(() => {
     if (!doc || !groupingDoc) return false;
     return doc.groupingVersion !== groupingDoc.summary.version;
   }, [doc, groupingDoc]);
 
-  return { doc, groupingDoc, isStale, loading };
+  return {
+    doc,
+    groupingDoc,
+    isStale,
+    loading:
+      Boolean(traitId) && (!isCurrent || !state.diffResolved || !state.groupingResolved),
+  };
 }
