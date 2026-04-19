@@ -67,12 +67,20 @@ def assert_prefix_empty(bucket, prefix: str) -> None:
         )
 
 
-def upload_file(bucket, local: Path, dest: str) -> None:
+def upload_file(bucket, local: Path, dest: str, *, create_only: bool) -> None:
     blob = bucket.blob(dest)
     content_type = "application/json" if dest.endswith(".json") else (
         "text/markdown" if dest.endswith(".md") else "text/tab-separated-values"
     )
-    blob.upload_from_filename(str(local), content_type=content_type)
+    # `if_generation_match=0` is GCS's atomic create-if-not-exists:
+    # the upload fails with a 412 precondition error if any object
+    # already exists at `dest`. Closes the TOCTOU window between the
+    # pre-flight `assert_prefix_empty` walk and the actual upload.
+    # The manifest file is the exception — it's an overwritable pointer.
+    kwargs: dict = {"content_type": content_type}
+    if create_only:
+        kwargs["if_generation_match"] = 0
+    blob.upload_from_filename(str(local), **kwargs)
     blob.cache_control = "public, max-age=3600"
     blob.patch()
 
@@ -117,7 +125,7 @@ def main() -> int:
             local = src_dir / fname
             if not local.is_file():
                 raise RuntimeError(f"Missing staging file: {local}")
-            upload_file(bucket, local, f"{dest_dir}/{fname}")
+            upload_file(bucket, local, f"{dest_dir}/{fname}", create_only=True)
             uploaded += 1
         print(f"  uploaded {trait_id} ({len(entry['files'])} files)")
 
@@ -128,7 +136,7 @@ def main() -> int:
         local = cross_src / fname
         if not local.is_file():
             raise RuntimeError(f"Missing staging file: {local}")
-        upload_file(bucket, local, f"{cross_dest}/{fname}")
+        upload_file(bucket, local, f"{cross_dest}/{fname}", create_only=True)
         uploaded += 1
     print(f"  uploaded cross-trait ({len(manifest['crossTrait']['files'])} files)")
 
@@ -137,7 +145,7 @@ def main() -> int:
     # succeeded, the UI will now see the new version pair. If we bailed
     # earlier, the previous manifest stays in place.
     print(f"Publishing manifest → {download_manifest_path()}")
-    upload_file(bucket, manifest_path, download_manifest_path())
+    upload_file(bucket, manifest_path, download_manifest_path(), create_only=False)
 
     print(f"\nPromote complete. {uploaded} data files + manifest published for v{of}_g{g}.")
     return 0

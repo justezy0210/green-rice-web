@@ -7,20 +7,31 @@ const INITIAL: State = { data: null, resolved: false, error: null };
 
 // Module-level cache so repeated hook uses across pages (DownloadPage +
 // TraitDownloadCard on every Explore nav) reuse the same manifest fetch.
-// The manifest is small (~7 KB) and stable for a given (of, g) version
-// pair — no point re-downloading it per component mount.
+// The manifest is small (~7 KB) and changes only when a new (of, g)
+// pair is promoted, so a coarse TTL is sufficient — long enough to
+// absorb SPA navigation, short enough that a release flip surfaces
+// without a full reload.
+const CACHE_TTL_MS = 10 * 60 * 1000;
 let cached: DownloadManifest | null = null;
+let cachedAt = 0;
 let inflight: Promise<DownloadManifest | null> | null = null;
 
+function isCacheFresh(): boolean {
+  return cached !== null && Date.now() - cachedAt < CACHE_TTL_MS;
+}
+
 async function loadManifest(): Promise<DownloadManifest | null> {
-  if (cached) return cached;
+  if (isCacheFresh()) return cached;
   if (!inflight) {
     inflight = (async () => {
       try {
-        const res = await fetch(publicDownloadUrl('downloads/_manifest.json'));
+        const res = await fetch(publicDownloadUrl('downloads/_manifest.json'), {
+          cache: 'no-store',
+        });
         if (!res.ok) throw new Error(`manifest fetch ${res.status}`);
         const data = (await res.json()) as DownloadManifest;
         cached = data;
+        cachedAt = Date.now();
         return data;
       } finally {
         inflight = null;
@@ -55,7 +66,7 @@ export function useDownloadManifest(): {
   error: string | null;
 } {
   const [state, setState] = useState<State>(() =>
-    cached ? { data: cached, resolved: true, error: null } : INITIAL,
+    isCacheFresh() ? { data: cached, resolved: true, error: null } : INITIAL,
   );
 
   useEffect(() => {
