@@ -29,14 +29,16 @@ export function shouldShowLength(ref: string, alt: string): boolean {
 }
 
 export function eventClassBadgeClass(cls: EventClass): string {
+  // All classes use the same neutral tone so the badge describes the row
+  // without signalling importance. SV-like carries a subtle amber tint only,
+  // to remain distinguishable from SNP without reading as "more important".
   switch (cls) {
     case 'SV-like':
-      return 'bg-amber-100 text-amber-800 border-amber-300';
+      return 'bg-amber-50 text-amber-700 border-amber-200';
     case 'indel-ins':
     case 'indel-del':
-      return 'bg-blue-50 text-blue-700 border-blue-200';
     case 'SNP':
     default:
-      return 'bg-gray-100 text-gray-600 border-gray-200';
+      return 'bg-gray-50 text-gray-600 border-gray-200';
   }
 }

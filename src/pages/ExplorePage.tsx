@@ -26,7 +26,7 @@ const VALID_TRAITS: TraitId[] = [
 ];
 
 const PAGE_SIZE = 20;
-const VALID_SORT: DiffSortKey[] = ['p', 'log2FC', 'deltaAf'];
+const VALID_SORT: DiffSortKey[] = ['p', 'log2FC'];
 
 function isTraitId(v: string | null): v is TraitId {
   return v !== null && (VALID_TRAITS as string[]).includes(v);

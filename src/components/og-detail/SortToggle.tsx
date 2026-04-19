@@ -27,8 +27,8 @@ export function SortToggle({
       {btn('phenotype', 'Phenotype', 'Group paths by phenotype group, then cultivar name')}
       {btn(
         'graphOverlap',
-        'Graph overlap',
-        'Cluster cultivars by shared divergent graph structure (UPGMA, length-weighted Jaccard). Not an AF similarity order.',
+        'Alternate layout',
+        'Exploratory layout grouping paths by shared graph pattern in this region. Not a biological similarity or trait-explaining axis.',
       )}
     </div>
   );

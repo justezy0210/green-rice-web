@@ -7,6 +7,7 @@ import {
   statusCopy,
   type ClusterRegionStatus,
 } from '@/lib/cluster-region-status';
+import { Layer2CoverageBadge } from './Layer2CoverageBadge';
 import type {
   GeneCluster,
   OgVariantSummary,
@@ -60,7 +61,9 @@ export function OgDetailAlleleFreqTab({
           <span className="text-[10px] px-1.5 py-0.5 rounded border border-gray-300 bg-gray-50 text-gray-600">
             OG-level AF across linked IRGSP gene bodies
           </span>
+          <Layer2CoverageBadge />
         </div>
+        <FrameNote />
         <div className="border border-gray-200 rounded-lg overflow-hidden bg-white">
           <OgDrawerAlleleFreqSection
             summary={afSummary}
@@ -95,11 +98,7 @@ export function OgDetailAlleleFreqTab({
       return (
         <div className="space-y-2">
           <ClusterHeader region={region.data} statusTone={statusTone} />
-          <p className="text-[11px] text-gray-500 px-1">
-            Variant rows observed in the IRGSP region that the selected cluster was lifted to.
-            AF here is ALT-path frequency within each phenotype group — it is not a per-cultivar
-            copy count, and does not explain gene presence/absence at this cluster.
-          </p>
+          <FrameNote />
           {statusTone?.caveat && (
             <p className={`text-[11px] px-2 py-1 rounded border ${statusTone.toneClass}`}>
               {statusTone.caveat}
@@ -209,9 +208,21 @@ function ClusterHeader({
           {statusTone.badge}
         </span>
       )}
+      <Layer2CoverageBadge />
     </div>
   );
 }
+
+function FrameNote() {
+  return (
+    <p className="text-[11px] text-gray-600 bg-gray-50 border border-gray-200 rounded px-3 py-2">
+      Supporting variant evidence for this candidate. AF values are ALT-path frequencies within each
+      phenotype group — not per-cultivar copy counts, and not proof of which variant explains the
+      trait or the presence/absence of this OG.
+    </p>
+  );
+}
+
 
 function EmptyState({
   title,
@@ -261,6 +272,11 @@ function toOgVariantSummary(r: RegionData): OgVariantSummary | null {
         ]
       : [],
     totalVariants: variants.length,
-    variants: [...variants].sort((a, b) => b.deltaAf - a.deltaAf),
+    // Default to genomic position (chr then pos). ΔAF ordering was removed
+    // to prevent reading AF as a ranking axis — it is supporting evidence only.
+    variants: [...variants].sort((a, b) => {
+      if (a.chr !== b.chr) return a.chr.localeCompare(b.chr);
+      return a.pos - b.pos;
+    }),
   };
 }

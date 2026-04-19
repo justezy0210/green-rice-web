@@ -13,8 +13,6 @@ interface Props {
 }
 
 export function OgDrawerAlleleFreqSection({ summary, groupLabels, groupColorMap }: Props) {
-  const highDelta = summary.variants.filter((v) => v.deltaAf >= 0.5);
-
   return (
     <section className="px-4 py-3 border-b border-gray-100 text-xs">
       <h3 className="font-medium text-gray-500 uppercase tracking-wide mb-2">
@@ -23,11 +21,6 @@ export function OgDrawerAlleleFreqSection({ summary, groupLabels, groupColorMap 
 
       <div className="flex gap-4 text-gray-600 mb-2">
         <span>{summary.totalVariants.toLocaleString()} variants in region</span>
-        {highDelta.length > 0 && (
-          <span className="text-amber-700 font-medium">
-            {highDelta.length} with |ΔAF| ≥ 0.5
-          </span>
-        )}
       </div>
 
       {summary.geneRegions.length > 0 && (
@@ -80,7 +73,7 @@ export function OgDrawerAlleleFreqSection({ summary, groupLabels, groupColorMap 
           </table>
           {summary.variants.length > 30 && (
             <p className="text-[10px] text-gray-400 mt-1">
-              Showing top 30 of {summary.variants.length} by ΔAF
+              Showing the first 30 rows in genomic order. Use for local context; not a ranked list.
             </p>
           )}
         </div>
@@ -141,7 +134,7 @@ function VariantRow({
           </td>
         );
       })}
-      <td className="py-1 pl-1 text-right tabular-nums font-medium text-gray-600">
+      <td className="py-1 pl-1 text-right tabular-nums text-gray-500">
         {variant.deltaAf.toFixed(2)}
       </td>
     </tr>
@@ -150,13 +143,15 @@ function VariantRow({
 
 function AfBar({ af, color }: { af: number; color: string }) {
   const pct = Math.round(af * 100);
+  // Number-first; bar is a muted visual cue at ~40% opacity so it does not
+  // invite length-based causal reading.
   return (
-    <div className="flex items-center gap-1 justify-end">
-      <span className="text-gray-600 w-8 text-right">{pct}%</span>
-      <div className="w-12 h-2 bg-gray-100 rounded-sm overflow-hidden">
+    <div className="flex items-center gap-1.5 justify-end">
+      <span className="text-gray-700 w-8 text-right tabular-nums">{pct}%</span>
+      <div className="w-10 h-1 bg-gray-100 rounded-sm overflow-hidden">
         <div
           className="h-full rounded-sm"
-          style={{ width: `${pct}%`, backgroundColor: color }}
+          style={{ width: `${pct}%`, backgroundColor: color, opacity: 0.4 }}
         />
       </div>
     </div>

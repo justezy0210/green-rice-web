@@ -97,15 +97,14 @@ export function OrthogroupDiffTable({
           <CardTitle className="text-sm">Candidate Orthogroups</CardTitle>
           {hasStats && (
             <span className="text-xs text-gray-500">
-              {doc.passedCount.toLocaleString()} candidates of {doc.totalTested.toLocaleString()} tested
+              {doc.passedCount.toLocaleString()} copy-count candidates of {doc.totalTested.toLocaleString()} orthogroups tested (Mann-Whitney U)
             </span>
           )}
         </div>
       </CardHeader>
       <CardContent className="space-y-3">
-        <div className={`text-xs rounded px-3 py-2 border ${modeBanner.cls}`}>
-          {modeBanner.text}
-        </div>
+        <p className="text-[11px] text-gray-600 bg-gray-50 border border-gray-200 rounded px-3 py-2">OG-level copy-count candidate screen for this 16-cultivar panel. AF and graph in OG Detail are supporting context, not ranking.</p>
+        <div className={`text-xs rounded px-3 py-2 border ${modeBanner.cls}`}>{modeBanner.text}</div>
 
         {isStale && (
           <div className="text-xs text-orange-700 bg-orange-50 border border-orange-200 rounded px-3 py-2">
@@ -145,7 +144,6 @@ export function OrthogroupDiffTable({
             <span className="text-gray-500">Sort:</span>
             <SortButton current={sortKey} value="p" label="p-value" onClick={onSortChange} />
             <SortButton current={sortKey} value="log2FC" label="|log₂ FC|" onClick={onSortChange} />
-            <SortButton current={sortKey} value="deltaAf" label="ΔAF" onClick={onSortChange} />
           </div>
         </div>
 

@@ -225,6 +225,10 @@ export function OgDetailPage() {
         </nav>
       </div>
 
+      <p className="text-[11px] text-gray-600 bg-green-50 border border-green-200 rounded px-3 py-2">
+        This candidate was prioritized by orthogroup copy-count difference between phenotype groups. The Variants and Graph tabs provide supporting sequence and structural context — not confirmation.
+      </p>
+
       <ScopePanel />
 
       {/* Tab content */}

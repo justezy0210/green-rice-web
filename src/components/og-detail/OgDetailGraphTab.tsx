@@ -9,6 +9,7 @@ import {
   resolveClusterRegionStatus,
   statusCopy,
 } from '@/lib/cluster-region-status';
+import { Layer2CoverageBadge } from './Layer2CoverageBadge';
 import type { TubeMapSortMode } from '@/lib/tube-map-ordering';
 import type { CultivarGroupAssignment } from '@/types/grouping';
 import type {
@@ -47,7 +48,7 @@ export function OgDetailGraphTab({
   // Reference view always uses default IRGSP tubemap. Cultivar cluster falls
   // back to default only if its og_region is missing.
   const tubemap = useOgTubeMap(region.data && !isReference ? null : ogId ?? null);
-  const [sortMode, setSortMode] = useState<TubeMapSortMode>('graphOverlap');
+  const [sortMode, setSortMode] = useState<TubeMapSortMode>('phenotype');
 
   const { manifest } = useOgRegionManifest();
   const manifestEntry =
@@ -231,6 +232,7 @@ function GraphHeader(
             {props.statusBadge}
           </span>
         )}
+        <Layer2CoverageBadge />
       </div>
     );
   }
@@ -257,6 +259,7 @@ function GraphHeader(
         <span>
           {props.nodes} nodes · {props.paths} paths
         </span>
+        <Layer2CoverageBadge />
       </div>
       {props.selectedClusterId && (
         <div className="text-[11px] text-amber-700">
