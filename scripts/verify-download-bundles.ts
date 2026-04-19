@@ -43,19 +43,32 @@ if (!statSync(STAGING, { throwIfNoEntry: false })?.isDirectory()) {
 const errors: string[] = [];
 const err = (msg: string) => errors.push(msg);
 
-// ─── Load SSOT ──────────────────────────────────────────────
+// ─── Load SSOT + staging manifest ───────────────────────────
 
 const traitsJson = JSON.parse(readFileSync(resolve(REPO_ROOT, 'data/traits.json'), 'utf-8'));
 const cultivarsJson = JSON.parse(readFileSync(resolve(REPO_ROOT, 'data/cultivars.json'), 'utf-8'));
-const downloadVersions = JSON.parse(
-  readFileSync(resolve(REPO_ROOT, 'data/download_versions.json'), 'utf-8'),
-);
 const traitIds: string[] = (traitsJson.traits as Array<{ id: string }>).map((t) => t.id);
 const pangenomeCount = (cultivarsJson.cultivars as Array<{ pangenome?: boolean }>).filter(
   (c) => c.pangenome,
 ).length;
-const of: number = downloadVersions.activeOrthofinderVersion;
-const g: number = downloadVersions.activeGroupingVersion;
+
+// Version tag comes from the STAGING manifest, not from data/
+// download_versions.json. The two normally agree, but --pair override
+// on the generator, or verifying an older bundle, would break the
+// repo-SSOT binding. Staging manifest is authoritative for its own dir.
+const stagingManifestPath = join(STAGING, '_manifest.json');
+if (!statSync(stagingManifestPath, { throwIfNoEntry: false })?.isFile()) {
+  console.error(`Staging _manifest.json missing at ${stagingManifestPath}`);
+  process.exit(2);
+}
+const stagingManifest = JSON.parse(readFileSync(stagingManifestPath, 'utf-8')) as {
+  orthofinderVersion: number;
+  groupingVersion: number;
+  traits: Record<string, { files: Record<string, { size: number; sha256: string }>; usable: boolean }>;
+  crossTrait: { files: Record<string, { size: number; sha256: string }> };
+};
+const of: number = stagingManifest.orthofinderVersion;
+const g: number = stagingManifest.groupingVersion;
 const versionTag = `v${of}_g${g}`;
 
 // ─── Locked column lists ────────────────────────────────────
@@ -233,34 +246,41 @@ for (const f of allTsvBedFiles()) {
 
 // ─── Check 7: manifest SHA256 parity ────────────────────────
 
-const manifestPath = join(STAGING, '_manifest.json');
-if (!statSync(manifestPath, { throwIfNoEntry: false })?.isFile()) {
-  err('staging _manifest.json missing');
-} else {
-  const manifest = JSON.parse(readFileSync(manifestPath, 'utf-8'));
-  for (const [traitId, entry] of Object.entries(manifest.traits as Record<string, { files: Record<string, { size: number; sha256: string }> }>)) {
-    for (const [fname, meta] of Object.entries(entry.files)) {
-      const p = join(STAGING, 'traits', traitId, versionTag, fname);
-      if (!statSync(p, { throwIfNoEntry: false })?.isFile()) {
-        err(`manifest references missing file: traits/${traitId}/${versionTag}/${fname}`);
-        continue;
-      }
-      if (sha256(p) !== meta.sha256) err(`sha256 mismatch: traits/${traitId}/${versionTag}/${fname}`);
-      if (statSync(p).size !== meta.size) err(`size mismatch: traits/${traitId}/${versionTag}/${fname}`);
-    }
-  }
-  for (const [fname, meta] of Object.entries(manifest.crossTrait.files as Record<string, { size: number; sha256: string }>)) {
-    const p = join(STAGING, 'cross-trait', versionTag, fname);
+for (const [traitId, entry] of Object.entries(stagingManifest.traits)) {
+  for (const [fname, meta] of Object.entries(entry.files)) {
+    const p = join(STAGING, 'traits', traitId, versionTag, fname);
     if (!statSync(p, { throwIfNoEntry: false })?.isFile()) {
-      err(`manifest references missing cross-trait file: ${fname}`);
+      err(`manifest references missing file: traits/${traitId}/${versionTag}/${fname}`);
       continue;
     }
-    if (sha256(p) !== meta.sha256) err(`sha256 mismatch: cross-trait/${fname}`);
-    if (statSync(p).size !== meta.size) err(`size mismatch: cross-trait/${fname}`);
+    if (sha256(p) !== meta.sha256) err(`sha256 mismatch: traits/${traitId}/${versionTag}/${fname}`);
+    if (statSync(p).size !== meta.size) err(`size mismatch: traits/${traitId}/${versionTag}/${fname}`);
   }
 }
+for (const [fname, meta] of Object.entries(stagingManifest.crossTrait.files)) {
+  const p = join(STAGING, 'cross-trait', versionTag, fname);
+  if (!statSync(p, { throwIfNoEntry: false })?.isFile()) {
+    err(`manifest references missing cross-trait file: ${fname}`);
+    continue;
+  }
+  if (sha256(p) !== meta.sha256) err(`sha256 mismatch: cross-trait/${fname}`);
+  if (statSync(p).size !== meta.size) err(`size mismatch: cross-trait/${fname}`);
+}
 
-// ─── Check 8: cross-trait file header ───────────────────────
+// ─── Check 8: cross-trait file header + row-count parity ────
+
+function countDataRows(path: string): number {
+  const text = readFileSync(path, 'utf-8');
+  let n = 0;
+  let sawHeader = false;
+  for (const raw of text.split('\n')) {
+    const line = raw.replace(/\r$/, '');
+    if (line === '' || line.startsWith('#')) continue;
+    if (!sawHeader) { sawHeader = true; continue; }
+    n += 1;
+  }
+  return n;
+}
 
 const crossPath = join(STAGING, 'cross-trait', versionTag, 'cross_trait_candidates.tsv');
 if (!statSync(crossPath, { throwIfNoEntry: false })?.isFile()) {
@@ -269,6 +289,58 @@ if (!statSync(crossPath, { throwIfNoEntry: false })?.isFile()) {
   const h = readHeaderRow(crossPath);
   if (h !== CROSS_TRAIT_COLUMNS.join('\t')) {
     err(`cross-trait header mismatch\n    expected: ${CROSS_TRAIT_COLUMNS.join('\t')}\n    got:      ${h}`);
+  }
+
+  // Row-count parity: sum of per-trait candidates.tsv data rows
+  // (usable=true traits only — usable=false contribute 0 rows) must
+  // equal the cross-trait row count.
+  let expectedCross = 0;
+  for (const t of traitIds) {
+    const entry = stagingManifest.traits[t];
+    if (!entry?.usable) continue;
+    const p = join(STAGING, 'traits', t, versionTag, 'candidates.tsv');
+    if (statSync(p, { throwIfNoEntry: false })?.isFile()) {
+      expectedCross += countDataRows(p);
+    }
+  }
+  const actualCross = countDataRows(crossPath);
+  if (expectedCross !== actualCross) {
+    err(
+      `cross-trait row count mismatch: sum of per-trait candidates.tsv rows = ${expectedCross}, ` +
+        `cross_trait_candidates.tsv rows = ${actualCross}`,
+    );
+  }
+}
+
+// ─── Check 8b: BED rows sorted (chrom asc, start asc) ──────
+// When bedtools is absent this is the only integrity check on ordering.
+
+function readBedDataRows(path: string): Array<{ chrom: string; start: number }> {
+  const rows: Array<{ chrom: string; start: number }> = [];
+  const text = readFileSync(path, 'utf-8');
+  let sawHeader = false;
+  for (const raw of text.split('\n')) {
+    const line = raw.replace(/\r$/, '');
+    if (line === '' || line.startsWith('#')) continue;
+    if (!sawHeader) { sawHeader = true; continue; }
+    const parts = line.split('\t');
+    rows.push({ chrom: parts[0], start: parseInt(parts[1], 10) });
+  }
+  return rows;
+}
+
+for (const t of traitIds) {
+  const p = join(STAGING, 'traits', t, versionTag, 'candidate_irgsp_coords.bed');
+  if (!statSync(p, { throwIfNoEntry: false })?.isFile()) continue;
+  const rows = readBedDataRows(p);
+  for (let i = 1; i < rows.length; i++) {
+    const prev = rows[i - 1];
+    const cur = rows[i];
+    const chromCmp = prev.chrom < cur.chrom ? -1 : prev.chrom > cur.chrom ? 1 : 0;
+    if (chromCmp > 0 || (chromCmp === 0 && prev.start > cur.start)) {
+      err(`BED not sorted (chrom asc, start asc) for ${t} at row ${i + 1}`);
+      break;
+    }
   }
 }
 
