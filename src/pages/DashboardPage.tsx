@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { usePhenotypeData } from '@/hooks/usePhenotypeData';
 import { PhenotypeDistributionChart } from '@/components/dashboard/PhenotypeDistributionChart';
 import { TraitQualityOverview } from '@/components/dashboard/TraitQualityOverview';
@@ -9,6 +9,24 @@ import {
   TOTAL_CULTIVARS,
   TRAIT_COUNT,
 } from '@/config/panel';
+import { FIELD_TO_TRAIT_ID, type PhenotypeFieldKey } from '@/types/grouping';
+
+function dashboardTraitToExploreUrl(trait: string | null, season: string | null): string {
+  // Dashboard chart writes ?trait=<dashboardKey>&season=<early|normal|late>.
+  // The dashboard key is either "days_to_heading" (expanded via `season`) or
+  // a PhenotypeFieldKey (culmLength, panicleLength, …). Map it to an
+  // Explore TraitId and hand Explore a pre-selected trait.
+  let fieldKey: PhenotypeFieldKey | null = null;
+  if (trait === 'days_to_heading' || trait === null) {
+    const s = season && ['early', 'normal', 'late'].includes(season) ? season : 'early';
+    fieldKey = s as PhenotypeFieldKey;
+  } else if ((Object.keys(FIELD_TO_TRAIT_ID) as PhenotypeFieldKey[]).includes(trait as PhenotypeFieldKey)) {
+    fieldKey = trait as PhenotypeFieldKey;
+  }
+  if (!fieldKey) return '/explore';
+  const traitId = FIELD_TO_TRAIT_ID[fieldKey];
+  return `/explore?trait=${encodeURIComponent(traitId)}`;
+}
 
 export function DashboardPage() {
   const { records, loading, error } = usePhenotypeData();
@@ -16,6 +34,11 @@ export function DashboardPage() {
   const [highlightIdx, setHighlightIdx] = useState(-1);
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const exploreUrl = dashboardTraitToExploreUrl(
+    searchParams.get('trait'),
+    searchParams.get('season'),
+  );
 
   const suggestions = dropdownOpen
     ? records.filter((r) => {
@@ -84,7 +107,7 @@ export function DashboardPage() {
             </div>
             <div className="pt-2 flex items-center gap-3">
               <Link
-                to="/explore"
+                to={exploreUrl}
                 className="inline-flex items-center gap-1 bg-green-600 hover:bg-green-700 text-white text-sm font-medium rounded-md px-4 py-2 transition-colors"
               >
                 Start exploring candidates <span aria-hidden>→</span>
