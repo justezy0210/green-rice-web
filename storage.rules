@@ -49,6 +49,25 @@ service firebase.storage {
       allow write: if false;
     }
 
+    // OG region v2 — trait-split + version-namespaced. Staging prefixes
+    // are deliberately denied so stray uploads there are never publicly
+    // linkable. Promoted prefixes (og_region_graph/v{of}_g{g}/,
+    // og_region_af/v{of}_g{g}/) are public-read.
+    match /og_region_graph/_staging/{path=**} {
+      allow read, write: if false;
+    }
+    match /og_region_graph/{path=**} {
+      allow read: if true;
+      allow write: if false;
+    }
+    match /og_region_af/_staging/{path=**} {
+      allow read, write: if false;
+    }
+    match /og_region_af/{path=**} {
+      allow read: if true;
+      allow write: if false;
+    }
+
     // Discovery result downloads (public read; written by scripts/generate-download-bundles.py).
     // Files live under downloads/traits/{trait}/v{of}_g{g}/ and downloads/cross-trait/v{of}_g{g}/.
     // Bundle manifest at downloads/_manifest.json drives the /download UI.

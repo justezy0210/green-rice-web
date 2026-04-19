@@ -47,6 +47,69 @@ def orthofinder_og_descriptions_path(version: int) -> str:
 
 
 # ─────────────────────────────────────────────────────────────
+# OG region v2 — trait-split, version-namespaced. Mirrors
+# src/lib/storage-paths.ts; keep in lockstep per the shared SSOT rule.
+# ─────────────────────────────────────────────────────────────
+
+
+def _of_g_tag(orthofinder_version: int, grouping_version: int) -> str:
+    return f"v{orthofinder_version}_g{grouping_version}"
+
+
+def og_region_pointer_path() -> str:
+    return "downloads/_og_region_manifest.json"
+
+
+def og_region_graph_path(
+    orthofinder_version: int, grouping_version: int, og_id: str, cluster_id: str,
+) -> str:
+    return (
+        f"og_region_graph/{_of_g_tag(orthofinder_version, grouping_version)}/"
+        f"{og_id}/{cluster_id}.json"
+    )
+
+
+def og_region_graph_manifest_path(orthofinder_version: int, grouping_version: int) -> str:
+    return f"og_region_graph/{_of_g_tag(orthofinder_version, grouping_version)}/_manifest.json"
+
+
+def og_region_af_path(
+    orthofinder_version: int, grouping_version: int,
+    trait_id: str, og_id: str, cluster_id: str,
+) -> str:
+    return (
+        f"og_region_af/{_of_g_tag(orthofinder_version, grouping_version)}/"
+        f"{trait_id}/{og_id}/{cluster_id}.json"
+    )
+
+
+def og_region_af_manifest_path(
+    orthofinder_version: int, grouping_version: int, trait_id: str,
+) -> str:
+    return (
+        f"og_region_af/{_of_g_tag(orthofinder_version, grouping_version)}/"
+        f"{trait_id}/_manifest.json"
+    )
+
+
+def og_region_af_summary_manifest_path(
+    orthofinder_version: int, grouping_version: int,
+) -> str:
+    return f"og_region_af/{_of_g_tag(orthofinder_version, grouping_version)}/_manifest.json"
+
+
+# Local-staging dir name (relative, used by the extractor + validator +
+# promoter). Firebase staging prefixes are denied by storage.rules; primary
+# staging is the local filesystem per the plan §9.
+def og_region_graph_local_staging_dir(runId: str) -> str:
+    return f"og_region_graph/{runId}"
+
+
+def og_region_af_local_staging_dir(runId: str) -> str:
+    return f"og_region_af/{runId}"
+
+
+# ─────────────────────────────────────────────────────────────
 # Discovery download bundles (/download page artifacts)
 # ─────────────────────────────────────────────────────────────
 
