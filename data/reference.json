@@ -1,0 +1,6 @@
+{
+  "comment": "IRGSP reference identifiers. Read by TS (src/lib/irgsp-constants.ts) and Python (functions-python/shared/reference.py). Edit here, then run `npm run sync:manifests`.",
+  "sampleId": "IRGSP-1",
+  "displayName": "IRGSP-1.0",
+  "longName": "IRGSP-1.0 (Nipponbare)"
+}

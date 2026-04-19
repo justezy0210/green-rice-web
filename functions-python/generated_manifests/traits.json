@@ -1,0 +1,86 @@
+{
+  "comment": "Canonical trait registry. Read by TS (src/config/traits.ts) and Python (functions-python/shared/traits.py). Edit here, then run `npm run sync:manifests` to regenerate the deploy copy under functions-python/generated_manifests/.",
+  "traits": [
+    {
+      "id": "heading_date",
+      "label": "Days to Heading",
+      "type": "multi-env",
+      "keys": ["early", "normal", "late"],
+      "direction": "higher-is-more",
+      "labels": { "low": "early", "high": "late" },
+      "unit": "days"
+    },
+    {
+      "id": "culm_length",
+      "label": "Culm Length",
+      "type": "single-continuous",
+      "keys": ["culmLength"],
+      "direction": "higher-is-more",
+      "labels": { "low": "short", "high": "tall" },
+      "unit": "cm"
+    },
+    {
+      "id": "panicle_length",
+      "label": "Panicle Length",
+      "type": "single-continuous",
+      "keys": ["panicleLength"],
+      "direction": "higher-is-more",
+      "labels": { "low": "short", "high": "long" },
+      "unit": "cm"
+    },
+    {
+      "id": "panicle_number",
+      "label": "Panicle Number",
+      "type": "single-continuous",
+      "keys": ["panicleNumber"],
+      "direction": "higher-is-more",
+      "labels": { "low": "low", "high": "high" },
+      "unit": ""
+    },
+    {
+      "id": "spikelets_per_panicle",
+      "label": "Spikelets / Panicle",
+      "type": "single-continuous",
+      "keys": ["spikeletsPerPanicle"],
+      "direction": "higher-is-more",
+      "labels": { "low": "low", "high": "high" },
+      "unit": ""
+    },
+    {
+      "id": "ripening_rate",
+      "label": "Ripening Rate",
+      "type": "single-continuous",
+      "keys": ["ripeningRate"],
+      "direction": "higher-is-more",
+      "labels": { "low": "low", "high": "high" },
+      "unit": "%"
+    },
+    {
+      "id": "grain_weight",
+      "label": "1000-Grain Weight",
+      "type": "single-continuous",
+      "keys": ["grainWeight1000"],
+      "direction": "higher-is-more",
+      "labels": { "low": "light", "high": "heavy" },
+      "unit": "g"
+    },
+    {
+      "id": "pre_harvest_sprouting",
+      "label": "Pre-harvest Sprouting",
+      "type": "single-continuous",
+      "keys": ["preHarvestSprouting"],
+      "direction": "higher-is-more",
+      "labels": { "low": "low", "high": "high" },
+      "unit": "%"
+    },
+    {
+      "id": "bacterial_leaf_blight",
+      "label": "Bacterial Leaf Blight",
+      "type": "binary",
+      "keys": ["k1", "k2", "k3", "k3a"],
+      "direction": "not-applicable",
+      "labels": { "low": "susceptible", "high": "resistant" },
+      "unit": ""
+    }
+  ]
+}

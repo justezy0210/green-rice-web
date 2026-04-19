@@ -1,10 +1,15 @@
-"""IRGSP reference identifiers shared by Python scripts.
+"""Re-export shim → functions-python/shared/reference.py (SSOT).
 
-Python-side mirror of `src/lib/irgsp-constants.ts`. The DISPLAY_NAME is the
-user-visible reference genome version; the SAMPLE_ID matches the `vg paths`
-literal used inside Cactus/GBZ path names.
+scripts/ and functions-python/ both read the same identifiers; this shim
+keeps the scripts/ import surface stable while the canonical code lives
+in the Cloud-Functions-reachable package.
 """
 
-IRGSP_SAMPLE_ID = "IRGSP-1"
-IRGSP_DISPLAY_NAME = "IRGSP-1.0"
-IRGSP_LONG_NAME = "IRGSP-1.0 (Nipponbare)"
+import sys
+from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "functions-python"))
+
+from shared.reference import IRGSP_DISPLAY_NAME, IRGSP_LONG_NAME, IRGSP_SAMPLE_ID  # noqa: E402
+
+__all__ = ["IRGSP_SAMPLE_ID", "IRGSP_DISPLAY_NAME", "IRGSP_LONG_NAME"]

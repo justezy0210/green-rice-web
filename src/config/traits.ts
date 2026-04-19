@@ -1,11 +1,13 @@
 /**
  * Trait registry for UI-facing display data (labels + order).
  *
- * The canonical `TraitId` union lives in `src/types/traits.ts`. Every entry
- * here is checked against that union via `satisfies`, so adding or renaming
- * a trait is caught at compile time if either side drifts.
+ * Loads from data/traits.json — the cross-language SSOT shared with
+ * functions-python/shared/traits.py. The canonical `TraitId` union lives
+ * in src/types/traits.ts; scripts/check-traits-schema.ts asserts that
+ * the JSON id set matches the union.
  */
 
+import traitsJson from '../../data/traits.json';
 import type { TraitId } from '@/types/traits';
 
 export interface TraitDef {
@@ -13,17 +15,15 @@ export interface TraitDef {
   label: string;
 }
 
-export const TRAITS = [
-  { id: 'heading_date', label: 'Days to Heading' },
-  { id: 'culm_length', label: 'Culm Length' },
-  { id: 'panicle_length', label: 'Panicle Length' },
-  { id: 'panicle_number', label: 'Panicle Number' },
-  { id: 'spikelets_per_panicle', label: 'Spikelets / Panicle' },
-  { id: 'ripening_rate', label: 'Ripening Rate' },
-  { id: 'grain_weight', label: '1000-Grain Weight' },
-  { id: 'pre_harvest_sprouting', label: 'Pre-harvest Sprouting' },
-  { id: 'bacterial_leaf_blight', label: 'Bacterial Leaf Blight' },
-] as const satisfies readonly TraitDef[];
+const RAW_ENTRIES = (traitsJson.traits ?? []) as ReadonlyArray<{
+  id: string;
+  label: string;
+}>;
+
+export const TRAITS: readonly TraitDef[] = RAW_ENTRIES.map((e) => ({
+  id: e.id as TraitId,
+  label: e.label,
+}));
 
 export const DEFAULT_TRAIT_ID: TraitId = 'heading_date';
 

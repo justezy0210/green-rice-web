@@ -5,8 +5,10 @@ import io
 from typing import Iterator
 from urllib.parse import unquote
 
+from shared.reference import IRGSP_DISPLAY_NAME
+
 CULTIVAR_SUFFIX = "_longest"
-IRGSP_COL = "IRGSP-1.0"
+IRGSP_COL = IRGSP_DISPLAY_NAME
 IRGSP_DESC_COL = "IRGSP_description"
 
 

@@ -1,4 +1,11 @@
-"""Data quality checker for trait grouping."""
+"""Data quality checker for trait grouping.
+
+Trait-id dispatch uses the `EXTRACTORS` registry so adding a trait to
+data/traits.json fails the build (test_quality_check_registry.py) until
+a matching extractor is registered here.
+"""
+
+from typing import Callable
 
 from .models import TraitMetadata, TraitQuality
 
@@ -9,34 +16,59 @@ MIN_VARIANCE = 1e-6
 
 def extract_values(cultivar_docs: list[dict], trait: TraitMetadata) -> list:
     """Extract raw values for the trait from all cultivar docs. Returns list with None for missing."""
-    values = []
-    for doc in cultivar_docs:
-        val = _extract_trait_value(doc, trait)
-        values.append(val)
-    return values
+    extractor = EXTRACTORS.get(trait.traitId)
+    if extractor is None:
+        return [None] * len(cultivar_docs)
+    return [extractor(doc) for doc in cultivar_docs]
 
 
-def _extract_trait_value(doc: dict, trait: TraitMetadata):
-    """Get the raw (possibly composite) value for one cultivar."""
-    if trait.traitId == "heading_date":
-        return doc.get("daysToHeading", {})
-    if trait.traitId == "culm_length":
-        return doc.get("morphology", {}).get("culmLength")
-    if trait.traitId == "panicle_length":
-        return doc.get("morphology", {}).get("panicleLength")
-    if trait.traitId == "panicle_number":
-        return doc.get("morphology", {}).get("panicleNumber")
-    if trait.traitId == "spikelets_per_panicle":
-        return doc.get("yield", {}).get("spikeletsPerPanicle")
-    if trait.traitId == "ripening_rate":
-        return doc.get("yield", {}).get("ripeningRate")
-    if trait.traitId == "grain_weight":
-        return doc.get("quality", {}).get("grainWeight")
-    if trait.traitId == "pre_harvest_sprouting":
-        return doc.get("quality", {}).get("preHarvestSprouting")
-    if trait.traitId == "bacterial_leaf_blight":
-        return doc.get("resistance", {}).get("bacterialLeafBlight")
-    return None
+def _heading_date(doc: dict):
+    return doc.get("daysToHeading", {})
+
+
+def _culm_length(doc: dict):
+    return doc.get("morphology", {}).get("culmLength")
+
+
+def _panicle_length(doc: dict):
+    return doc.get("morphology", {}).get("panicleLength")
+
+
+def _panicle_number(doc: dict):
+    return doc.get("morphology", {}).get("panicleNumber")
+
+
+def _spikelets_per_panicle(doc: dict):
+    return doc.get("yield", {}).get("spikeletsPerPanicle")
+
+
+def _ripening_rate(doc: dict):
+    return doc.get("yield", {}).get("ripeningRate")
+
+
+def _grain_weight(doc: dict):
+    return doc.get("quality", {}).get("grainWeight")
+
+
+def _pre_harvest_sprouting(doc: dict):
+    return doc.get("quality", {}).get("preHarvestSprouting")
+
+
+def _bacterial_leaf_blight(doc: dict):
+    return doc.get("resistance", {}).get("bacterialLeafBlight")
+
+
+EXTRACTORS: dict[str, Callable[[dict], object]] = {
+    "heading_date": _heading_date,
+    "culm_length": _culm_length,
+    "panicle_length": _panicle_length,
+    "panicle_number": _panicle_number,
+    "spikelets_per_panicle": _spikelets_per_panicle,
+    "ripening_rate": _ripening_rate,
+    "grain_weight": _grain_weight,
+    "pre_harvest_sprouting": _pre_harvest_sprouting,
+    "bacterial_leaf_blight": _bacterial_leaf_blight,
+}
 
 
 def check_quality(

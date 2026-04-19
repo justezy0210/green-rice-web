@@ -21,6 +21,10 @@ export default defineConfig([
     },
     rules: {
       // -- Harness: Import 제약 --
+      // Parent-dir imports are banned — use the `@/` alias instead.
+      // The `src/config/*` and `src/lib/irgsp-constants.ts` SSOT loaders
+      // import from `../../data/*.json` by design: data/ lives outside src/
+      // and `@/` only covers src/. Those are exempted via an override below.
       'no-restricted-imports': ['error', {
         patterns: [
           {
@@ -65,6 +69,18 @@ export default defineConfig([
           format: ['PascalCase'],
         },
       ],
+    },
+  },
+  // Cross-language SSOT loaders: these intentionally import from repo-root
+  // data/*.json (outside src/), which the `@/` alias does not cover.
+  {
+    files: [
+      'src/config/panel.ts',
+      'src/config/traits.ts',
+      'src/lib/irgsp-constants.ts',
+    ],
+    rules: {
+      'no-restricted-imports': 'off',
     },
   },
 ])

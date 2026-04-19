@@ -30,8 +30,13 @@
     "noFallthroughCasesInSwitch": true,
     "noUncheckedSideEffectImports": true,
 
-    /* Allow importing data/cultivars.json (shared SSOT with Python side) */
+    /* Allow importing data/*.json (cross-language SSOT with Python side) */
     "resolveJsonModule": true
   },
-  "include": ["src", "data/cultivars.json"]
+  "include": [
+    "src",
+    "data/cultivars.json",
+    "data/traits.json",
+    "data/reference.json"
+  ]
 }
