@@ -419,6 +419,161 @@ def pick_anchor_cultivar(cultivars_data: dict) -> str | None:
 # Per-cluster extraction
 # ─────────────────────────────────────────────────────────────
 
+def extract_cluster_graph(
+    og_id: str,
+    anchor_cultivar: str,
+    cluster: dict,
+    kind: str,
+    all_paths: dict,
+    hal_path: str,
+    gbz_path: str,
+    flank: int,
+    hal_bin: str,
+    vg_bin: str,
+    orthofinder_version: int,
+) -> tuple[dict, dict | None]:
+    """Run halLiftover + vg chunk. Returns (RegionDataGraph v2, liftover_merged | None).
+
+    The liftover result is returned alongside so the per-trait AF step can
+    reuse the IRGSP region without re-running halLiftover.
+    """
+    lift_merged, anchor_region = _compute_liftover(
+        anchor_cultivar, cluster, flank, hal_path, hal_bin,
+    )
+    region_start, region_end = anchor_region
+
+    cid = cluster_id(anchor_cultivar, cluster["chr"], cluster["start"])
+
+    liftover_status = "unmapped"
+    irgsp_region = None
+    coverage = 0.0
+    if lift_merged:
+        coverage = lift_merged["coverage"]
+        irgsp_region = {
+            "chr": lift_merged["chr"],
+            "start": lift_merged["start"],
+            "end": lift_merged["end"],
+        }
+        liftover_status = "mapped" if coverage >= 0.8 else "partial"
+
+    graph, graph_reason = _extract_graph_body(
+        anchor_cultivar, cluster, region_start, region_end,
+        all_paths, hal_path, hal_bin, gbz_path, vg_bin,
+    )
+    graph_status = "ok" if graph and graph["nodes"] else ("empty" if graph else "error")
+
+    return {
+        "schemaVersion": 2,
+        "ogId": og_id,
+        "clusterId": cid,
+        "orthofinderVersion": orthofinder_version,
+        "source": "cultivar-anchor",
+        "anchor": {
+            "cultivar": anchor_cultivar,
+            "kind": kind,
+            "genes": cluster["genes"],
+            "regionSpan": {"chr": cluster["chr"], "start": region_start, "end": region_end},
+            "flankBp": flank,
+        },
+        "liftover": {
+            "status": liftover_status,
+            "irgspRegion": irgsp_region,
+            "coverage": round(coverage, 4),
+        },
+        "graph": graph,
+        "status": {
+            "graph": graph_status,
+            "reasonCode": graph_reason,
+        },
+    }, lift_merged
+
+
+def extract_cluster_af(
+    og_id: str,
+    cluster_cid: str,
+    trait: str,
+    group_members: dict,
+    lift_merged: dict | None,
+    vcf_path: str,
+    orthofinder_version: int,
+    grouping_version: int,
+) -> dict:
+    """AF for one (cluster, trait). Requires prior graph run for lift_merged."""
+    variants: list = []
+    af_status = "unmapped"
+    reason = "COVERAGE_TOO_LOW"
+    if lift_merged and lift_merged["coverage"] >= 0.5:
+        try:
+            variants = extract_variants_af(
+                vcf_path,
+                lift_merged["chr"], lift_merged["start"], lift_merged["end"],
+                group_members,
+            )
+            if variants:
+                af_status = "ok"
+                reason = "OK"
+            else:
+                af_status = "no_variants"
+                reason = "NO_VARIANTS"
+        except Exception as ex:
+            af_status = "error"
+            reason = "VCF_FAIL"
+            print(f"  VCF error {og_id}/{cluster_cid}/{trait}: {ex}", file=sys.stderr)
+    return {
+        "schemaVersion": 2,
+        "ogId": og_id,
+        "clusterId": cluster_cid,
+        "trait": trait,
+        "orthofinderVersion": orthofinder_version,
+        "groupingVersion": grouping_version,
+        "groupLabels": list(group_members.keys()),
+        "variants": variants,
+        "status": {"af": af_status, "reasonCode": reason},
+    }
+
+
+def _compute_liftover(
+    anchor_cultivar: str, cluster: dict, flank: int, hal_path: str, hal_bin: str,
+) -> tuple[dict | None, tuple[int, int]]:
+    region_start = max(0, cluster["start"] - flank)
+    region_end = cluster["end"] + flank
+    if region_end - region_start > MAX_REGION_LENGTH:
+        region_end = region_start + MAX_REGION_LENGTH
+    lifted = hal_liftover(
+        hal_path, anchor_cultivar, REF_GENOME,
+        cluster["chr"], region_start, region_end, hal_bin,
+    )
+    return merge_intervals(lifted), (region_start, region_end)
+
+
+def _extract_graph_body(
+    anchor_cultivar: str, cluster: dict, region_start: int, region_end: int,
+    all_paths: dict, hal_path: str, hal_bin: str, gbz_path: str, vg_bin: str,
+):
+    """Returns (graph_dict_or_None, reason_code)."""
+    anchor_pick = pick_path(all_paths, anchor_cultivar, cluster["chr"], region_start)
+    if not anchor_pick:
+        return None, "LIFT_FAIL"
+    anchor_path_name, anchor_block_start = anchor_pick
+    anchor_local_start = max(0, region_start - anchor_block_start)
+    anchor_local_end = region_end - anchor_block_start
+    cohort = collect_cohort_paths_via_liftover(
+        all_paths, hal_path, hal_bin,
+        anchor_cultivar, cluster["chr"],
+        region_start, region_end,
+    )
+    if anchor_local_start >= anchor_local_end or not cohort:
+        return None, "NO_COHORT"
+    graph = extract_subgraph(
+        gbz_path, anchor_path_name,
+        anchor_local_start, anchor_local_end,
+        cohort, vg_bin,
+    )
+    if graph and graph.get("nodes"):
+        return graph, "OK"
+    return graph, "VG_CHUNK_EMPTY"
+
+
 def extract_one_cluster(
     og_id: str,
     anchor_cultivar: str,
@@ -433,7 +588,10 @@ def extract_one_cluster(
     hal_bin: str,
     vg_bin: str,
 ) -> dict:
-    """Run halLiftover + vg chunk + VCF AF for one cluster. Returns RegionData schema v1."""
+    """Legacy v1 API — retained for backward compat during migration only.
+    Combines graph + AF into one JSON. New code should call
+    extract_cluster_graph() + extract_cluster_af() separately.
+    """
     region_start = max(0, cluster["start"] - flank)
     region_end = cluster["end"] + flank
     if region_end - region_start > MAX_REGION_LENGTH:
@@ -546,23 +704,65 @@ def load_candidates(tsv_path: str) -> list:
     return rows
 
 
+def _sha256_file(path: str) -> str:
+    import hashlib as _hl
+    h = _hl.sha256()
+    with open(path, "rb") as f:
+        for chunk in iter(lambda: f.read(65536), b""):
+            h.update(chunk)
+    return h.hexdigest()
+
+
+def _sha256_tree(dir_path: str) -> str:
+    """Stable content hash over a directory's sorted (relpath, sha256) list."""
+    import hashlib as _hl
+    acc = _hl.sha256()
+    for dirpath, dirnames, filenames in os.walk(dir_path):
+        dirnames.sort()
+        for fn in sorted(filenames):
+            full = os.path.join(dirpath, fn)
+            rel = os.path.relpath(full, dir_path)
+            acc.update(rel.encode())
+            acc.update(b"\0")
+            acc.update(_sha256_file(full).encode())
+            acc.update(b"\0")
+    return acc.hexdigest()
+
+
+def _git_short_sha() -> str:
+    try:
+        out = subprocess.check_output(
+            ["git", "rev-parse", "--short", "HEAD"],
+            cwd=os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
+            stderr=subprocess.DEVNULL,
+        )
+        return out.decode().strip()
+    except Exception:
+        return "unknown"
+
+
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--candidates", required=True,
-                    help="TSV from select-candidate-ogs.py (og_id\\tcategory\\t...)")
+    # v2 schema — trait-split + version-namespaced. The old --candidates +
+    # --trait single-trait flow is retired; use --og-list + all-traits
+    # groupings instead.
+    ap.add_argument("--og-list", required=True,
+                    help="One OG id per line. Output of prepare-og-region-inputs.py.")
     ap.add_argument("--hal", required=True)
     ap.add_argument("--gbz", required=True)
     ap.add_argument("--vcf", required=True)
-    ap.add_argument("--gene-coords-dir", required=True)
+    ap.add_argument("--gene-coords-dir", required=True,
+                    help="Local dir mirroring Storage og_gene_coords/ chunks.")
     ap.add_argument("--groupings", required=True,
-                    help="JSON: {traitId: {groupLabel: [cultivarIds]}}")
-    ap.add_argument("--trait", default="heading_date")
+                    help="JSON: {trait: {groupLabels: [...], groupMembers: {label: [cultivar,...]}}}")
+    ap.add_argument("--of", type=int, required=True, dest="orthofinder_version")
+    ap.add_argument("--g", type=int, required=True, dest="grouping_version")
     ap.add_argument("--output", required=True,
-                    help="Output directory (will contain OG subdirs + _manifest.json)")
+                    help="Local staging root. Will write "
+                         "og_region_graph/<runId>/... and og_region_af/<runId>/...")
     ap.add_argument("--flank", type=int, default=10_000)
     ap.add_argument("--cluster-threshold", type=int, default=25_000)
-    ap.add_argument("--cluster-cap", type=int, default=5,
-                    help="Max clusters per OG (largest-first)")
+    ap.add_argument("--cluster-cap", type=int, default=5)
     ap.add_argument("--hal-bin-dir", default=os.path.expanduser("~/cactus-bin/bin"))
     args = ap.parse_args()
 
@@ -570,138 +770,247 @@ def main():
     hal_bin = os.path.join(args.hal_bin_dir, "halLiftover")
     vg_bin = os.path.join(args.hal_bin_dir, "vg")
 
-    print("Loading GBZ path metadata...", flush=True)
-    all_paths = load_all_paths(args.gbz, vg_bin)
-    print(f"  {len(all_paths)} (sample, chr) pairs", flush=True)
+    of = args.orthofinder_version
+    g = args.grouping_version
+    run_id = f"v{of}_g{g}_{time.strftime('%Y%m%dT%H%M%SZ', time.gmtime())}"
+    graph_root = os.path.join(args.output, "og_region_graph", run_id)
+    af_root = os.path.join(args.output, "og_region_af", run_id)
+    os.makedirs(graph_root, exist_ok=True)
+    os.makedirs(af_root, exist_ok=True)
 
-    print("Loading coordinate index...", flush=True)
-    og_coords = {}
+    # ── Fingerprints (bound into every manifest) ──────────────
+    print("Hashing inputs…", flush=True)
+    hal_sha = _sha256_file(args.hal)
+    gbz_sha = _sha256_file(args.gbz)
+    vcf_sha = _sha256_file(args.vcf)
+    coords_hash = _sha256_tree(args.gene_coords_dir)
+    candidates_sha = _sha256_file(args.og_list)
+    extractor_sha = _git_short_sha()
+    generated_at = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
+
+    print("Loading GBZ path metadata…", flush=True)
+    all_paths = load_all_paths(args.gbz, vg_bin)
+
+    print("Loading coordinate index…", flush=True)
+    og_coords: dict = {}
     for f in sorted(os.listdir(args.gene_coords_dir)):
         if f.endswith(".json"):
             with open(os.path.join(args.gene_coords_dir, f)) as fh:
                 og_coords.update(json.load(fh))
     print(f"  {len(og_coords)} OGs with coords", flush=True)
 
-    with open(args.groupings) as f:
-        all_groupings = json.load(f)
-    group_members = all_groupings.get(args.trait, {})
-    if not group_members:
-        print(f"ERROR: trait {args.trait} not in groupings", file=sys.stderr)
-        sys.exit(1)
-    print(f"  trait={args.trait} groups={list(group_members.keys())}", flush=True)
+    with open(args.groupings) as fh:
+        all_groupings = json.load(fh)
+    usable_traits = sorted(all_groupings.keys())
+    print(f"Usable traits: {len(usable_traits)}  {usable_traits}", flush=True)
 
-    candidates = load_candidates(args.candidates)
-    print(f"Loaded {len(candidates)} candidate OGs", flush=True)
+    with open(args.og_list) as fh:
+        candidate_ogs = [ln.strip() for ln in fh if ln.strip()]
+    print(f"Candidate OGs: {len(candidate_ogs)}", flush=True)
 
-    manifest = {
-        "schemaVersion": SCHEMA_VERSION,
-        "trait": args.trait,
-        "clusterThreshold": args.cluster_threshold,
-        "flankBp": args.flank,
+    # ── Per-trait AF manifest scaffolding ─────────────────────
+    af_manifests: dict[str, dict] = {}
+    for t in usable_traits:
+        trait_groupings = all_groupings[t]
+        os.makedirs(os.path.join(af_root, t), exist_ok=True)
+        af_manifests[t] = {
+            "schemaVersion": 2,
+            "orthofinderVersion": of,
+            "groupingVersion": g,
+            "trait": t,
+            "usable": True,
+            "groupLabels": list(trait_groupings["groupLabels"]),
+            "generatedAt": generated_at,
+            "extractorGitSha": extractor_sha,
+            "inputFingerprints": {
+                "vcf": {"path": args.vcf, "sha256": vcf_sha},
+                "groupingsDocVersion": g,
+            },
+            "totals": {
+                "ogsEmitted": 0,
+                "clustersEmitted": 0,
+                "statusCounts": {"af_ok": 0, "af_no_variants": 0,
+                                 "af_unmapped": 0, "af_error": 0},
+            },
+            "ogs": {},
+        }
+
+    # ── Graph manifest scaffolding ────────────────────────────
+    graph_manifest: dict = {
+        "schemaVersion": 2,
+        "orthofinderVersion": of,
+        "groupingVersion": g,
+        "generatedAt": generated_at,
+        "extractorGitSha": extractor_sha,
+        "inputFingerprints": {
+            "hal":            {"path": args.hal, "sha256": hal_sha},
+            "gbz":            {"path": args.gbz, "sha256": gbz_sha},
+            "geneCoordsDir":  {"path": args.gene_coords_dir, "contentHash": coords_hash},
+            "candidateListSha256": candidates_sha,
+        },
         "clusterCap": args.cluster_cap,
+        "flankBp": args.flank,
+        "clusterThresholdBp": args.cluster_threshold,
+        "anchorPriority": list(ANCHOR_PRIORITY),
+        "totals": {
+            "candidateOgs": len(candidate_ogs),
+            "ogsEmitted": 0,
+            "ogsSkipped": 0,
+            "clustersEmitted": 0,
+            "statusCounts": {"graph_ok": 0, "graph_empty": 0, "graph_error": 0},
+            "skipReasonCounts": {},
+        },
         "ogs": {},
     }
 
-    start_time = time.time()
-    total_clusters = 0
-    ok_clusters = 0
+    def _record_skip(og_id: str, reason: str):
+        graph_manifest["ogs"][og_id] = {
+            "status": "skipped", "skipReason": reason, "clusters": [],
+        }
+        graph_manifest["totals"]["ogsSkipped"] += 1
+        graph_manifest["totals"]["skipReasonCounts"][reason] = (
+            graph_manifest["totals"]["skipReasonCounts"].get(reason, 0) + 1
+        )
 
-    for i, row in enumerate(candidates):
-        og_id = row["og_id"]
+    # ── Per-OG extraction loop ────────────────────────────────
+    start_time = time.time()
+    for i, og_id in enumerate(candidate_ogs):
         cultivars_data = og_coords.get(og_id, {})
         if not cultivars_data:
-            manifest["ogs"][og_id] = {"error": "no_coords", "clusters": []}
+            _record_skip(og_id, "NO_GENE_COORDS")
             continue
 
         anchor = pick_anchor_cultivar(cultivars_data)
         if not anchor:
-            manifest["ogs"][og_id] = {"error": "no_anchor_cultivar", "clusters": []}
+            _record_skip(og_id, "NO_ANCHOR_CULTIVAR")
             continue
 
         clusters = cluster_genes(cultivars_data[anchor], args.cluster_threshold)
         if not clusters:
-            manifest["ogs"][og_id] = {"error": "no_clusters", "clusters": []}
+            _record_skip(og_id, "NO_CLUSTERS")
             continue
 
         clusters.sort(key=lambda c: -len(c["genes"]))
         truncated = len(clusters) > args.cluster_cap
         clusters = clusters[: args.cluster_cap]
 
-        og_dir = os.path.join(args.output, og_id)
-        os.makedirs(og_dir, exist_ok=True)
+        og_graph_dir = os.path.join(graph_root, og_id)
+        os.makedirs(og_graph_dir, exist_ok=True)
 
-        cluster_entries = []
-        og_anchor_kind_map = "dispersed" if len(clusters) > 1 else None
+        kind_for_og = "dispersed" if len(clusters) > 1 else None
+        cluster_entries: list[dict] = []
 
         for cluster in clusters:
-            if og_anchor_kind_map == "dispersed":
-                kind = "dispersed"
-            else:
-                kind = "tandem" if len(cluster["genes"]) > 1 else "singleton"
-
+            kind = kind_for_og if kind_for_og else (
+                "tandem" if len(cluster["genes"]) > 1 else "singleton"
+            )
             try:
-                region_data = extract_one_cluster(
+                graph_data, lift_merged = extract_cluster_graph(
                     og_id, anchor, cluster, kind, all_paths,
-                    args.hal, args.gbz, args.vcf, group_members,
-                    args.flank, hal_bin, vg_bin,
+                    args.hal, args.gbz, args.flank, hal_bin, vg_bin, of,
                 )
             except Exception as ex:
-                manifest["ogs"].setdefault(og_id, {"clusters": []})
-                cluster_entries.append({
-                    "clusterId": cluster_id(anchor, cluster["chr"], cluster["start"]),
-                    "status": "error",
-                    "errorMessage": str(ex)[:300],
-                })
-                continue
+                _record_skip(og_id, "EXTRACTOR_ERROR")
+                print(f"  ERROR {og_id}: {ex}", file=sys.stderr)
+                break  # skip remaining clusters of this OG
 
-            out_path = os.path.join(og_dir, f"{region_data['clusterId']}.json")
-            with open(out_path, "w") as f:
-                json.dump(region_data, f, separators=(",", ":"))
+            cid = graph_data["clusterId"]
+            # Write graph JSON
+            with open(os.path.join(og_graph_dir, f"{cid}.json"), "w") as fh:
+                json.dump(graph_data, fh, separators=(",", ":"))
 
-            total_clusters += 1
-            if region_data["status"]["graph"] == "ok":
-                ok_clusters += 1
+            graph_manifest["totals"]["clustersEmitted"] += 1
+            gs = graph_data["status"]["graph"]
+            graph_manifest["totals"]["statusCounts"][f"graph_{gs}"] += 1
 
             cluster_entries.append({
-                "clusterId": region_data["clusterId"],
-                "cultivar": anchor,
+                "clusterId": cid,
                 "chr": cluster["chr"],
                 "start": cluster["start"],
                 "end": cluster["end"],
                 "geneCount": len(cluster["genes"]),
                 "kind": kind,
-                "graphStatus": region_data["status"]["graph"],
-                "afStatus": region_data["status"]["af"],
-                "variantCount": len(region_data.get("alleleFrequency", {}).get("variants", []))
-                    if region_data.get("alleleFrequency") else 0,
+                "graphStatus": gs,
             })
 
-        manifest["ogs"][og_id] = {
-            "anchorCultivar": anchor,
-            "clusters": cluster_entries,
-            "truncated": truncated,
-        }
+            # Per-trait AF
+            for t in usable_traits:
+                gm = all_groupings[t]["groupMembers"]
+                af_data = extract_cluster_af(
+                    og_id, cid, t, gm, lift_merged, args.vcf, of, g,
+                )
+                af_og_dir = os.path.join(af_root, t, og_id)
+                os.makedirs(af_og_dir, exist_ok=True)
+                with open(os.path.join(af_og_dir, f"{cid}.json"), "w") as fh:
+                    json.dump(af_data, fh, separators=(",", ":"))
 
-        if (i + 1) % 10 == 0:
+                m = af_manifests[t]
+                m["totals"]["clustersEmitted"] += 1
+                m["totals"]["statusCounts"][f"af_{af_data['status']['af']}"] += 1
+                og_entry = m["ogs"].setdefault(og_id, {"clusters": []})
+                og_entry["clusters"].append({
+                    "clusterId": cid,
+                    "afStatus": af_data["status"]["af"],
+                    "variantCount": len(af_data["variants"]),
+                })
+
+        if og_id not in graph_manifest["ogs"]:
+            # Record emitted OG
+            graph_manifest["ogs"][og_id] = {
+                "status": "emitted",
+                "anchorCultivar": anchor,
+                "truncated": truncated,
+                "clusters": cluster_entries,
+            }
+            graph_manifest["totals"]["ogsEmitted"] += 1
+            for t in usable_traits:
+                af_manifests[t]["totals"]["ogsEmitted"] += 1
+
+        if (i + 1) % 25 == 0:
             elapsed = time.time() - start_time
-            print(f"  {i+1}/{len(candidates)} OGs · "
-                  f"{total_clusters} clusters · ok={ok_clusters} · "
-                  f"{elapsed:.1f}s elapsed", flush=True)
+            t = graph_manifest["totals"]
+            print(
+                f"  {i+1}/{len(candidate_ogs)} OGs · "
+                f"emit={t['ogsEmitted']} skip={t['ogsSkipped']} "
+                f"clusters={t['clustersEmitted']} · "
+                f"{elapsed:.1f}s elapsed",
+                flush=True,
+            )
 
-    manifest["totalClusters"] = total_clusters
-    manifest["okClusters"] = ok_clusters
-    manifest["elapsedSeconds"] = round(time.time() - start_time, 1)
+    # ── Write manifests ───────────────────────────────────────
+    with open(os.path.join(graph_root, "_manifest.json"), "w") as fh:
+        json.dump(graph_manifest, fh, indent=2)
+    for t in usable_traits:
+        with open(os.path.join(af_root, t, "_manifest.json"), "w") as fh:
+            json.dump(af_manifests[t], fh, indent=2)
 
-    manifest_path = os.path.join(args.output, "_manifest.json")
-    with open(manifest_path, "w") as f:
-        json.dump(manifest, f, indent=2)
+    # Cross-trait AF summary
+    summary_manifest = {
+        "schemaVersion": 2,
+        "orthofinderVersion": of,
+        "groupingVersion": g,
+        "generatedAt": generated_at,
+        "traits": {
+            t: {
+                "usable": True,
+                "ogsEmitted": af_manifests[t]["totals"]["ogsEmitted"],
+                "clustersEmitted": af_manifests[t]["totals"]["clustersEmitted"],
+            } for t in usable_traits
+        },
+    }
+    with open(os.path.join(af_root, "_manifest.json"), "w") as fh:
+        json.dump(summary_manifest, fh, indent=2)
 
-    print(f"\n=== Batch complete ===")
-    print(f"OGs processed:  {len(candidates)}")
-    print(f"Clusters total: {total_clusters}")
-    print(f"Clusters ok:    {ok_clusters}")
-    print(f"Elapsed:        {manifest['elapsedSeconds']}s")
-    print(f"Manifest:       {manifest_path}")
+    elapsed = round(time.time() - start_time, 1)
+    t = graph_manifest["totals"]
+    print(f"\n=== Batch complete ({elapsed}s) ===")
+    print(f"candidate OGs: {t['candidateOgs']}")
+    print(f"emitted:       {t['ogsEmitted']}")
+    print(f"skipped:       {t['ogsSkipped']}  {dict(t['skipReasonCounts'])}")
+    print(f"clusters:      {t['clustersEmitted']}  {t['statusCounts']}")
+    print(f"Graph manifest: {graph_root}/_manifest.json")
+    print(f"AF summary:     {af_root}/_manifest.json")
+    print(f"runId:          {run_id}")
 
 
 if __name__ == "__main__":
