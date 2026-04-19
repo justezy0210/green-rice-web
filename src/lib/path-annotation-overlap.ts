@@ -8,6 +8,7 @@
  *    gene model, or relocation. UI must caveat.
  */
 
+import { isReferencePathCultivar } from '@/lib/irgsp-constants';
 import type { OgGeneCoords } from '@/types/orthogroup';
 
 export type PathAnnotationStatus =
@@ -59,7 +60,7 @@ export function parsePathCoords(name: string): ParsedPath | null {
     localEnd,
     absoluteStart: blockStart + localStart,
     absoluteEnd: blockStart + localEnd,
-    isRef: cultivar === 'IRGSP-1',
+    isRef: isReferencePathCultivar(cultivar),
   };
 }
 

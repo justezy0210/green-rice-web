@@ -1,3 +1,4 @@
+import { IRGSP_DISPLAY_NAME } from '@/lib/irgsp-constants';
 import type {
   OgGeneCoords,
   GeneCluster,
@@ -7,7 +8,7 @@ import type {
 } from '@/types/orthogroup';
 import type { CultivarGroupAssignment } from '@/types/grouping';
 
-export const IRGSP_CULTIVAR = 'IRGSP-1.0';
+export const IRGSP_CULTIVAR = IRGSP_DISPLAY_NAME;
 export const IRGSP_CLUSTER_PREFIX = 'irgsp_';
 
 const DEFAULT_THRESHOLD = 25_000; // 25kb — subject to pilot tuning

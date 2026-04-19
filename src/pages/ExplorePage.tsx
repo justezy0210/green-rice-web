@@ -12,35 +12,20 @@ import { useOgCategories } from '@/hooks/useOgCategories';
 import { useOgAlleleFreq } from '@/hooks/useOgAlleleFreq';
 import { useCultivars } from '@/hooks/useCultivars';
 import type { TraitId } from '@/types/grouping';
-
-const VALID_TRAITS: TraitId[] = [
-  'heading_date',
-  'culm_length',
-  'panicle_length',
-  'panicle_number',
-  'spikelets_per_panicle',
-  'ripening_rate',
-  'grain_weight',
-  'pre_harvest_sprouting',
-  'bacterial_leaf_blight',
-];
+import { DEFAULT_TRAIT_ID, isTraitId } from '@/config/traits';
+import { PANEL_LABEL } from '@/config/panel';
 
 const PAGE_SIZE = 20;
 const VALID_SORT: DiffSortKey[] = ['p', 'log2FC'];
 
-function isTraitId(v: string | null): v is TraitId {
-  return v !== null && (VALID_TRAITS as string[]).includes(v);
-}
 function isSortKey(v: string | null): v is DiffSortKey {
   return v !== null && (VALID_SORT as string[]).includes(v);
 }
 
-const DEFAULT_TRAIT: TraitId = 'heading_date';
-
 export function ExplorePage() {
   const [params, setParams] = useSearchParams();
   const rawTrait = params.get('trait');
-  const traitId: TraitId = isTraitId(rawTrait) ? rawTrait : DEFAULT_TRAIT;
+  const traitId: TraitId = isTraitId(rawTrait) ? rawTrait : DEFAULT_TRAIT_ID;
   const ogId = params.get('og');
   const page = Math.max(0, parseInt(params.get('page') ?? '0', 10) || 0);
   const sortKey: DiffSortKey = isSortKey(params.get('sort')) ? (params.get('sort') as DiffSortKey) : 'p';
@@ -156,7 +141,7 @@ export function ExplorePage() {
           <div>
             <h1 className="text-2xl font-bold text-gray-900">Explore Candidates</h1>
             <p className="text-sm text-gray-500 mt-1">
-              Pick a trait to see orthogroups where copy count differs between proposed phenotype groups across the 16-cultivar Korean temperate japonica panel. Starting point for follow-up validation — not association confirmation.
+              Pick a trait to see orthogroups where copy count differs between proposed phenotype groups across the {PANEL_LABEL.panelSize} Korean temperate japonica panel. Starting point for follow-up validation — not association confirmation.
             </p>
           </div>
           <div className="flex flex-col gap-1">

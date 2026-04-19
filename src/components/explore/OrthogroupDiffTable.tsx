@@ -20,6 +20,8 @@ import type {
   OrthogroupDiffDocument,
   SelectionMode,
 } from '@/types/orthogroup';
+import { PANEL_LABEL } from '@/config/panel';
+import { IRGSP_DISPLAY_NAME } from '@/lib/irgsp-constants';
 
 export type { DiffSortKey };
 
@@ -103,7 +105,7 @@ export function OrthogroupDiffTable({
         </div>
       </CardHeader>
       <CardContent className="space-y-3">
-        <p className="text-[11px] text-gray-600 bg-gray-50 border border-gray-200 rounded px-3 py-2">OG-level copy-count candidate screen for this 16-cultivar panel. AF and graph in OG Detail are supporting context, not ranking.</p>
+        <p className="text-[11px] text-gray-600 bg-gray-50 border border-gray-200 rounded px-3 py-2">OG-level copy-count candidate screen for this {PANEL_LABEL.panelSize} panel. AF and graph in OG Detail are supporting context, not ranking.</p>
         <div className={`text-xs rounded px-3 py-2 border ${modeBanner.cls}`}>{modeBanner.text}</div>
 
         {isStale && (
@@ -205,7 +207,7 @@ export function OrthogroupDiffTable({
                     </th>
                     <th
                       className="text-left py-1.5 pl-2 font-medium"
-                      title="IRGSP-1.0 reference transcript and description"
+                      title={`${IRGSP_DISPLAY_NAME} reference transcript and description`}
                     >
                       IRGSP representative*
                     </th>
@@ -240,7 +242,7 @@ export function OrthogroupDiffTable({
         )}
 
         <p className="text-[10px] text-gray-400">
-          * IRGSP-1.0 (Nipponbare reference) transcript. Click an orthogroup for details.
+          * {IRGSP_DISPLAY_NAME} (Nipponbare reference) transcript. Click an orthogroup for details.
         </p>
       </CardContent>
     </Card>

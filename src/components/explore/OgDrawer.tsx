@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { OgDrawerHeader } from './OgDrawerHeader';
 import { OgDrawerGroupSummary } from './OgDrawerGroupSummary';
 import { buildGroupColorMap } from '@/components/dashboard/distribution-helpers';
+import { useOgRegionManifest } from '@/hooks/useOgRegion';
 import type {
   DiffEntriesState,
   OgAlleleFreqPayload,
@@ -105,6 +106,20 @@ export function OgDrawer({
     : null;
   const afSummary = ogId ? alleleFreq?.ogs[ogId] ?? null : null;
 
+  const { manifest } = useOgRegionManifest();
+  const graphAvailability = useMemo(() => {
+    if (!ogId || !manifest) return { available: false, detail: undefined };
+    const entry = manifest.ogs[ogId];
+    if (!entry) return { available: false, detail: undefined };
+    const ok = entry.clusters.filter((c) => c.graphStatus === 'ok').length;
+    const total = entry.clusters.length;
+    if (ok === 0) return { available: false, detail: total > 0 ? `${total} clusters (none ok)` : undefined };
+    return {
+      available: true,
+      detail: ok === total ? `${ok} clusters` : `${ok}/${total} clusters`,
+    };
+  }, [ogId, manifest]);
+
   const detailUrl = ogId
     ? `/explore/og/${ogId}${traitId ? `?trait=${traitId}` : ''}`
     : '#';
@@ -165,7 +180,11 @@ export function OgDrawer({
               {/* Evidence badges */}
               <div className="px-4 py-3 border-b border-gray-100 flex flex-wrap gap-2">
                 <Badge label="AF" available={!!afSummary} detail={afSummary ? `${afSummary.totalVariants} var` : undefined} />
-                <Badge label="Graph" available={false} />
+                <Badge
+                  label="Graph"
+                  available={graphAvailability.available}
+                  detail={graphAvailability.detail}
+                />
                 <Badge
                   label="Members"
                   available={!!diffEntry}

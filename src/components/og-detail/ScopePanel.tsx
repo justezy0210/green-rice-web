@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { PANEL_LABEL } from '@/config/panel';
 
 /**
  * Persistent "what this page can / cannot tell you" scope panel for OG Detail.
@@ -12,7 +13,7 @@ export function ScopePanel() {
       <ul className="flex flex-wrap items-center gap-x-4 gap-y-1 px-4 py-2 text-[11px] text-gray-600">
         <li><span className="text-gray-400">⊘</span> Not causal</li>
         <li><span className="text-gray-400">⊘</span> Not marker-ready</li>
-        <li><span className="text-gray-400">⊘</span> 16-cultivar panel only</li>
+        <li><span className="text-gray-400">⊘</span> {PANEL_LABEL.panelSize} panel only</li>
         <li><span className="text-gray-400">⊘</span> Phenotype grouping is proposed (GMM), not truth</li>
       </ul>
     <details
@@ -30,7 +31,7 @@ export function ScopePanel() {
           <h4 className="font-medium text-gray-700 mb-1">What this page CAN tell you</h4>
           <ul className="list-disc list-outside ml-4 space-y-0.5 text-gray-600">
             <li>Trait groups that differ by copy count / AF / graph context at this OG</li>
-            <li>Annotated OG-member positions across the 16 cultivars</li>
+            <li>Annotated OG-member positions across the {PANEL_LABEL.panelSizeFull}</li>
             <li>Cluster-derived lifted IRGSP region and the variants observed there</li>
             <li>Panel-scoped evidence for prioritizing this OG as a follow-up candidate</li>
           </ul>

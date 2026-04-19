@@ -16,16 +16,9 @@ export type PhenotypeFieldKey =
   | 'preHarvestSprouting'
   | 'bacterialLeafBlight';
 
-export type TraitId =
-  | 'heading_date'
-  | 'culm_length'
-  | 'panicle_length'
-  | 'panicle_number'
-  | 'spikelets_per_panicle'
-  | 'ripening_rate'
-  | 'grain_weight'
-  | 'pre_harvest_sprouting'
-  | 'bacterial_leaf_blight';
+// TraitId is derived from the trait registry (single source of truth).
+export type { TraitId } from '@/config/traits';
+import type { TraitId } from '@/config/traits';
 
 export interface TraitMetadata {
   traitId: TraitId;

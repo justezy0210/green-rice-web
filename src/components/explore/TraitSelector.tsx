@@ -1,17 +1,6 @@
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import type { TraitId } from '@/types/grouping';
-
-const TRAITS: { id: TraitId; label: string }[] = [
-  { id: 'heading_date', label: 'Days to Heading' },
-  { id: 'culm_length', label: 'Culm Length' },
-  { id: 'panicle_length', label: 'Panicle Length' },
-  { id: 'panicle_number', label: 'Panicle Number' },
-  { id: 'spikelets_per_panicle', label: 'Spikelets / Panicle' },
-  { id: 'ripening_rate', label: 'Ripening Rate' },
-  { id: 'grain_weight', label: '1000-Grain Weight' },
-  { id: 'pre_harvest_sprouting', label: 'Pre-harvest Sprouting' },
-  { id: 'bacterial_leaf_blight', label: 'Bacterial Leaf Blight' },
-];
+import { TRAITS } from '@/config/traits';
 
 interface Props {
   value: TraitId | null;

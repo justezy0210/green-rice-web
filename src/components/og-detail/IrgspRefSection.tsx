@@ -1,4 +1,5 @@
 import { useMemo } from 'react';
+import { IRGSP_DISPLAY_NAME } from '@/lib/irgsp-constants';
 import { buildReferenceCluster } from '@/lib/og-gene-clusters';
 import type {
   GeneCluster,
@@ -33,7 +34,7 @@ export function IrgspRefSection({
   return (
     <section className="px-4 py-3 text-xs bg-gray-50 border-l-4 border-l-gray-400">
       <div className="flex items-center gap-2 mb-1.5">
-        <span className="font-medium text-gray-900">IRGSP-1.0</span>
+        <span className="font-medium text-gray-900">{IRGSP_DISPLAY_NAME}</span>
         <span className="text-[10px] px-1.5 py-0.5 rounded border border-gray-300 bg-white text-gray-600">
           reference
         </span>

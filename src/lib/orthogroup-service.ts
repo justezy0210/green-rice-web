@@ -1,6 +1,11 @@
 import { doc, onSnapshot, type Unsubscribe } from 'firebase/firestore';
 import { ref as storageRef, getDownloadURL } from 'firebase/storage';
 import { db, storage } from '@/lib/firebase';
+import {
+  orthofinderBaegilmiAnnotationPath,
+  orthofinderOgCategoriesPath,
+  orthofinderOgMembersPath,
+} from '@/lib/storage-paths';
 import type { OrthogroupDiffDocument, OrthogroupDiffPayload } from '@/types/orthogroup';
 // Region artifacts (gene coords, tube map, AF) live in og-region-service.ts
 export {
@@ -73,7 +78,7 @@ export async function fetchOgChunk(
   const combined = mergeSignals(signal, controller.signal);
 
   try {
-    const path = `orthofinder/v${version}/og-members/chunk_${chunkKey}.json`;
+    const path = orthofinderOgMembersPath(version, chunkKey);
     const data = await downloadJson<OgMembersChunk>(path, combined);
     _chunkData.set(cacheKey, data);
     return data;
@@ -98,7 +103,7 @@ export async function fetchBaegilmiAnnotation(
   const combined = mergeSignals(signal, controller.signal);
 
   try {
-    const path = `orthofinder/v${version}/baegilmi_gene_annotation.json`;
+    const path = orthofinderBaegilmiAnnotationPath(version);
     const data = await downloadJson<BaegilmiGeneAnnotation>(path, combined);
     _annotationData.set(version, data);
     return data;
@@ -137,7 +142,7 @@ export async function fetchOgCategories(
   const combined = mergeSignals(signal, controller.signal);
 
   try {
-    const path = `orthofinder/v${orthofinderVersion}/og_categories.json`;
+    const path = orthofinderOgCategoriesPath(orthofinderVersion);
     const data = await downloadJson<OgCategoriesData>(path, combined);
     _ogCategoriesData.set(orthofinderVersion, data);
     return data;

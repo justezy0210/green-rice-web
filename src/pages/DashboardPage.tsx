@@ -3,8 +3,12 @@ import { Link, useNavigate } from 'react-router-dom';
 import { usePhenotypeData } from '@/hooks/usePhenotypeData';
 import { PhenotypeDistributionChart } from '@/components/dashboard/PhenotypeDistributionChart';
 import { TraitQualityOverview } from '@/components/dashboard/TraitQualityOverview';
-
-const TRAIT_COUNT = 9; // heading_date × 5 envs, culm_length, panicle_length/number, spikelets, ripening, grain, pre-harvest sprouting, blb — counted as logical traits
+import {
+  PANEL_LABEL,
+  REFERENCE_SHORT_NAME,
+  TOTAL_CULTIVARS,
+  TRAIT_COUNT,
+} from '@/config/panel';
 
 export function DashboardPage() {
   const { records, loading, error } = usePhenotypeData();
@@ -67,15 +71,16 @@ export function DashboardPage() {
             </h1>
             <p className="text-sm text-gray-600 leading-relaxed">
               This resource prioritizes candidate genes and genomic elements that distinguish trait
-              groups across 16 Korean temperate japonica cultivars using orthogroup, variant, and
-              graph-based evidence — as a starting point for downstream biological validation.
+              groups across {TOTAL_CULTIVARS} Korean temperate japonica cultivars using orthogroup,
+              variant, and graph-based evidence — as a starting point for downstream biological
+              validation.
             </p>
             <div className="flex flex-wrap gap-x-6 gap-y-1 pt-1 text-[11px] text-gray-500">
-              <span>{records.length} cultivars</span>
+              <span>{records.length} cultivars loaded</span>
               <span>{TRAIT_COUNT} traits</span>
-              <span>Cactus pangenome (11 of 16 assembled)</span>
+              <span>Cactus pangenome ({PANEL_LABEL.coverageOf} assembled)</span>
               <span>OrthoFinder orthogroups</span>
-              <span>IRGSP-1.0 reference</span>
+              <span>{REFERENCE_SHORT_NAME}</span>
             </div>
             <div className="pt-2 flex items-center gap-3">
               <Link

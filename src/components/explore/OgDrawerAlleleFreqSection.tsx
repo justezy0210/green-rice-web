@@ -5,6 +5,7 @@ import {
   shouldShowLength,
   SV_THRESHOLD_BP,
 } from '@/lib/variant-event-class';
+import { PANEL_LABEL } from '@/config/panel';
 
 interface Props {
   summary: OgVariantSummary;
@@ -34,7 +35,7 @@ export function OgDrawerAlleleFreqSection({ summary, groupLabels, groupColorMap 
       )}
 
       <p className="text-[10px] text-amber-600 mb-2">
-        AF is based on 11 of 16 cultivars present in the pangenome VCF.
+        AF is based on {PANEL_LABEL.coverageOf} cultivars present in the pangenome VCF.
       </p>
       <p className="text-[10px] text-gray-400 mb-2">
         Event class is a length-based heuristic (≥ {SV_THRESHOLD_BP}bp → SV-like). <code>vg deconstruct</code>{' '}

@@ -5,6 +5,14 @@
 
 import { ref as storageRef, getDownloadURL } from 'firebase/storage';
 import { storage } from '@/lib/firebase';
+import {
+  ogAlleleFreqLegacyPath,
+  ogAlleleFreqPath,
+  ogGeneCoordsPath,
+  ogRegionManifestPath,
+  ogRegionPath,
+  ogTubeMapPath,
+} from '@/lib/storage-paths';
 import type {
   OgAlleleFreqPayload,
   OgGeneCoords,
@@ -53,7 +61,7 @@ export async function fetchOgGeneCoords(
   if (cached) return cached[ogId] ?? null;
   try {
     const data = await downloadJson<Record<string, OgGeneCoords>>(
-      `og_gene_coords/chunk_${chunkKey}.json`,
+      ogGeneCoordsPath(chunkKey),
       signal,
     );
     _geneCoordsChunks.set(chunkKey, data);
@@ -76,7 +84,7 @@ export async function fetchOgTubeMap(
   const cached = _tubeMapData.get(ogId);
   if (cached) return cached;
   try {
-    const data = await downloadJson<OgTubeMapData>(`og_tubemap/${ogId}.json`, signal);
+    const data = await downloadJson<OgTubeMapData>(ogTubeMapPath(ogId), signal);
     _tubeMapData.set(ogId, data);
     return data;
   } catch {
@@ -101,7 +109,7 @@ export async function fetchOgRegion(
   if (cached) return cached;
   try {
     const data = await downloadJson<RegionData>(
-      `og_region/${ogId}/${clusterId}.json`,
+      ogRegionPath(ogId, clusterId),
       signal,
     );
     _regionData.set(key, data);
@@ -117,7 +125,7 @@ export async function fetchOgRegionManifest(
   if (_manifestPromise) return _manifestPromise;
   _manifestPromise = (async () => {
     try {
-      return await downloadJson<OgRegionManifest>('og_region/_manifest.json', signal);
+      return await downloadJson<OgRegionManifest>(ogRegionManifestPath(), signal);
     } catch {
       return null;
     }
@@ -137,7 +145,7 @@ export async function fetchOgAlleleFreq(
   groupingVersion: number,
   signal?: AbortSignal,
 ): Promise<OgAlleleFreqPayload | null> {
-  const path = `og_allele_freq/v${orthofinderVersion}/g${groupingVersion}/${traitId}.json`;
+  const path = ogAlleleFreqPath(orthofinderVersion, groupingVersion, traitId);
   const cached = _afData.get(path);
   if (cached) return cached;
   try {
@@ -146,7 +154,7 @@ export async function fetchOgAlleleFreq(
     return data;
   } catch {
     try {
-      const legacyPath = `og_allele_freq/${traitId}.json`;
+      const legacyPath = ogAlleleFreqLegacyPath(traitId);
       const data = await downloadJson<OgAlleleFreqPayload>(legacyPath, signal);
       _afData.set(path, data);
       return data;

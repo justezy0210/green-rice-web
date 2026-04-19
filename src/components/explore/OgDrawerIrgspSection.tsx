@@ -1,3 +1,4 @@
+import { IRGSP_DISPLAY_NAME } from '@/lib/irgsp-constants';
 import type { OrthogroupRepresentative } from '@/types/orthogroup';
 
 interface Props {
@@ -25,7 +26,7 @@ export function OgDrawerIrgspSection({ rep }: Props) {
   return (
     <section className="border-b border-gray-100 px-4 py-3 text-xs">
       <h3 className="font-medium text-gray-500 uppercase tracking-wide mb-2">
-        IRGSP-1.0 reference
+        {IRGSP_DISPLAY_NAME} reference
       </h3>
       <ul className="space-y-1">
         {items.map((it) => (

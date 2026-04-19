@@ -28,7 +28,10 @@
     "noUnusedParameters": true,
     "erasableSyntaxOnly": true,
     "noFallthroughCasesInSwitch": true,
-    "noUncheckedSideEffectImports": true
+    "noUncheckedSideEffectImports": true,
+
+    /* Allow importing data/cultivars.json (shared SSOT with Python side) */
+    "resolveJsonModule": true
   },
-  "include": ["src"]
+  "include": ["src", "data/cultivars.json"]
 }

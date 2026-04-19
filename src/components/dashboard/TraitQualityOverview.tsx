@@ -3,24 +3,15 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useAllGroupings } from '@/hooks/useAllGroupings';
 import type { PhenotypeRecord } from '@/types/phenotype';
 import type { TraitId } from '@/types/grouping';
+import { TRAITS } from '@/config/traits';
 import { cn } from '@/lib/utils';
 
 interface Props {
   records: PhenotypeRecord[];
 }
 
-// Display order + label. traitId → short label shown in the overview.
-const TRAIT_DISPLAY: { traitId: TraitId; label: string }[] = [
-  { traitId: 'heading_date', label: 'Days to Heading' },
-  { traitId: 'culm_length', label: 'Culm Length' },
-  { traitId: 'panicle_length', label: 'Panicle Length' },
-  { traitId: 'panicle_number', label: 'Panicle Number' },
-  { traitId: 'spikelets_per_panicle', label: 'Spikelets / Panicle' },
-  { traitId: 'ripening_rate', label: 'Ripening Rate' },
-  { traitId: 'grain_weight', label: '1000-Grain Weight' },
-  { traitId: 'pre_harvest_sprouting', label: 'Pre-harvest Sprouting' },
-  { traitId: 'bacterial_leaf_blight', label: 'Bacterial Leaf Blight' },
-];
+// Display order + label read from the trait registry SSOT.
+const TRAIT_DISPLAY = TRAITS.map((t) => ({ traitId: t.id as TraitId, label: t.label }));
 
 export function TraitQualityOverview({ records }: Props) {
   const { groupings, loading } = useAllGroupings();

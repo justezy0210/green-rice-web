@@ -11,6 +11,7 @@
  *   size weighting and split phase blocks make the two concepts differ.
  */
 
+import { isReferencePathCultivar } from '@/lib/irgsp-constants';
 import type { TubeMapPath, TubeMapNode } from '@/types/orthogroup';
 import type { CultivarGroupAssignment } from '@/types/grouping';
 
@@ -18,7 +19,7 @@ export type TubeMapSortMode = 'phenotype' | 'graphOverlap';
 
 export function parseCultivar(pathName: string): { cultivar: string; isRef: boolean } {
   const cultivar = pathName.split('#')[0];
-  return { cultivar, isRef: cultivar === 'IRGSP-1' };
+  return { cultivar, isRef: isReferencePathCultivar(cultivar) };
 }
 
 export function orderByPhenotype(

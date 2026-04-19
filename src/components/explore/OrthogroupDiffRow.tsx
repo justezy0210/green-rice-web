@@ -1,3 +1,4 @@
+import { IRGSP_DISPLAY_NAME } from '@/lib/irgsp-constants';
 import type { OrthogroupDiffEntry } from '@/types/orthogroup';
 
 interface Props {
@@ -115,7 +116,7 @@ function pickPrimaryRepresentative(
 function formatRepresentativeTooltip(
   rep: NonNullable<OrthogroupDiffEntry['representative']>,
 ): string {
-  const lines: string[] = ['IRGSP-1.0 reference transcripts:'];
+  const lines: string[] = [`${IRGSP_DISPLAY_NAME} reference transcripts:`];
   for (const tid of rep.transcripts) {
     lines.push(`  ${tid}: ${rep.descriptions?.[tid] ?? 'NA'}`);
   }
