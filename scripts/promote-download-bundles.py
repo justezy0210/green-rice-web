@@ -67,11 +67,21 @@ def assert_prefix_empty(bucket, prefix: str) -> None:
         )
 
 
+def content_type_for(dest: str) -> str:
+    # Every text artifact carries charset=utf-8 so browsers don't fall
+    # back to Latin-1 and garble em-dashes, Greek delta, arrows, etc.
+    if dest.endswith(".json"):
+        return "application/json; charset=utf-8"
+    if dest.endswith(".md"):
+        return "text/markdown; charset=utf-8"
+    if dest.endswith(".bed"):
+        return "text/plain; charset=utf-8"
+    return "text/tab-separated-values; charset=utf-8"
+
+
 def upload_file(bucket, local: Path, dest: str, *, create_only: bool) -> None:
     blob = bucket.blob(dest)
-    content_type = "application/json" if dest.endswith(".json") else (
-        "text/markdown" if dest.endswith(".md") else "text/tab-separated-values"
-    )
+    content_type = content_type_for(dest)
     # `if_generation_match=0` is GCS's atomic create-if-not-exists:
     # the upload fails with a 412 precondition error if any object
     # already exists at `dest`. Closes the TOCTOU window between the

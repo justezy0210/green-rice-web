@@ -57,15 +57,37 @@ STORAGE_NAME: dict[FileType, str] = {
     "repeatGff":   "repeat.out",
 }
 
-# Extension → type (lowercase, leading dot included).
+# Extension → type (lowercase, leading dot included). Checked on
+# Path.suffix — single-extension match.
 EXTENSION_MAP: dict[str, FileType] = {
     ".fasta": "genomeFasta",
     ".fa":    "genomeFasta",
     ".fna":   "genomeFasta",
     ".gff3":  "geneGff3",
-    ".gff":   "geneGff3",
     ".out":   "repeatGff",
 }
+
+# Compound-suffix matches (checked on the full lowercase filename first).
+# `.out.gff` / `.out.gff3` are RepeatMasker's GFF-converted outputs and
+# MUST win over the bare-`.gff` → geneGff3 fallback below.
+COMPOUND_SUFFIX_MAP: tuple[tuple[str, FileType], ...] = (
+    (".out.gff", "repeatGff"),
+    (".out.gff3", "repeatGff"),
+)
+
+# Bare `.gff` (not `.out.gff`) is treated as gene annotation.
+GENE_GFF_EXT = ".gff"
+
+
+def classify_file(path: Path) -> FileType | None:
+    name = path.name.lower()
+    for suffix, ftype in COMPOUND_SUFFIX_MAP:
+        if name.endswith(suffix):
+            return ftype
+    ext = path.suffix.lower()
+    if ext == GENE_GFF_EXT:
+        return "geneGff3"
+    return EXTENSION_MAP.get(ext)
 
 
 def iso_now() -> str:
@@ -99,8 +121,7 @@ def discover_batch(root: Path, allowed_ids: set[str]) -> dict[str, dict[FileType
         for f in sorted(child.iterdir()):
             if not f.is_file():
                 continue
-            ext = f.suffix.lower()
-            ftype = EXTENSION_MAP.get(ext)
+            ftype = classify_file(f)
             if not ftype:
                 continue
             # Prefer canonical filename (genome.fasta) over arbitrary; if two
@@ -157,9 +178,9 @@ def upload_one(
         return
 
     content_type = (
-        "text/x-fasta" if ftype == "genomeFasta"
-        else "text/x-gff3" if ftype == "geneGff3"
-        else "text/plain"
+        "text/x-fasta; charset=utf-8" if ftype == "genomeFasta"
+        else "text/x-gff3; charset=utf-8" if ftype == "geneGff3"
+        else "text/plain; charset=utf-8"
     )
     # upload_from_filename streams in chunks internally — fine for multi-GB.
     blob.upload_from_filename(str(local), content_type=content_type)
