@@ -6,6 +6,7 @@ Upload to Firebase Storage.
 
 import json
 import gzip
+import sys
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -16,12 +17,16 @@ PROJECT_ROOT = Path(__file__).resolve().parent.parent
 SA_PATH = PROJECT_ROOT / "service-account.json"
 VCF_PATH = PROJECT_ROOT / "data" / "green-rice-pg.vcf.gz"
 
-ALL_CULTIVARS = [
-    "baegilmi", "chamdongjin", "chindeul", "dasan",
-    "dongjin", "hwaseong", "hyeonpum", "ilmi",
-    "jopyeong", "jungmo1024", "namchan", "namil",
-    "odae", "pyeongwon", "saeilmi", "samgwang",
-]
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from _cultivars import all_cultivars, pangenome_count, total_cultivars
+from _reference import IRGSP_DISPLAY_NAME, IRGSP_LONG_NAME
+from _storage_paths import (
+    orthofinder_matrix_path,
+    orthofinder_og_categories_path,
+    orthofinder_og_descriptions_path,
+)
+
+ALL_CULTIVARS = all_cultivars()
 
 
 def get_vcf_samples() -> list[str]:
@@ -76,11 +81,11 @@ def main():
 
     # Add IRGSP reference
     samples.append({
-        "id": "IRGSP-1.0",
-        "name": "IRGSP-1.0 (Nipponbare)",
+        "id": IRGSP_DISPLAY_NAME,
+        "name": IRGSP_LONG_NAME,
         "role": "reference",
         "inVcf": False,
-        "inOrthoFinder": "IRGSP-1.0" in state.get("cultivarIds", []),
+        "inOrthoFinder": IRGSP_DISPLAY_NAME in state.get("cultivarIds", []),
         "hasGenomeUploaded": False,
         "hasPhenotype": False,
     })
@@ -113,7 +118,7 @@ def main():
             },
             "geneRegionVariants": {
                 "tool": "Custom Python script (compute-allele-freq.py)",
-                "input": "Cactus pangenome VCF + IRGSP-1.0 GFF",
+                "input": f"Cactus pangenome VCF + {IRGSP_DISPLAY_NAME} GFF",
                 "vcfSamples": vcf_samples,
                 "vcfSampleCount": len(vcf_samples),
                 "totalCultivars": len(ALL_CULTIVARS),
@@ -130,7 +135,7 @@ def main():
         },
         "knownLimitations": [
             "Candidate OGs without IRGSP annotation have no reference-anchored gene-region variants or pangenome graph coverage; cluster-derived views are the only fallback",
-            "VCF contains 11 of 16 cultivars — 5 missing from pangenome alignment",
+            f"VCF contains {pangenome_count()} of {total_cultivars()} cultivars — {total_cultivars() - pangenome_count()} missing from pangenome alignment",
             "Copy count is OrthoFinder gene model count, subject to annotation fragmentation",
             "MWU raw p-value selection is exploratory, not FDR-significant",
             "LLM classification is non-reproducible and not formally validated",
@@ -141,7 +146,7 @@ def main():
     # ─── qc_summary.json ───
     # Load matrix to get per-cultivar stats
     try:
-        matrix_blob = bucket.blob(f"orthofinder/v{active_version}/_matrix.json")
+        matrix_blob = bucket.blob(orthofinder_matrix_path(active_version))
         matrix = json.loads(matrix_blob.download_as_text())
         cultivar_ids = matrix.get("cultivarIds", [])
         ogs = matrix.get("ogs", {})
@@ -157,7 +162,7 @@ def main():
 
         # OGs with IRGSP annotation
         try:
-            desc_blob = bucket.blob(f"orthofinder/v{active_version}/og_descriptions.json")
+            desc_blob = bucket.blob(orthofinder_og_descriptions_path(active_version))
             descs = json.loads(desc_blob.download_as_text())
             ogs_with_desc = len(descs)
         except Exception:
@@ -165,7 +170,7 @@ def main():
 
         # Categories coverage
         try:
-            cat_blob = bucket.blob(f"orthofinder/v{active_version}/og_categories.json")
+            cat_blob = bucket.blob(orthofinder_og_categories_path(active_version))
             cats = json.loads(cat_blob.download_as_text())
             ogs_classified = cats.get("totalClassified", 0)
         except Exception:

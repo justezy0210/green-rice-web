@@ -21,6 +21,7 @@ const MAX_LINES = 300;
 const LAYERS = [
   { name: 'types',      dir: 'types',      rank: 0 },
   { name: 'lib',        dir: 'lib',        rank: 1 },
+  { name: 'config',     dir: 'config',     rank: 1 }, // panel/trait registry — runtime constants
   { name: 'hooks',      dir: 'hooks',      rank: 2 },
   { name: 'context',    dir: 'context',    rank: 2 }, // same rank as hooks
   { name: 'components', dir: 'components', rank: 3 },
@@ -46,9 +47,23 @@ function getLayer(filePath: string) {
   return null;
 }
 
-function resolveImportLayer(importPath: string): typeof LAYERS[number] | null {
-  // Handle @/* alias
-  const normalized = importPath.replace(/^@\//, '');
+function resolveImportLayer(
+  importPath: string,
+  sourceFile: string,
+): typeof LAYERS[number] | null {
+  let normalized: string;
+  if (importPath.startsWith('@/')) {
+    normalized = importPath.slice(2);
+  } else if (importPath.startsWith('.')) {
+    // Relative import — resolve against source file's dir, then relative to SRC_DIR
+    const resolved = path.resolve(path.dirname(sourceFile), importPath);
+    const rel = path.relative(SRC_DIR, resolved);
+    if (rel.startsWith('..')) return null; // outside src/ — ignore
+    normalized = rel.split(path.sep).join('/');
+  } else {
+    return null; // bare package import (e.g. 'react') — not layered
+  }
+
   for (const layer of LAYERS) {
     if (normalized.startsWith(layer.dir + '/') || normalized === layer.dir) {
       return layer;
@@ -78,17 +93,17 @@ function checkDependencyDirection(filePath: string, lines: string[]): Violation[
   const sourceLayer = getLayer(filePath);
   if (!sourceLayer) return violations;
 
-  const importRegex = /^import\s+.*from\s+['"](@\/[^'"]+|\.\.?\/[^'"]+)['"]/;
+  // Catch both `import ... from '...'` and `export ... from '...'` (the
+  // latter re-exports, which the previous regex missed). Accepts @/aliased
+  // and relative paths; bare package imports fall through resolveImportLayer.
+  const moduleRefRegex = /^(?:import|export)\b.*\bfrom\s+['"]([^'"]+)['"]/;
 
   for (let i = 0; i < lines.length; i++) {
-    const match = lines[i].match(importRegex);
+    const match = lines[i].match(moduleRefRegex);
     if (!match) continue;
 
     const importPath = match[1];
-    // Only check @/ imports (internal project imports)
-    if (!importPath.startsWith('@/')) continue;
-
-    const targetLayer = resolveImportLayer(importPath);
+    const targetLayer = resolveImportLayer(importPath, filePath);
     if (!targetLayer) continue;
 
     if (targetLayer.rank > sourceLayer.rank) {

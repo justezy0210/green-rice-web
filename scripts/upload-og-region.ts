@@ -13,6 +13,7 @@ import { join } from 'node:path';
 import { config } from 'dotenv';
 import { initializeApp, applicationDefault } from 'firebase-admin/app';
 import { getStorage } from 'firebase-admin/storage';
+import { ogRegionManifestPath, ogRegionPath } from '../src/lib/storage-paths';
 
 config();
 
@@ -47,7 +48,7 @@ async function main() {
     const local = join(root, entry);
     const stat = statSync(local);
     if (stat.isFile() && entry === '_manifest.json') {
-      await upload(bucket, local, 'og_region/_manifest.json');
+      await upload(bucket, local, ogRegionManifestPath());
       fileCount++;
       continue;
     }
@@ -56,7 +57,8 @@ async function main() {
     const ogId = entry;
     const clusterFiles = readdirSync(local).filter((f) => f.endsWith('.json'));
     for (const cf of clusterFiles) {
-      await upload(bucket, join(local, cf), `og_region/${ogId}/${cf}`);
+      const clusterId = cf.replace(/\.json$/, '');
+      await upload(bucket, join(local, cf), ogRegionPath(ogId, clusterId));
       fileCount++;
     }
     ogCount++;

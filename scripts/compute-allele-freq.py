@@ -29,6 +29,9 @@ from urllib.parse import unquote
 import firebase_admin
 from firebase_admin import credentials, firestore, storage
 
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from _storage_paths import og_allele_freq_path, orthofinder_og_descriptions_path
+
 # ─────────────────────────────────────────────────────────────
 # Config
 # ─────────────────────────────────────────────────────────────
@@ -292,7 +295,7 @@ def main():
         print("  ERROR: No active orthofinder version")
         sys.exit(1)
 
-    desc_blob = bucket.blob(f"orthofinder/v{active_version}/og_descriptions.json")
+    desc_blob = bucket.blob(orthofinder_og_descriptions_path(active_version))
     og_descriptions = json.loads(desc_blob.download_as_text())
     og_regions = build_og_gene_regions(og_descriptions, gene_index)
     print(f"  {len(og_regions)} OGs have IRGSP gene regions")
@@ -396,7 +399,7 @@ def main():
         }
 
         # Upload to Storage
-        out_path = f"og_allele_freq/v{active_version}/g{grouping_version}/{trait_id}.json"
+        out_path = og_allele_freq_path(active_version, grouping_version, trait_id)
         out_json = json.dumps(output)
         bucket.blob(out_path).upload_from_string(out_json, content_type="application/json")
         size_kb = len(out_json) / 1024

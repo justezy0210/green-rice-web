@@ -36,11 +36,12 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from _cultivars import pangenome_cultivars
+from _reference import IRGSP_DISPLAY_NAME, IRGSP_SAMPLE_ID
 
 CULTIVARS = pangenome_cultivars()
 
-REF_GENOME = "IRGSP-1.0"
-GBZ_REF_SAMPLE = "IRGSP-1"
+REF_GENOME = IRGSP_DISPLAY_NAME
+GBZ_REF_SAMPLE = IRGSP_SAMPLE_ID
 MAX_REGION_LENGTH = 200_000
 SCHEMA_VERSION = 1
 

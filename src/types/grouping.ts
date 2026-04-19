@@ -16,9 +16,8 @@ export type PhenotypeFieldKey =
   | 'preHarvestSprouting'
   | 'bacterialLeafBlight';
 
-// TraitId is derived from the trait registry (single source of truth).
-export type { TraitId } from '@/config/traits';
-import type { TraitId } from '@/config/traits';
+export type { TraitId } from '@/types/traits';
+import type { TraitId } from '@/types/traits';
 
 export interface TraitMetadata {
   traitId: TraitId;

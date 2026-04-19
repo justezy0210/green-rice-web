@@ -1,16 +1,15 @@
 /**
- * Single source of truth for the trait registry consumed by:
- *  - route parsing / default trait
- *  - TraitSelector UI options
- *  - TraitQualityOverview display order + label
- *  - dashboard panel counters
+ * Trait registry for UI-facing display data (labels + order).
  *
- * The `TraitId` union is derived from this array so a new trait added here
- * propagates everywhere type-checked callers use `TraitId`.
+ * The canonical `TraitId` union lives in `src/types/traits.ts`. Every entry
+ * here is checked against that union via `satisfies`, so adding or renaming
+ * a trait is caught at compile time if either side drifts.
  */
 
+import type { TraitId } from '@/types/traits';
+
 export interface TraitDef {
-  id: string;
+  id: TraitId;
   label: string;
 }
 
@@ -25,8 +24,6 @@ export const TRAITS = [
   { id: 'pre_harvest_sprouting', label: 'Pre-harvest Sprouting' },
   { id: 'bacterial_leaf_blight', label: 'Bacterial Leaf Blight' },
 ] as const satisfies readonly TraitDef[];
-
-export type TraitId = (typeof TRAITS)[number]['id'];
 
 export const DEFAULT_TRAIT_ID: TraitId = 'heading_date';
 
