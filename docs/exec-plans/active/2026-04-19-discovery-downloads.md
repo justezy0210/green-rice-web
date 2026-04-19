@@ -107,16 +107,26 @@ draft's `candidates_long.tsv` is retired and must not appear anywhere.
 
 ### 2. Staging / promote / idempotency (Condition #8)
 
-Generator writes to a staging prefix first, then promotes:
+**Implementation note (rev2 final):** staging is a **local filesystem
+directory**, NOT a Firebase prefix. The generator writes to
+`<local>/v{of}_g{g}_{utcIsoBasic}/…`, the verifier runs against that
+local tree, and the promote script is the ONLY step that touches
+Firebase Storage. This is simpler than round-tripping through
+`downloads/_staging/**` and provides the same atomicity guarantee: until
+promote completes, the final prefixes on Firebase are untouched.
 
-1. Generate all files of a run under
-   `downloads/_staging/{runId}/…` where `runId = "v{of}_g{g}_{utcIsoBasic}"`.
-2. Run the verification script (see §10) against the staging prefix.
-3. On pass: atomically copy every file into the final
-   `downloads/traits/{t}/v{of}_g{g}/` and
-   `downloads/cross-trait/v{of}_g{g}/` locations.
-4. Delete the staging prefix on success; keep it on failure for
-   diagnostics.
+1. Generate all files of a run to a local directory
+   `<staging-root>/v{of}_g{g}_{utcIsoBasic}/…` (dry-run-safe; no
+   Firebase writes).
+2. Run the verification script (see §10) against the local staging
+   directory.
+3. On pass: upload each file from staging into its final
+   `downloads/traits/{t}/v{of}_g{g}/` or
+   `downloads/cross-trait/v{of}_g{g}/` object. `downloads/_manifest.json`
+   is uploaded **last**.
+4. Local staging is left in place for diagnostics; `downloads/_staging/`
+   on Firebase is deliberately unused (storage rules still deny it as a
+   safety net).
 
 **Published-URL immutability policy (locked):**
 - The final prefix `downloads/traits/{t}/v{of}_g{g}/` and
