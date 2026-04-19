@@ -120,26 +120,45 @@ function Stat({ label, value, sub }: { label: string; value: string; sub: string
   );
 }
 
+// Preferred render order; unknowns fall through alphabetically at the end.
+const CROSS_TRAIT_ORDER = ['cross_trait_candidates.tsv', 'README.md'];
+
+function orderCrossTraitFiles(names: string[]): string[] {
+  const known = new Set(CROSS_TRAIT_ORDER);
+  const first = CROSS_TRAIT_ORDER.filter((n) => names.includes(n));
+  const extra = names.filter((n) => !known.has(n)).sort();
+  return [...first, ...extra];
+}
+
 function CrossTraitRow({ manifest }: { manifest: DownloadManifest }) {
   const tag = versionTag(manifest);
-  const tsv = manifest.crossTrait.files['cross_trait_candidates.tsv'];
-  if (!tsv) return null;
+  const files = orderCrossTraitFiles(Object.keys(manifest.crossTrait.files));
+  if (files.length === 0) return null;
 
   return (
-    <div className="flex items-center justify-between gap-4 pt-2 border-t border-gray-100">
+    <div className="flex items-start justify-between gap-4 pt-2 border-t border-gray-100">
       <div>
         <p className="text-sm font-medium text-gray-900">Cross-trait master</p>
         <p className="text-[11px] text-gray-500">
           One row per (trait, candidate OG). Long format. Ranks are not comparable across traits.
         </p>
       </div>
-      <div className="shrink-0 flex flex-col items-end gap-0.5">
-        <CrossTraitLink
-          path={`downloads/cross-trait/${tag}/cross_trait_candidates.tsv`}
-          name="cross_trait_candidates.tsv"
-        />
-        <span className="text-[10px] text-gray-400 tabular-nums">{humanSize(tsv.size)}</span>
-      </div>
+      <ul className="shrink-0 space-y-0.5">
+        {files.map((name) => {
+          const meta = manifest.crossTrait.files[name];
+          return (
+            <li key={name} className="flex items-center gap-2 justify-end">
+              <CrossTraitLink
+                path={`downloads/cross-trait/${tag}/${name}`}
+                name={name}
+              />
+              <span className="text-[10px] text-gray-400 tabular-nums w-14 text-right">
+                {humanSize(meta.size)}
+              </span>
+            </li>
+          );
+        })}
+      </ul>
     </div>
   );
 }
