@@ -1,6 +1,17 @@
 # CLAUDE.md — Green Rice Web
 
-> 16개 한국 벼 품종의 표현형과 pangenome variation을 연결해 탐색하는 웹 데이터베이스
+> **이 리소스는 16개 한국 temperate japonica 품종에서 형질 그룹을 구분하는 후보 유전자 및 유전체 요소를 orthogroup, 변이, 그래프 기반 증거로 우선순위화해 제시하는 표현형 기반 후보 발견 데이터베이스이며, 후속 생물학적 검증의 출발점을 제공한다.**
+
+**정체성 lock (2026-04-18)**: 새 UI copy · 기능 · 플랜 작성 전에 반드시 확인: [`docs/product-specs/scope.md`](docs/product-specs/scope.md)
+
+금지된 프레이밍 (exclusion list):
+- Marker / primer / KASP / CAPS / InDel design
+- Parent-pair polymorphism workflow
+- MAS / GS / GEBV
+- Validated PAV / pseudogene / causal
+- "한국 벼 전체 대표" 일반화
+
+1차 사용자: trait biologist · QTL 후속 연구자 · upstream (pre-MAS) breeder. Molecular breeder는 주 사용자 아님.
 
 ## Tech Stack
 

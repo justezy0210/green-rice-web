@@ -30,6 +30,7 @@ class OrthogroupDiffEntry:
     meanDiff: float
     presenceDiff: float
     log2FoldChange: float | None
+    cliffsDelta: float | None
     uStatistic: float
     pValue: float
     qValue: float
@@ -109,6 +110,7 @@ def diff_entry_to_dict(e: OrthogroupDiffEntry) -> dict:
         "meanDiff": e.meanDiff,
         "presenceDiff": e.presenceDiff,
         "log2FoldChange": e.log2FoldChange,
+        "cliffsDelta": e.cliffsDelta,
         "uStatistic": e.uStatistic,
         "pValue": e.pValue,
         "qValue": e.qValue,

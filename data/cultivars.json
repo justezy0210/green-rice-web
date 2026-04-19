@@ -1,0 +1,21 @@
+{
+  "comment": "Single source of truth for cultivar ids and pangenome membership. Loaded by Python scripts (scripts/_cultivars.py) and TS upload helpers.",
+  "cultivars": [
+    { "id": "baegilmi", "pangenome": true },
+    { "id": "chamdongjin", "pangenome": true },
+    { "id": "chindeul", "pangenome": true },
+    { "id": "dasan", "pangenome": false },
+    { "id": "dongjin", "pangenome": false },
+    { "id": "hwaseong", "pangenome": false },
+    { "id": "hyeonpum", "pangenome": true },
+    { "id": "ilmi", "pangenome": false },
+    { "id": "jopyeong", "pangenome": true },
+    { "id": "jungmo1024", "pangenome": true },
+    { "id": "namchan", "pangenome": true },
+    { "id": "namil", "pangenome": true },
+    { "id": "odae", "pangenome": false },
+    { "id": "pyeongwon", "pangenome": true },
+    { "id": "saeilmi", "pangenome": true },
+    { "id": "samgwang", "pangenome": true }
+  ]
+}

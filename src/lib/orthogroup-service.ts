@@ -2,6 +2,12 @@ import { doc, onSnapshot, type Unsubscribe } from 'firebase/firestore';
 import { ref as storageRef, getDownloadURL } from 'firebase/storage';
 import { db, storage } from '@/lib/firebase';
 import type { OrthogroupDiffDocument, OrthogroupDiffPayload } from '@/types/orthogroup';
+// Region artifacts (gene coords, tube map, AF) live in og-region-service.ts
+export {
+  fetchOgGeneCoords,
+  fetchOgTubeMap,
+  fetchOgAlleleFreq,
+} from '@/lib/og-region-service';
 import type { TraitId } from '@/types/grouping';
 import type {
   BaegilmiGeneAnnotation,
@@ -143,6 +149,8 @@ export async function fetchOgCategories(
     }
   }
 }
+
+// Region artifacts moved to og-region-service.ts (see re-exports at top of file)
 
 export async function fetchOrthogroupDiffPayload(
   storagePath: string,

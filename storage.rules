@@ -25,6 +25,30 @@ service firebase.storage {
       allow write: if false;
     }
 
+    // Allele frequency payloads (public read; written server-side only).
+    match /og_allele_freq/{path=**} {
+      allow read: if true;
+      allow write: if false;
+    }
+
+    // Pangenome tube map payloads (public read; written server-side only).
+    match /og_tubemap/{path=**} {
+      allow read: if true;
+      allow write: if false;
+    }
+
+    // Per-OG cultivar gene coordinate index (public read; written server-side only).
+    match /og_gene_coords/{path=**} {
+      allow read: if true;
+      allow write: if false;
+    }
+
+    // Per-OG cluster region data (graph + AF bundle; public read; written server-side only).
+    match /og_region/{path=**} {
+      allow read: if true;
+      allow write: if false;
+    }
+
     match /{allPaths=**} {
       allow read, write: if false;
     }

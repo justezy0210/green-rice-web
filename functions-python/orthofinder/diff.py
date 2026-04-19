@@ -120,10 +120,15 @@ def compute_diff_for_trait(
     valid_idx_local = np.where(mwu_valid)[0]
     total_tested = int(valid_idx_local.size)
 
+    # Cliff's delta: (2U / (n1*n2)) - 1, where U is the Mann-Whitney U statistic.
+    # Ranges from -1 to +1. Sign indicates direction (positive = g2 > g1).
+    cliffs_delta = (2.0 * u_stats / (n1 * n2)) - 1.0
+
     # Assemble candidates (one per valid-tested OG).
     candidates: list[dict] = []
     for k, i in enumerate(valid_idx_local):
         log2_v = float(signed_log2_fcs[i]) if not np.isnan(signed_log2_fcs[i]) else None
+        cd = float(cliffs_delta[i]) if not np.isnan(cliffs_delta[i]) else None
         candidates.append({
             "og_id": valid_og_ids[i],
             "means": {g1: float(means_g1[i]), g2: float(means_g2[i])},
@@ -132,6 +137,7 @@ def compute_diff_for_trait(
             "mean_diff": float(mean_diffs[i]),
             "presence_diff": float(presence_diffs[i]),
             "log2_fc": log2_v,
+            "cliffs_delta": cd,
             "u_stat": float(u_stats[i]),
             "p_value": float(valid_p[k]),
             "q_value": float(q_all[k]),
@@ -157,6 +163,7 @@ def compute_diff_for_trait(
             meanDiff=c["mean_diff"],
             presenceDiff=c["presence_diff"],
             log2FoldChange=c["log2_fc"],
+            cliffsDelta=c["cliffs_delta"],
             uStatistic=c["u_stat"],
             pValue=c["p_value"],
             qValue=c["q_value"],

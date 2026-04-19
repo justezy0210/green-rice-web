@@ -1,145 +1,113 @@
 # Product Vision
 
+> **이 리소스는 16개 한국 temperate japonica 품종에서 형질 그룹을 구분하는 후보 유전자 및 유전체 요소를 orthogroup, 변이, 그래프 기반 증거로 우선순위화해 제시하는 표현형 기반 후보 발견 데이터베이스이며, 후속 생물학적 검증의 출발점을 제공한다.**
+
+Scope lock (2026-04-18): [scope.md](scope.md)
+
 ## Identity
 
-> 16개 한국 벼 품종의 표현형과 pangenome variation을 연결해 탐색하는 웹 데이터베이스
+표현형 차이에서 출발해 유전체 차이를 추적하는 **후보 발견(discovery)** 데이터베이스. 답을 확정하는 시스템이 아니라, **다음 실험/검증으로 보낼 후보를 좁혀주는** 시스템.
 
-## Core Concept
+## One-line definition
 
-품종명이나 유전자명을 검색하는 기존 DB가 아니라, **표현형 차이에서 출발해서 유전체 차이를 추적**할 수 있는 DB.
+16개 한국 벼 품종의 **표현형 패턴**을 기준으로 자동 그룹핑을 수행하고, 그 그룹 간 **유전체 차이(copy count, allele frequency, graph structure)**를 연결해서 **후속 검증이 필요한 후보 유전요소**를 우선순위화하는 웹 데이터베이스.
 
-### Key Questions This DB Answers
+## Core concept
 
-- 조생종과 만생종을 가르는 후보 유전자는?
-- 특정 품종의 heading date 관련 유전자는 다른 품종에서 어떤 haplotype을 가지는가?
-- 이 표현형과 관련된 유전자가 PAV, SV, copy number 변화, orthogroup 차이와 연결되는가?
-- 특정 유전자 주변 구조가 품종마다 어떻게 다른가?
+- 기존 DB: "이 유전자는 무엇인가?" — 유전자명·품종명으로 검색
+- Green Rice DB: **"이 표현형을 가르는 후보 유전요소는 무엇인가?"** — 표현형에서 출발
 
-### Data Sources
+중요: "가르는"이 아니라 **"가르는 후보"**. 인과 확정이 아닌 우선순위화.
 
-phenotype + assembly + annotation + cactus pangenome + orthofinder
+### 기존 DB와의 차별점
 
----
+| 기존 DB | Green Rice DB |
+|---------|--------------|
+| 유전자명/품종명 검색 → 정보 조회 | 표현형 선택 → 후보 유전요소 **우선순위화** |
+| 단일 reference 기반 | 16 품종 (11 in pangenome) + IRGSP |
+| 정적 annotation | GMM 제안 그룹 + multi-modal evidence |
+| General 대상 | **한국 temperate japonica 특화** |
 
-## Feature 1: Phenotype-driven Exploration
+### Primary user
 
-사용자가 phenotype을 선택하고, 품종 그룹을 나누고, 그룹 간 유전체 정보를 비교하는 워크플로우.
+Trait biologist · QTL 후속 연구자 · upstream (pre-MAS) breeder.
 
-### User Flow
+Molecular breeder (KASP marker 개발자), GS/MAS 운영자, pangenome 방법론 연구자는 주 사용자 **아님**.
+
+## User workflow
 
 ```
-Select phenotype → View group distribution → Compare groups
+1. Dashboard
+   표현형 분포 + 자동 그룹핑 (GMM proposed) 시각화
+           ↓
+2. Explore
+   trait 선택 → 후보 OG 우선순위화
+   - Mann-Whitney U + Cliff's delta (exploratory)
+   - Functional category chart (LLM proposed)
+   - Search / sort / filter
+           ↓
+3. OG Detail — 증거 수렴
+   ├─ Gene Locations    cultivar별 gene 좌표 + cluster + same-chr presence
+   ├─ Variants          cluster-derived region의 group별 AF + event-class
+   └─ Pangenome Graph   Cactus alignment + annotation overlay
+           ↓
+4. Download
+   후속 검증용 candidate/evidence table
 ```
 
-### Group Comparison Outputs
+## Data sources
 
-| Output | Description |
-|--------|-------------|
-| Group distribution | 그룹별 품종 분포 |
-| Candidate genes | 관련 후보 유전자 목록 |
-| Allele frequency | 그룹 간 allele frequency 차이 |
-| PAV/SV hotspot | 구조 변이 핫스팟 |
-| Orthogroup diff | Orthogroup 차이 |
-| Sequence tube map | Pangenome sequence tube map |
+| Layer | Source | Artifacts |
+|-------|--------|-----------|
+| Phenotype | 9 traits × 16 cultivars | `cultivars/{id}` |
+| Proposed grouping | GMM per trait | `groupings/{traitId}` |
+| Orthogroups | OrthoFinder | `orthofinder/v{N}/` |
+| Differential | Mann-Whitney U | `orthogroup_diffs/v{N}/g{M}/` |
+| Allele frequency | Cactus pangenome VCF | `og_allele_freq/v{N}/g{M}/` |
+| Per-cluster region | halLiftover + vg chunk | `og_region/{ogId}/{clusterId}.json` |
+| Functional annotation | IRGSP GFF + LLM | `og_categories.json` |
 
----
+## What this DB CAN answer
 
-## Feature 2: Auto-Grouping Pipeline
+- 어느 OG가 **후보**인가 (copy count diff 기준)
+- 후보 locus에서 group별 AF 차이
+- 후보 locus의 cluster-derived pangenome graph 구조
+- Cluster별 cultivar annotation 분포
+- 한국 temperate japonica panel 내부 비교
 
-품종이 추가/편집되면 trait별 자동 그룹핑을 수행하는 Cloud Function 파이프라인.
+## What this DB CANNOT answer
 
-### Pipeline Outputs
+- 이 후보가 **원인**인가
+- 어느 cultivar가 진짜 gene을 가지지 않는가 (annotation 부재 ≠ gene 부재)
+- 이 변이가 KASP / CAPS marker로 적합한가
+- 이 결과가 16개 panel 밖에서도 성립하는가
+- GMM 제안 그룹이 생물학적 실체인가
 
-1. **Group labels** — early / mid-late, low / intermediate / high
-2. **Assignment probability** — 소속 신뢰도
-3. **Borderline flag** — 경계 품종 판정
-4. **Linkage table** — gene/SV/PAV/orthogroup 연결용 저장 테이블
+→ 이것들은 모두 **후속 실험/검증 영역**.
 
-### Trait Types
+자세한 경계: [scope.md](scope.md)
 
-| Type | Examples | Grouping Method |
-|------|----------|-----------------|
-| **Multi-env continuous** | heading date (22E, 22L, 23E, 23N, 23L) | Multivariate GMM |
-| **Single continuous** | culm length, panicle length, spikelets/panicle | 1D GMM |
-| **Binary/resistance** | K1, K2, K3 (resistant/susceptible) | Keep actual class |
-| **High-missing** | traits with >40% missing | Flag as low-confidence |
+## Next-step guidance (for users)
 
-### Pipeline Steps
+Green Rice DB가 후보를 제시하면, 사용자는 자기 랩에서:
 
-#### Step 1. Trait Metadata
-각 형질의 속성(type, direction, unit)을 등록.
+- Reference CDS → 대상 cultivar assembly BLAST / minimap2
+- ORF integrity inspection
+- Promoter / upstream variant scan
+- Expression validation (RNA-seq / qPCR)
+- 더 넓은 panel에서 genotyping
 
-#### Step 2. Data Quality Check
+## Scope boundaries (현재 MVP)
 
-| Check | Rule |
-|-------|------|
-| Sample count | < 6 cultivars → grouping not recommended |
-| Missing rate | > 40% → low-confidence flag |
-| Variance | Very low → skip grouping |
-| Outliers | Detect and flag |
+**포함**
+- 11 cultivars (pangenome VCF 기준) + IRGSP
+- Phenotype-based proposed grouping (k=2)
+- Copy count / AF / pangenome graph 통합 뷰
+- 후보 우선순위화
 
-#### Step 3. Preprocessing
-- **Z-score normalization** — 환경별 scale 차이 보정 (e.g. 22E와 22L 범위 차이)
-- **Direction metadata** — heading_date: higher=later, culm_length: higher=taller, resistance: higher=stronger
-
-#### Step 4. Feature Matrix
-- Multi-env trait: vector `[z_22E, z_22L, z_23E, z_23N, z_23L]`
-- Single continuous: scalar `[z_culm]`
-
-#### Step 5. Optimal Group Count (k)
-- Test k=2, k=3
-- Metrics: silhouette score, Calinski-Harabasz, Davies-Bouldin, BIC/AIC
-- Rules:
-  - n < 12 → prefer k=2
-  - 3-group with a singleton → downgrade to k=2
-  - Pick higher silhouette with interpretable split
-
-#### Step 6. Clustering (GMM)
-Gaussian Mixture Model — provides cluster labels + membership probabilities.
-
-#### Step 7. Borderline Detection
-
-| Max Probability | Confidence |
-|-----------------|------------|
-| >= 0.85 | High |
-| 0.65 – 0.85 | Medium |
-| < 0.65 | Borderline |
-
-Stored fields: `assigned_group`, `assignment_probability`, `extremeness_score`, `borderline_flag`
-
-#### Step 8. Auto-naming
-Rule-based group names by trait:
-- heading date: lower mean → "early", higher → "mid-late"
-- culm length: lower → "short", higher → "tall"
-- panicle number: "low" / "high"
-
-#### Step 9. Result Storage
-
-**Grouping summary:**
-
-| Field | Example |
-|-------|---------|
-| trait_id | heading_date_integrated |
-| method | GMM |
-| n_groups | 2 |
-| score_metric | silhouette |
-| score_value | 0.71 |
-
-**Per-cultivar assignment:**
-
-| Field | Example |
-|-------|---------|
-| cultivar | Baegilmi |
-| group_label | early |
-| probability | 0.98 |
-| confidence | high |
-| borderline | false |
-
-**Trait quality:**
-
-| Field | Example |
-|-------|---------|
-| trait_id | PHS |
-| missing_rate | 0.56 |
-| usable | false |
-| note | too many missing values |
+**미포함 / 의도적 제외 (scope.md 참조)**
+- Marker/primer design
+- Parent-pair workflow
+- Validated PAV / pseudogene
+- MAS / GS / GEBV
+- Population-level causal inference

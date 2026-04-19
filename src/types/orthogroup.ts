@@ -21,6 +21,7 @@ export interface OrthogroupDiffEntry {
   meanDiff: number;                            // max - min across groups
   presenceDiff: number;
   log2FoldChange: number | null;               // only meaningful for exactly 2 groups; null otherwise
+  cliffsDelta: number | null;                  // effect size: -1 to +1 (derived from U statistic)
   uStatistic: number;                          // Mann-Whitney U
   pValue: number;                              // raw two-sided p-value (nominal, used for filtering)
   qValue: number;                              // BH-adjusted across all tested OGs (rarely <0.05 at small n; shown for reference)
@@ -74,6 +75,126 @@ export interface OrthogroupDiffPayload {
 }
 
 /** Frontend fetch state for diff entries. */
+// ─────────────────────────────────────────────────────────────
+// Allele frequency
+// ─────────────────────────────────────────────────────────────
+
+export interface VariantAlleleCounts {
+  ref: number;
+  alt: number;
+  total: number;
+}
+
+export interface VariantEntry {
+  chr: string;
+  pos: number;
+  ref: string;
+  alt: string;
+  afByGroup: Record<string, number>;
+  countsByGroup?: Record<string, VariantAlleleCounts>;
+  deltaAf: number;
+}
+
+export interface OgVariantSummary {
+  geneRegions: { geneId: string; chr: string; start: number; end: number }[];
+  totalVariants: number;
+  variants: VariantEntry[];
+}
+
+export interface OgAlleleFreqPayload {
+  schemaVersion: number;
+  traitId: string;
+  orthofinderVersion: number;
+  groupingVersion: number;
+  computedAt: string;
+  groupLabels: string[];
+  samplesByGroup: Record<string, string[]>;
+  ogs: Record<string, OgVariantSummary>;
+}
+
+// ─────────────────────────────────────────────────────────────
+// Tube Map (pangenome graph)
+// ─────────────────────────────────────────────────────────────
+
+// ─────────────────────────────────────────────────────────────
+// Cultivar gene coordinates (Step 1 artifact)
+// ─────────────────────────────────────────────────────────────
+
+export interface CultivarGeneCoord {
+  id: string;
+  chr: string;
+  start: number;
+  end: number;
+  strand: string;
+}
+
+/** Per-OG coordinate payload: { cultivarId → [genes] } */
+export type OgGeneCoords = Record<string, CultivarGeneCoord[]>;
+
+/** A gene cluster (computed client-side): cultivar genes on same chr within proximity */
+export interface GeneCluster {
+  id: string;           // e.g., "baegilmi_chr01_5000123" or "irgsp_chr10_20719171"
+  cultivar: string;
+  chr: string;
+  start: number;
+  end: number;
+  genes: CultivarGeneCoord[];
+  kind: 'tandem' | 'singleton' | 'dispersed';
+  /** Discriminator: cultivar clusters use og_region pipeline; reference uses OG-level sources. */
+  source: 'cultivar' | 'reference';
+}
+
+export interface TubeMapNode {
+  id: string;
+  seq?: string;
+  len: number;
+}
+
+export interface TubeMapEdge {
+  from: string;
+  to: string;
+}
+
+export interface TubeMapPathVisit {
+  nodeId: string;
+  reverse: boolean;
+}
+
+export interface TubeMapPath {
+  name: string;
+  visits: TubeMapPathVisit[];
+}
+
+export interface TubeMapAnnotate {
+  count: number;
+  label: string;
+  type: 'reference' | 'haplotype';
+}
+
+export interface OgTubeMapData {
+  ogId: string;
+  region: string;
+  anchorGene: string;
+  schemaVersion: number;
+  nodes: TubeMapNode[];
+  edges: TubeMapEdge[];
+  paths: TubeMapPath[];
+  annotate: Record<string, TubeMapAnnotate>;
+}
+
+// Per-cluster region types live in ./og-region.ts
+export type {
+  RegionAnchor,
+  RegionLiftover,
+  RegionGraph,
+  RegionAlleleFrequency,
+  RegionStatus,
+  RegionData,
+  OgRegionManifestCluster,
+  OgRegionManifestEntry,
+  OgRegionManifest,
+} from './og-region';
+
 export type DiffEntriesState =
   | { kind: 'idle' }
   | { kind: 'loading'; storagePath: string }

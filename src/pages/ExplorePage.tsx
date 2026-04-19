@@ -9,6 +9,7 @@ import { isCategoryId, type CategoryId } from '@/lib/og-functional-categories';
 import { useOrthogroupDiff } from '@/hooks/useOrthogroupDiff';
 import { useOrthogroupDiffEntries } from '@/hooks/useOrthogroupDiffEntries';
 import { useOgCategories } from '@/hooks/useOgCategories';
+import { useOgAlleleFreq } from '@/hooks/useOgAlleleFreq';
 import { useCultivars } from '@/hooks/useCultivars';
 import type { TraitId } from '@/types/grouping';
 
@@ -25,7 +26,7 @@ const VALID_TRAITS: TraitId[] = [
 ];
 
 const PAGE_SIZE = 20;
-const VALID_SORT: DiffSortKey[] = ['p', 'meanDiff', 'log2FC'];
+const VALID_SORT: DiffSortKey[] = ['p', 'log2FC', 'deltaAf'];
 
 function isTraitId(v: string | null): v is TraitId {
   return v !== null && (VALID_TRAITS as string[]).includes(v);
@@ -50,6 +51,11 @@ export function ExplorePage() {
   const { doc, groupingDoc, isStale, loading } = useOrthogroupDiff(traitId);
   const entriesState = useOrthogroupDiffEntries(doc);
   const ogCategories = useOgCategories(doc?.orthofinderVersion ?? null);
+  const alleleFreq = useOgAlleleFreq(
+    traitId,
+    doc?.orthofinderVersion ?? null,
+    doc?.groupingVersion ?? null,
+  );
   const { cultivars } = useCultivars();
 
   const cultivarNameMap = useMemo(() => {
@@ -150,7 +156,7 @@ export function ExplorePage() {
           <div>
             <h1 className="text-2xl font-bold text-gray-900">Explore Candidates</h1>
             <p className="text-sm text-gray-500 mt-1">
-              Phenotype-driven exploration: pick a trait and see orthogroups differing most between groups.
+              Pick a trait to see orthogroups where copy count differs between proposed phenotype groups across the 16-cultivar Korean temperate japonica panel. Starting point for follow-up validation — not association confirmation.
             </p>
           </div>
           <div className="flex flex-col gap-1">
@@ -193,6 +199,7 @@ export function ExplorePage() {
           query={query}
           category={category}
           precomputed={ogCategories}
+          alleleFreq={alleleFreq}
           onPageChange={onPageChange}
           onSortChange={onSortChange}
           onQueryChange={onQueryChange}
@@ -203,9 +210,10 @@ export function ExplorePage() {
 
       <OgDrawer
         ogId={ogId}
+        traitId={traitId}
         diffDoc={doc}
         entriesState={entriesState}
-        cultivarNameMap={cultivarNameMap}
+        alleleFreq={alleleFreq}
         groupByCultivar={groupingDoc?.assignments ?? null}
         onClose={closeOg}
       />

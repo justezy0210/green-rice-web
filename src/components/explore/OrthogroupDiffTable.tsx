@@ -16,6 +16,7 @@ import {
 import type { OgCategoriesData } from '@/lib/orthogroup-service';
 import type {
   DiffEntriesState,
+  OgAlleleFreqPayload,
   OrthogroupDiffDocument,
   SelectionMode,
 } from '@/types/orthogroup';
@@ -32,6 +33,7 @@ interface Props {
   query: string;
   category: CategoryId | null;
   precomputed?: OgCategoriesData | null;
+  alleleFreq?: OgAlleleFreqPayload | null;
   onPageChange: (page: number) => void;
   onSortChange: (key: DiffSortKey) => void;
   onQueryChange: (q: string) => void;
@@ -49,6 +51,7 @@ export function OrthogroupDiffTable({
   query,
   category,
   precomputed,
+  alleleFreq,
   onPageChange,
   onSortChange,
   onQueryChange,
@@ -61,7 +64,7 @@ export function OrthogroupDiffTable({
     [entries, category, precomputed],
   );
   const filtered = useMemo(() => filterByQuery(byCategory, query), [byCategory, query]);
-  const sorted = useMemo(() => sortEntries(filtered, sortKey), [filtered, sortKey]);
+  const sorted = useMemo(() => sortEntries(filtered, sortKey, alleleFreq), [filtered, sortKey, alleleFreq]);
   const activeCategoryLabel = category ? getCategoryById(category)?.label ?? category : null;
   const pageRows = useMemo(
     () => sorted.slice(page * pageSize, (page + 1) * pageSize),
@@ -94,7 +97,7 @@ export function OrthogroupDiffTable({
           <CardTitle className="text-sm">Candidate Orthogroups</CardTitle>
           {hasStats && (
             <span className="text-xs text-gray-500">
-              {doc.passedCount.toLocaleString()} nominal hits of {doc.totalTested.toLocaleString()} tested
+              {doc.passedCount.toLocaleString()} candidates of {doc.totalTested.toLocaleString()} tested
             </span>
           )}
         </div>
@@ -141,8 +144,8 @@ export function OrthogroupDiffTable({
           <div className="flex items-center gap-1">
             <span className="text-gray-500">Sort:</span>
             <SortButton current={sortKey} value="p" label="p-value" onClick={onSortChange} />
-            <SortButton current={sortKey} value="meanDiff" label="|Δ mean|" onClick={onSortChange} />
             <SortButton current={sortKey} value="log2FC" label="|log₂ FC|" onClick={onSortChange} />
+            <SortButton current={sortKey} value="deltaAf" label="ΔAF" onClick={onSortChange} />
           </div>
         </div>
 
@@ -197,6 +200,12 @@ export function OrthogroupDiffTable({
                     </th>
                     <th className="text-right py-1.5 px-2 font-medium">log₂ FC</th>
                     <th
+                      className="text-right py-1.5 px-2 font-medium"
+                      title="Max |ΔAF| — largest allele frequency difference between groups in this OG's IRGSP gene region"
+                    >
+                      ΔAF
+                    </th>
+                    <th
                       className="text-left py-1.5 pl-2 font-medium"
                       title="IRGSP-1.0 reference transcript and description"
                     >
@@ -205,14 +214,20 @@ export function OrthogroupDiffTable({
                   </tr>
                 </thead>
                 <tbody>
-                  {pageRows.map((entry) => (
-                    <OrthogroupDiffRow
-                      key={entry.orthogroup}
-                      entry={entry}
-                      groupLabels={groupLabels}
-                      onSelectOg={onSelectOg}
-                    />
-                  ))}
+                  {pageRows.map((entry) => {
+                    const afOg = alleleFreq?.ogs[entry.orthogroup];
+                    const maxDaf = afOg?.variants?.[0]?.deltaAf ?? null;
+                    return (
+                      <OrthogroupDiffRow
+                        key={entry.orthogroup}
+                        entry={entry}
+                        groupLabels={groupLabels}
+                        hasAf={!!afOg}
+                        maxDeltaAf={maxDaf}
+                        onSelectOg={onSelectOg}
+                      />
+                    );
+                  })}
                 </tbody>
               </table>
             </div>
@@ -227,9 +242,7 @@ export function OrthogroupDiffTable({
         )}
 
         <p className="text-[10px] text-gray-400">
-          * Representative shows the IRGSP-1.0 (Nipponbare reference) transcript and its
-          published description. &quot;NA&quot; means no description in the source dataset.
-          Click an orthogroup to see per-cultivar gene members.
+          * IRGSP-1.0 (Nipponbare reference) transcript. Click an orthogroup for details.
         </p>
       </CardContent>
     </Card>

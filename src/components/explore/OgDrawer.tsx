@@ -1,14 +1,11 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
-import { useOgDrilldown } from '@/hooks/useOgDrilldown';
-import { useAdminClaim } from '@/hooks/useAdminClaim';
+import { useEffect, useMemo, useRef } from 'react';
+import { Link } from 'react-router-dom';
 import { OgDrawerHeader } from './OgDrawerHeader';
 import { OgDrawerGroupSummary } from './OgDrawerGroupSummary';
-import { OgDrawerCultivarSection } from './OgDrawerCultivarSection';
-import { OgDrawerIrgspSection } from './OgDrawerIrgspSection';
-import { OgDrawerSkeleton } from './OgDrawerSkeleton';
 import { buildGroupColorMap } from '@/components/dashboard/distribution-helpers';
 import type {
   DiffEntriesState,
+  OgAlleleFreqPayload,
   OrthogroupDiffDocument,
   OrthogroupDiffEntry,
 } from '@/types/orthogroup';
@@ -16,32 +13,28 @@ import type { CultivarGroupAssignment } from '@/types/grouping';
 
 interface Props {
   ogId: string | null;
+  traitId: string | null;
   diffDoc: OrthogroupDiffDocument | null;
   entriesState: DiffEntriesState;
-  cultivarNameMap: Record<string, string>;
-  /** cultivarId → groupLabel ('borderline' included separately if applicable) */
+  alleleFreq: OgAlleleFreqPayload | null;
   groupByCultivar: Record<string, CultivarGroupAssignment> | null;
   onClose: () => void;
 }
 
 export function OgDrawer({
   ogId,
+  traitId,
   diffDoc,
   entriesState,
-  cultivarNameMap,
+  alleleFreq,
   groupByCultivar,
   onClose,
 }: Props) {
   const open = !!ogId;
-  const version = diffDoc?.orthofinderVersion ?? null;
-  const { members, annotation, loading, error } = useOgDrilldown(ogId, version);
-  const { isAdmin } = useAdminClaim();
-
   const triggerRef = useRef<HTMLElement | null>(null);
   const drawerRef = useRef<HTMLDivElement>(null);
-  const [expanded, setExpanded] = useState<Record<string, boolean>>({});
 
-  // Scroll lock + remember trigger on open; restore focus on close
+  // Scroll lock
   useEffect(() => {
     if (!open) return;
     triggerRef.current = (document.activeElement as HTMLElement | null) ?? null;
@@ -49,7 +42,6 @@ export function OgDrawer({
     document.body.style.overflow = 'hidden';
     return () => {
       document.body.style.overflow = prevOverflow;
-      // Restore focus to trigger, fall back to body if trigger is gone
       const el = triggerRef.current;
       if (el && document.body.contains(el)) el.focus();
       else document.body.focus();
@@ -70,7 +62,7 @@ export function OgDrawer({
     return () => document.removeEventListener('keydown', onKey);
   }, [open, onClose]);
 
-  // Focus trap — cycle Tab/Shift+Tab within the drawer
+  // Focus trap
   useEffect(() => {
     if (!open) return;
     function onKey(e: KeyboardEvent) {
@@ -91,11 +83,6 @@ export function OgDrawer({
     return () => document.removeEventListener('keydown', onKey);
   }, [open]);
 
-  // Reset expanded state on OG change
-  useEffect(() => {
-    setExpanded({});
-  }, [ogId]);
-
   const diffEntry: OrthogroupDiffEntry | undefined = useMemo(() => {
     if (!ogId) return undefined;
     if (entriesState.kind === 'ready') {
@@ -112,28 +99,18 @@ export function OgDrawer({
     [groupByCultivar],
   );
 
-  const cultivarIds = useMemo(() => {
-    if (!members) return [] as string[];
-    const ids = Object.keys(members);
-    const groupLabels = diffDoc?.groupLabels ?? [];
-    // Order: groups in groupLabels order → others (borderline/unassigned) → alphabetical within each bucket
-    const rank = (cid: string): number => {
-      const lbl = groupByCultivar?.[cid]?.groupLabel;
-      if (!lbl) return groupLabels.length; // unassigned → last
-      const idx = groupLabels.indexOf(lbl);
-      return idx === -1 ? groupLabels.length : idx;
-    };
-    return ids.sort((a, b) => {
-      const ra = rank(a);
-      const rb = rank(b);
-      if (ra !== rb) return ra - rb;
-      return a.localeCompare(b);
-    });
-  }, [members, groupByCultivar, diffDoc]);
+  const rep = diffEntry?.representative;
+  const primaryDesc = rep
+    ? Object.values(rep.descriptions ?? {}).find((d) => d && d !== 'NA') ?? null
+    : null;
+  const afSummary = ogId ? alleleFreq?.ogs[ogId] ?? null : null;
+
+  const detailUrl = ogId
+    ? `/explore/og/${ogId}${traitId ? `?trait=${traitId}` : ''}`
+    : '#';
 
   return (
     <>
-      {/* overlay */}
       {open && (
         <div
           className="fixed top-0 left-0 w-screen h-screen bg-black/30 z-40 transition-opacity"
@@ -148,7 +125,7 @@ export function OgDrawer({
         aria-modal="true"
         aria-labelledby="og-drawer-title"
         aria-hidden={!open}
-        className={`fixed right-0 top-0 h-full w-full sm:w-[520px] bg-white shadow-xl z-50 flex flex-col transition-transform duration-200 ${
+        className={`fixed right-0 top-0 h-full w-full sm:w-[420px] bg-white shadow-xl z-50 flex flex-col transition-transform duration-200 ${
           open ? 'translate-x-0' : 'translate-x-full pointer-events-none'
         }`}
       >
@@ -156,11 +133,27 @@ export function OgDrawer({
           <>
             <OgDrawerHeader ogId={ogId} onClose={onClose} />
 
-            <div className="flex-1 overflow-y-auto relative">
-              {diffEntry?.representative && (
-                <OgDrawerIrgspSection rep={diffEntry.representative} />
-              )}
+            <div className="flex-1 overflow-y-auto">
+              {/* IRGSP representative */}
+              <div className="px-4 py-3 border-b border-gray-100">
+                {rep ? (
+                  <div className="text-xs">
+                    <span className="font-mono text-gray-500 text-[10px]">
+                      {rep.transcripts?.[0] ?? ''}
+                    </span>
+                    {primaryDesc && (
+                      <p className="text-gray-700 mt-0.5">{primaryDesc}</p>
+                    )}
+                    {!primaryDesc && (
+                      <p className="text-gray-400 italic mt-0.5">No functional description</p>
+                    )}
+                  </div>
+                ) : (
+                  <p className="text-xs text-gray-400 italic">Non-IRGSP-linked orthogroup</p>
+                )}
+              </div>
 
+              {/* Group summary */}
               {diffEntry && diffDoc && (
                 <OgDrawerGroupSummary
                   entry={diffEntry}
@@ -169,51 +162,56 @@ export function OgDrawer({
                 />
               )}
 
-              {error && (
-                <p className="px-4 py-3 text-xs text-red-600 bg-red-50 border-b border-red-100">
-                  {error}
-                </p>
-              )}
-
-              {loading && <OgDrawerSkeleton />}
-
-              {!loading && members && cultivarIds.length === 0 && (
-                <p className="px-4 py-6 text-xs text-gray-400 text-center">
-                  This orthogroup has no gene members in any cultivar.
-                </p>
-              )}
-
-              {!loading && cultivarIds.map((cid) => (
-                <OgDrawerCultivarSection
-                  key={cid}
-                  cultivarId={cid}
-                  cultivarName={cultivarNameMap[cid] ?? cid}
-                  geneIds={members?.[cid] ?? []}
-                  groupLabel={groupByCultivar?.[cid]?.groupLabel}
-                  groupColor={
-                    groupByCultivar?.[cid]?.groupLabel
-                      ? groupColorMap[groupByCultivar[cid].groupLabel] ?? null
-                      : null
-                  }
-                  annotation={annotation}
-                  expanded={!!expanded[cid]}
-                  onToggleExpand={() =>
-                    setExpanded((prev) => ({ ...prev, [cid]: !prev[cid] }))
-                  }
-                  showAdminHint={isAdmin}
+              {/* Evidence badges */}
+              <div className="px-4 py-3 border-b border-gray-100 flex flex-wrap gap-2">
+                <Badge label="AF" available={!!afSummary} detail={afSummary ? `${afSummary.totalVariants} var` : undefined} />
+                <Badge label="Graph" available={false} />
+                <Badge
+                  label="Members"
+                  available={!!diffEntry}
+                  detail={diffEntry ? `${Object.keys(diffEntry.cultivarCountsByGroup).length} groups` : undefined}
                 />
-              ))}
-
-              {/* spacer so last content isn't hidden behind fade */}
-              <div className="h-12" />
+              </div>
             </div>
 
-            {/* bottom fade-out overlay */}
-            <div className="pointer-events-none absolute bottom-0 left-0 right-0 h-16 bg-gradient-to-t from-white to-transparent" />
+            {/* CTA */}
+            <div className="px-4 py-3 border-t border-gray-200 bg-gray-50">
+              <Link
+                to={detailUrl}
+                onClick={onClose}
+                className="block w-full text-center px-4 py-2 text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700 transition-colors"
+              >
+                View details →
+              </Link>
+            </div>
           </>
         )}
       </div>
     </>
+  );
+}
+
+function Badge({
+  label,
+  available,
+  detail,
+}: {
+  label: string;
+  available: boolean;
+  detail?: string;
+}) {
+  return (
+    <span
+      className={`inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded border ${
+        available
+          ? 'border-green-200 bg-green-50 text-green-700'
+          : 'border-gray-200 bg-gray-50 text-gray-400'
+      }`}
+    >
+      <span className="text-[10px]">{available ? '●' : '○'}</span>
+      {label}
+      {detail && <span className="text-[10px] text-gray-400 ml-0.5">({detail})</span>}
+    </span>
   );
 }
 

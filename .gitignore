@@ -38,3 +38,18 @@ service-account.json
 functions-python/venv/
 functions-python/__pycache__/
 functions-python/**/__pycache__/
+
+# Python caches
+__pycache__/
+*.pyc
+
+# Large data (tracked via Storage, not git)
+data/green-rice-pg.vcf.gz
+data/irgsp-1.0.gff
+data/View.png
+
+# Scheduled task locks
+.claude/scheduled_tasks.lock
+
+# Orthogroup TSVs (large inputs, uploaded via admin panel, not git)
+data/Orthogroups*.tsv

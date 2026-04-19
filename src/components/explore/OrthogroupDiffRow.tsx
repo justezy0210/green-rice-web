@@ -3,10 +3,12 @@ import type { OrthogroupDiffEntry } from '@/types/orthogroup';
 interface Props {
   entry: OrthogroupDiffEntry;
   groupLabels: string[];
+  hasAf?: boolean;
+  maxDeltaAf?: number | null;
   onSelectOg?: (ogId: string) => void;
 }
 
-export function OrthogroupDiffRow({ entry, groupLabels, onSelectOg }: Props) {
+export function OrthogroupDiffRow({ entry, groupLabels, hasAf, maxDeltaAf, onSelectOg }: Props) {
   const rep = entry.representative;
   const primary = rep ? pickPrimaryRepresentative(rep) : null;
   const hasP = typeof entry.pValue === 'number';
@@ -15,17 +17,22 @@ export function OrthogroupDiffRow({ entry, groupLabels, onSelectOg }: Props) {
   return (
     <tr className="border-b border-gray-100 hover:bg-gray-50">
       <td className="py-1 pr-3 font-mono text-gray-900">
-        {onSelectOg ? (
-          <button
-            type="button"
-            onClick={() => onSelectOg(entry.orthogroup)}
-            className="text-left font-mono text-gray-900 hover:text-green-700 hover:underline focus:outline-none focus:ring-2 focus:ring-green-200 rounded px-1 -mx-1"
-          >
-            {entry.orthogroup}
-          </button>
-        ) : (
-          entry.orthogroup
-        )}
+        <div className="flex items-center gap-1">
+          {onSelectOg ? (
+            <button
+              type="button"
+              onClick={() => onSelectOg(entry.orthogroup)}
+              className="text-left font-mono text-gray-900 hover:text-green-700 hover:underline focus:outline-none focus:ring-2 focus:ring-green-200 rounded px-1 -mx-1"
+            >
+              {entry.orthogroup}
+            </button>
+          ) : (
+            entry.orthogroup
+          )}
+          {hasAf && (
+            <span className="text-[9px] text-teal-600" title="Gene-region variant data available">AF</span>
+          )}
+        </div>
       </td>
       {groupLabels.map((lbl) => (
         <td key={lbl} className="py-1 px-2 text-right tabular-nums text-gray-700">
@@ -43,6 +50,9 @@ export function OrthogroupDiffRow({ entry, groupLabels, onSelectOg }: Props) {
       </td>
       <td className="py-1 px-2 text-right tabular-nums text-gray-600">
         {entry.log2FoldChange === null ? '—' : entry.log2FoldChange.toFixed(2)}
+      </td>
+      <td className="py-1 px-2 text-right tabular-nums text-gray-600">
+        {maxDeltaAf != null ? maxDeltaAf.toFixed(2) : '—'}
       </td>
       <td className="py-1 pl-2 text-gray-600 max-w-xs truncate">
         {rep && primary ? (

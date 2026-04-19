@@ -102,9 +102,18 @@ function TraitRow({ row }: TraitRowProps) {
 
   const methodBadge =
     row.method === 'gmm'
-      ? { text: 'GMM', cls: 'bg-violet-50 text-violet-700 border-violet-200' }
+      ? {
+          text: 'GMM-proposed',
+          cls: 'bg-violet-50 text-violet-700 border-violet-200',
+          title:
+            'Groupings proposed by a Gaussian mixture model. Not a biological truth — a starting point for discovery.',
+        }
       : row.method === 'fixed-class'
-      ? { text: 'fixed', cls: 'bg-teal-50 text-teal-700 border-teal-200' }
+      ? {
+          text: 'fixed class',
+          cls: 'bg-teal-50 text-teal-700 border-teal-200',
+          title: 'Groupings defined by a fixed classification in the source data.',
+        }
       : null;
 
   const countTitle = row.usable && row.borderlineCount > 0
@@ -139,6 +148,7 @@ function TraitRow({ row }: TraitRowProps) {
         {row.usable && methodBadge ? (
           <span
             className={cn('px-1.5 py-0.5 rounded border font-medium text-[10px] whitespace-nowrap shrink-0', methodBadge.cls)}
+            title={methodBadge.title}
           >
             {methodBadge.text}
           </span>

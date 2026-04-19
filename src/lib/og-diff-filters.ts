@@ -1,7 +1,7 @@
-import type { OrthogroupDiffEntry } from '@/types/orthogroup';
+import type { OrthogroupDiffEntry, OgAlleleFreqPayload } from '@/types/orthogroup';
 import type { DiffEntriesState } from '@/types/orthogroup';
 
-export type DiffSortKey = 'p' | 'meanDiff' | 'log2FC';
+export type DiffSortKey = 'p' | 'meanDiff' | 'log2FC' | 'deltaAf';
 
 export function extractEntries(state: DiffEntriesState): OrthogroupDiffEntry[] {
   if (state.kind === 'ready') return state.payload.entries;
@@ -33,6 +33,7 @@ export function filterByQuery(
 export function sortEntries(
   entries: OrthogroupDiffEntry[],
   key: DiffSortKey,
+  alleleFreq?: OgAlleleFreqPayload | null,
 ): OrthogroupDiffEntry[] {
   const copy = entries.slice();
   if (key === 'p') {
@@ -41,6 +42,20 @@ export function sortEntries(
   }
   if (key === 'meanDiff') {
     copy.sort((a, b) => (b.meanDiff - a.meanDiff) || (a.pValue - b.pValue));
+    return copy;
+  }
+  if (key === 'deltaAf') {
+    const maxDeltaAf = (ogId: string): number => {
+      const variants = alleleFreq?.ogs[ogId]?.variants;
+      if (!variants || variants.length === 0) return -1;
+      return variants[0].deltaAf; // already sorted desc
+    };
+    copy.sort((a, b) => {
+      const da = maxDeltaAf(a.orthogroup);
+      const db = maxDeltaAf(b.orthogroup);
+      if (da !== db) return db - da; // higher first; -1 (no data) goes last
+      return a.pValue - b.pValue;
+    });
     return copy;
   }
   // log2FC: null goes last, otherwise sort by absolute magnitude descending

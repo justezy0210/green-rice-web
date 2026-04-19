@@ -147,25 +147,24 @@ Return a structured critique with concrete observations and recommendations.
 Report ALL issues.
 ```
 
-### Phase 4 — Spawn Codex reviewer
+### Phase 4 — Run Codex (foreground)
 
-Use the `codex-reviewer` subagent to run Codex in the background while Claude does its own analysis:
+Run Codex synchronously in the foreground with `tee`. This is the only pattern that has been reliable — backgrounded `codex exec ... > out.txt 2>&1 &` has repeatedly truncated output before the response is written (user prompt echoed, response section missing, exit code 0). Root cause appears to be stdin/stdout buffer flush interacting badly with detachment plus `reasoning effort: none` in non-interactive mode.
 
+```bash
+# 1. Write the composed prompt to a file
+# 2. Pipe through codex exec, tee to a file (so the prompt + response are preserved) and
+#    also stream to stdout so progress is visible.
+cat /tmp/codex-<slug>.txt | codex exec --model gpt-5.4 - 2>&1 | tee /tmp/codex-<slug>-out.txt
 ```
-Agent(
-  description: "Run Codex CLI {mode} analysis",
-  prompt: "<composed prompt from Phase 3>",
-  name: "codex-reviewer",
-  subagent_type: "codex-reviewer",
-  model: "haiku",
-  mode: "dontAsk",
-  run_in_background: true
-)
-```
+
+Foreground handles multi-KB prompts without issue — don't artificially shrink the context. Include what the reviewer genuinely needs (full plan text, relevant script excerpts, real file paths). Do split when the review genuinely covers multiple independent topics, not to hit a word budget.
+
+Because this blocks the main agent, run only one Codex call per verify invocation. If parallel external review is genuinely needed, invoke verify twice back-to-back instead of backgrounding.
 
 ### Phase 5 — Lead (Claude) independent analysis
 
-While Codex is running, analyze the same question independently using the same context. Form concrete findings before seeing Codex's output — preserves independence for synthesis.
+After Codex returns, write your own independent analysis **without re-reading the Codex output until your analysis is complete** — preserves independence for synthesis. If you already drafted lead analysis before running Codex (e.g. while composing the prompt), that also satisfies this.
 
 ### Phase 6 — Synthesis
 
@@ -192,11 +191,7 @@ Keep Codex's raw wording distinguishable from Claude's synthesis. Do not paraphr
 
 ### Phase 7 — Cleanup
 
-If the agent is still running (e.g. orchestration aborted mid-run):
-
-```
-SendMessage(to: "codex-reviewer", message: {type: "shutdown_request"})
-```
+Foreground execution means no cleanup is needed — the Codex call has already completed when you start synthesis. If a run failed (empty output, truncation), retry once with a shorter prompt before falling back to Lead-only.
 
 ## Error handling
 
@@ -204,7 +199,7 @@ SendMessage(to: "codex-reviewer", message: {type: "shutdown_request"})
 |----------|--------|
 | Codex CLI not installed | Report `CODEX_NOT_INSTALLED`, stop |
 | API / model error | Surface verbatim; Lead analysis still proceeds |
-| Timeout (agent no response) | Synthesize with Lead-only findings; note Codex unavailable |
+| Empty / truncated Codex output | Retry once in foreground (`codex exec ... \| tee`). If still empty, proceed Lead-only and note Codex unavailable. |
 | Context too large | Narrow to most relevant files; state partial context used |
 | Codex output unparseable | Show raw output; do not fabricate structure |
 

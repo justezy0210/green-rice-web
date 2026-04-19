@@ -4,9 +4,9 @@ import { useAuthContext } from '@/context/AuthContext';
 import { useAdminClaim } from '@/hooks/useAdminClaim';
 
 const NAV_ITEMS = [
-  { path: '/', label: 'Dashboard' },
+  { path: '/', label: 'Overview' },
   { path: '/explore', label: 'Explore' },
-  { path: '/download', label: 'Download' },
+  { path: '/download', label: 'Downloads' },
 ];
 
 export function Header() {
@@ -16,10 +16,19 @@ export function Header() {
 
   return (
     <header className="bg-white sticky top-0 z-10 shadow-sm">
-      <div className="max-w-7xl mx-auto px-4 h-14 flex items-center justify-between">
-        <Link to="/" className="flex items-center gap-2 font-semibold text-green-700 text-lg">
+      <div className="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
+        <Link
+          to="/"
+          className="flex items-center gap-2 font-semibold text-green-700"
+          title="Korean temperate japonica phenotype-driven candidate discovery database"
+        >
           <span className="text-2xl">🌾</span>
-          <span>RiceGenomeDB</span>
+          <span className="flex flex-col leading-tight">
+            <span className="text-base">Green Rice DB</span>
+            <span className="text-[10px] font-normal text-gray-500 tracking-wide">
+              Phenotype-driven candidate discovery · Korean temperate japonica
+            </span>
+          </span>
         </Link>
 
         <nav className="flex items-center gap-1">

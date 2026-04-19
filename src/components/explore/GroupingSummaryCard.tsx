@@ -132,9 +132,19 @@ function MethodBadge({ method }: { method: string }) {
     method === 'gmm'
       ? 'bg-violet-50 text-violet-700 border-violet-200'
       : 'bg-teal-50 text-teal-700 border-teal-200';
+  const label = method === 'gmm' ? 'GMM-proposed' : method === 'fixed-class' ? 'fixed class' : method;
+  const title =
+    method === 'gmm'
+      ? 'Groupings proposed by a Gaussian mixture model. Not a biological truth — a starting point for discovery.'
+      : method === 'fixed-class'
+      ? 'Groupings defined by a fixed classification in the source data.'
+      : undefined;
   return (
-    <span className={`text-[10px] px-1.5 py-0.5 rounded border font-medium ${cls}`}>
-      {method}
+    <span
+      className={`text-[10px] px-1.5 py-0.5 rounded border font-medium ${cls}`}
+      title={title}
+    >
+      {label}
     </span>
   );
 }

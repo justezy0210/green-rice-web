@@ -156,8 +156,8 @@ export function PhenotypeDistributionChart({ records }: PhenotypeDistributionCha
 
   const methodLabel = useMemo(() => {
     if (!summary) return '';
-    if (summary.method === 'gmm') return 'GMM';
-    if (summary.method === 'fixed-class') return 'fixed-class';
+    if (summary.method === 'gmm') return 'GMM-proposed';
+    if (summary.method === 'fixed-class') return 'fixed class';
     return '';
   }, [summary]);
 

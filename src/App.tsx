@@ -7,6 +7,7 @@ import { DownloadPage } from '@/pages/DownloadPage';
 import { LoginPage } from '@/pages/LoginPage';
 import { AdminPage } from '@/pages/AdminPage';
 import { CultivarDetailPage } from '@/pages/CultivarDetailPage';
+import { OgDetailPage } from '@/pages/OgDetailPage';
 import { ProtectedRoute } from '@/components/auth/ProtectedRoute';
 
 export default function App() {
@@ -17,6 +18,7 @@ export default function App() {
           <Routes>
             <Route path="/" element={<DashboardPage />} />
             <Route path="/explore" element={<ExplorePage />} />
+            <Route path="/explore/og/:ogId" element={<OgDetailPage />} />
             <Route path="/download" element={<DownloadPage />} />
             <Route path="/login" element={<LoginPage />} />
             <Route path="/cultivar/:name" element={<CultivarDetailPage />} />

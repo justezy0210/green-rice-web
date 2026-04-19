@@ -28,11 +28,14 @@ export function OgFunctionCategoriesChart({ entries, activeCategory, onCategoryS
     <Card className="h-full flex flex-col">
       <CardHeader className="pb-2">
         <div className="flex items-center justify-between gap-2 flex-wrap">
-          <CardTitle className="text-sm">Functional categories</CardTitle>
+          <CardTitle className="text-sm">Candidate annotation categories</CardTitle>
           <span className="text-xs text-gray-500">
-            {entries.length.toLocaleString()} OGs · {precomputed ? 'LLM-classified' : 'keyword heuristics'}
+            {entries.length.toLocaleString()} OGs · {precomputed ? 'LLM-proposed' : 'keyword heuristics'}
           </span>
         </div>
+        <p className="text-[10px] text-gray-400 mt-1">
+          Convenience grouping of the current candidate list, not trait-level enrichment.
+        </p>
       </CardHeader>
       <CardContent className="py-2 flex-1 flex flex-col justify-between">
         <ul className="space-y-1">
@@ -75,7 +78,7 @@ export function OgFunctionCategoriesChart({ entries, activeCategory, onCategoryS
           })}
         </ul>
         <p className="text-[10px] text-gray-400 mt-2">
-          {precomputed ? 'LLM-classified (GPT-5.4)' : 'Keyword heuristics'} — not formal GO terms. Click a row to filter the table.
+          {precomputed ? 'LLM-derived convenience classification (GPT-5.4)' : 'Keyword heuristics'} — not formal GO/InterPro annotation. Click a row to filter the table.
         </p>
       </CardContent>
     </Card>
