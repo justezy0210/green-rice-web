@@ -1,6 +1,6 @@
 {
   "comment": "Active (orthofinderVersion, groupingVersion) pair exposed under /download. Generator reads this to pick the pair; UI never reads it directly — the UI reads downloads/_manifest.json which is produced from this pair. Never infer 'active' from max numbers.",
-  "activeOrthofinderVersion": 1,
-  "activeGroupingVersion": 1,
+  "activeOrthofinderVersion": 6,
+  "activeGroupingVersion": 4,
   "updatedAt": "2026-04-19T00:00:00Z"
 }
