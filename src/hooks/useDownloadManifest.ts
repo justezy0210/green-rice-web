@@ -30,6 +30,15 @@ async function loadManifest(): Promise<DownloadManifest | null> {
   return inflight;
 }
 
+// Kick the fetch as soon as this module is imported, so the cache is
+// usually warm by the time the first component that reads the manifest
+// renders. No await — the promise is tracked in `inflight`.
+if (typeof window !== 'undefined') {
+  void loadManifest().catch(() => {
+    // Swallow here; individual hook callers still see the error state.
+  });
+}
+
 /**
  * Loads downloads/_manifest.json from Firebase Storage. This is the sole
  * source of the /download Discovery section's row list — per rev2 §9 the
