@@ -92,6 +92,13 @@ def upload_file(bucket, local: Path, dest: str, *, create_only: bool) -> None:
         kwargs["if_generation_match"] = 0
     blob.upload_from_filename(str(local), **kwargs)
     blob.cache_control = "public, max-age=3600"
+    # Force "save as" instead of inline render. The HTML `download`
+    # attribute is ignored for cross-origin URLs (Firebase Storage is
+    # on a different origin than the app), so the server has to say it.
+    # The manifest is the one exception — the UI fetches it
+    # programmatically and never presents it as a download.
+    if dest != download_manifest_path():
+        blob.content_disposition = f'attachment; filename="{Path(dest).name}"'
     blob.patch()
 
 
