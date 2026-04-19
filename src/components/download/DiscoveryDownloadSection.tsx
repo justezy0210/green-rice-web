@@ -1,10 +1,10 @@
-import { useMemo, useState } from 'react';
+import { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { ref as storageRef, getDownloadURL } from 'firebase/storage';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { storage } from '@/lib/firebase';
-import { TRAITS } from '@/config/traits';
 import { useDownloadManifest } from '@/hooks/useDownloadManifest';
-import type { DownloadManifest, DownloadTraitEntry } from '@/types/download-manifest';
+import type { DownloadManifest } from '@/types/download-manifest';
 
 function humanSize(bytes: number): string {
   if (bytes < 1024) return `${bytes} B`;
@@ -12,8 +12,8 @@ function humanSize(bytes: number): string {
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }
 
-function versionTag(manifest: DownloadManifest): string {
-  return `v${manifest.orthofinderVersion}_g${manifest.groupingVersion}`;
+function versionTag(m: DownloadManifest): string {
+  return `v${m.orthofinderVersion}_g${m.groupingVersion}`;
 }
 
 function formatDate(iso: string): string {
@@ -24,30 +24,84 @@ function formatDate(iso: string): string {
   }
 }
 
+/**
+ * Dashboard-style summary of the active discovery release:
+ * version pair + generation date + counts + link to Explore for per-trait
+ * downloads + direct link to the cross-trait master file.
+ *
+ * Per-trait file links live on the Explore page (TraitDownloadCard),
+ * where the user already has trait context. This page is for browse /
+ * bulk / citation users.
+ */
 export function DiscoveryDownloadSection() {
   const { manifest, loading, error } = useDownloadManifest();
 
   if (loading) {
-    return <InfoCard>Loading discovery downloads…</InfoCard>;
+    return <Shell>Loading discovery downloads…</Shell>;
   }
   if (error || !manifest) {
     return (
-      <InfoCard>
+      <Shell>
         Discovery downloads are not published yet for this deployment.
         <span className="block text-[11px] text-gray-400 mt-1">{error ?? 'manifest missing'}</span>
-      </InfoCard>
+      </Shell>
     );
   }
 
+  const tag = versionTag(manifest);
+  const date = formatDate(manifest.generatedAt);
+  const traitCount = Object.keys(manifest.traits).length;
+  const usableTraits = Object.values(manifest.traits).filter((t) => t.usable).length;
+  const totalBytes = [
+    ...Object.values(manifest.traits).flatMap((t) => Object.values(t.files)),
+    ...Object.values(manifest.crossTrait.files),
+  ].reduce((n, f) => n + f.size, 0);
+
   return (
-    <>
-      <PerTraitCard manifest={manifest} />
-      <CrossTraitCard manifest={manifest} />
-    </>
+    <Card>
+      <CardHeader className="pb-2">
+        <CardTitle className="text-base flex items-baseline gap-2">
+          <span>Discovery results</span>
+          <span className="font-mono text-green-700 text-sm">{tag}</span>
+          <span className="text-[11px] text-gray-400 font-normal">generated {date}</span>
+        </CardTitle>
+        <p className="text-[11px] text-gray-500 leading-relaxed mt-1">
+          Panel-scoped candidate exports. Version <span className="font-mono">{tag}</span> is
+          immutable — cite the full URL in Methods. Not marker-ready, not primer-ready,
+          not causal.
+        </p>
+      </CardHeader>
+      <CardContent className="space-y-3">
+        <div className="grid grid-cols-3 gap-3 text-center">
+          <Stat label="Traits" value={`${usableTraits}/${traitCount}`} sub="usable / total" />
+          <Stat label="Bundle size" value={humanSize(totalBytes)} sub={`${tag}`} />
+          <Stat label="Generated" value={date} sub={manifest.appVersion ?? ''} />
+        </div>
+
+        <div className="border-t border-gray-100 pt-3 space-y-1.5">
+          <div className="flex items-center justify-between gap-4">
+            <div>
+              <p className="text-sm font-medium text-gray-900">Per-trait files</p>
+              <p className="text-[11px] text-gray-500">
+                `candidates.tsv`, BED coordinates, copy-count matrix — choose a trait first.
+              </p>
+            </div>
+            <Link
+              to="/explore"
+              className="shrink-0 text-xs text-green-700 hover:underline whitespace-nowrap"
+            >
+              Go to Explore →
+            </Link>
+          </div>
+
+          <CrossTraitRow manifest={manifest} />
+        </div>
+      </CardContent>
+    </Card>
   );
 }
 
-function InfoCard({ children }: { children: React.ReactNode }) {
+function Shell({ children }: { children: React.ReactNode }) {
   return (
     <Card>
       <CardHeader className="pb-2">
@@ -58,159 +112,62 @@ function InfoCard({ children }: { children: React.ReactNode }) {
   );
 }
 
-function PerTraitCard({ manifest }: { manifest: DownloadManifest }) {
-  const tag = versionTag(manifest);
-  const date = formatDate(manifest.generatedAt);
-
+function Stat({ label, value, sub }: { label: string; value: string; sub: string }) {
   return (
-    <Card>
-      <CardHeader className="pb-2">
-        <CardTitle className="text-base">
-          Discovery results · <span className="font-mono text-green-700">{tag}</span>
-          <span className="ml-2 text-xs text-gray-400 font-normal">generated {date}</span>
-        </CardTitle>
-        <p className="text-[11px] text-gray-500 leading-relaxed mt-1">
-          Panel-scoped discovery exports. Candidate tables, BED coordinates, and per-OG copy
-          count for each trait. Not marker-ready, not primer-ready, not causal. Version
-          <span className="font-mono"> {tag}</span> is immutable — cite the full URL in Methods.
-        </p>
-      </CardHeader>
-      <CardContent className="divide-y divide-gray-100">
-        {TRAITS.map((t) => {
-          const entry = manifest.traits[t.id];
-          if (!entry) return null;
-          return <TraitRow key={t.id} traitId={t.id} label={t.label} entry={entry} />;
-        })}
-      </CardContent>
-    </Card>
-  );
-}
-
-function CrossTraitCard({ manifest }: { manifest: DownloadManifest }) {
-  const tag = versionTag(manifest);
-  const [open, setOpen] = useState(false);
-  const files = useMemo(
-    () => Object.entries(manifest.crossTrait.files).sort(([a], [b]) => a.localeCompare(b)),
-    [manifest.crossTrait.files],
-  );
-
-  return (
-    <Card>
-      <CardHeader className="pb-2">
-        <CardTitle className="text-base">
-          Cross-trait master · <span className="font-mono text-green-700">{tag}</span>
-        </CardTitle>
-        <p className="text-[11px] text-gray-500 leading-relaxed mt-1">
-          Long-format table: one row per (trait, candidate OG). Ranks are per-trait and NOT
-          comparable across traits.
-        </p>
-      </CardHeader>
-      <CardContent>
-        <button
-          type="button"
-          onClick={() => setOpen((v) => !v)}
-          className="text-xs text-green-700 hover:underline"
-        >
-          {open ? 'Hide' : 'Show'} files ({files.length})
-        </button>
-        {open && (
-          <ul className="mt-2 space-y-1">
-            {files.map(([name, meta]) => (
-              <li key={name} className="flex items-center justify-between text-sm">
-                <DownloadLink
-                  path={`downloads/cross-trait/${tag}/${name}`}
-                  name={name}
-                />
-                <span className="text-[11px] text-gray-400 tabular-nums">
-                  {humanSize(meta.size)}
-                </span>
-              </li>
-            ))}
-          </ul>
-        )}
-      </CardContent>
-    </Card>
-  );
-}
-
-function TraitRow({
-  traitId,
-  label,
-  entry,
-}: {
-  traitId: string;
-  label: string;
-  entry: DownloadTraitEntry;
-}) {
-  const [open, setOpen] = useState(false);
-  const { manifest } = useDownloadManifest();
-  if (!manifest) return null;
-  const tag = versionTag(manifest);
-  const files = Object.entries(entry.files).sort(([a], [b]) => a.localeCompare(b));
-
-  return (
-    <div className="py-2">
-      <button
-        type="button"
-        onClick={() => setOpen((v) => !v)}
-        className="w-full flex items-center justify-between text-left"
-      >
-        <span className="flex items-center gap-2">
-          <span className="text-sm font-medium text-gray-900">{label}</span>
-          <span className="text-[10px] uppercase tracking-wide text-gray-400">{traitId}</span>
-          {!entry.usable && (
-            <span className="text-[10px] px-1.5 py-0.5 rounded border border-amber-200 bg-amber-50 text-amber-700">
-              usable=false
-            </span>
-          )}
-        </span>
-        <span className="text-xs text-green-700">
-          {open ? 'Hide' : 'Show'} ({files.length})
-        </span>
-      </button>
-      {open && (
-        <ul className="mt-2 pl-2 space-y-1">
-          {files.map(([name, meta]) => (
-            <li key={name} className="flex items-center justify-between text-sm">
-              <DownloadLink
-                path={`downloads/traits/${traitId}/${tag}/${name}`}
-                name={name}
-              />
-              <span className="text-[11px] text-gray-400 tabular-nums">
-                {humanSize(meta.size)}
-              </span>
-            </li>
-          ))}
-        </ul>
-      )}
+    <div className="border border-gray-100 rounded px-2 py-1.5 bg-gray-50/50">
+      <p className="text-[10px] uppercase tracking-wide text-gray-400">{label}</p>
+      <p className="text-sm font-semibold text-gray-900 tabular-nums">{value}</p>
+      {sub && <p className="text-[10px] text-gray-400 truncate">{sub}</p>}
     </div>
   );
 }
 
-function DownloadLink({ path, name }: { path: string; name: string }) {
-  const [state, setState] = useState<{ key: string; url?: string; error?: string }>({ key: '' });
+function CrossTraitRow({ manifest }: { manifest: DownloadManifest }) {
+  const tag = versionTag(manifest);
+  const tsv = manifest.crossTrait.files['cross_trait_candidates.tsv'];
+  if (!tsv) return null;
 
-  const prime = async () => {
-    if (state.key === path) return;
+  return (
+    <div className="flex items-center justify-between gap-4 pt-2 border-t border-gray-100">
+      <div>
+        <p className="text-sm font-medium text-gray-900">Cross-trait master</p>
+        <p className="text-[11px] text-gray-500">
+          One row per (trait, candidate OG). Long format. Ranks are not comparable across traits.
+        </p>
+      </div>
+      <div className="shrink-0 flex flex-col items-end gap-0.5">
+        <CrossTraitLink
+          path={`downloads/cross-trait/${tag}/cross_trait_candidates.tsv`}
+          name="cross_trait_candidates.tsv"
+        />
+        <span className="text-[10px] text-gray-400 tabular-nums">{humanSize(tsv.size)}</span>
+      </div>
+    </div>
+  );
+}
+
+function CrossTraitLink({ path, name }: { path: string; name: string }) {
+  const [state, setState] = useState<{ url?: string; error?: string }>({});
+
+  const resolve = async () => {
+    if (state.url || state.error) return;
     try {
       const url = await getDownloadURL(storageRef(storage, path));
-      setState({ key: path, url });
+      setState({ url });
     } catch (err) {
-      setState({ key: path, error: err instanceof Error ? err.message : 'unavailable' });
+      setState({ error: err instanceof Error ? err.message : 'unavailable' });
     }
   };
 
-  if (state.key === path && state.error) {
-    return <span className="text-red-500 text-xs">{name} · error</span>;
-  }
-  if (state.key === path && state.url) {
+  if (state.error) return <span className="text-red-500 text-xs">{name} · error</span>;
+  if (state.url) {
     return (
       <a
         href={state.url}
         download={name}
         target="_blank"
         rel="noopener noreferrer"
-        className="font-mono text-green-700 hover:underline"
+        className="font-mono text-xs text-green-700 hover:underline"
       >
         {name}
       </a>
@@ -219,8 +176,8 @@ function DownloadLink({ path, name }: { path: string; name: string }) {
   return (
     <button
       type="button"
-      onClick={prime}
-      className="font-mono text-gray-700 hover:text-green-700 hover:underline"
+      onClick={resolve}
+      className="font-mono text-xs text-gray-700 hover:text-green-700 hover:underline"
     >
       {name}
     </button>

@@ -5,6 +5,7 @@ import { GroupingSummaryCard } from '@/components/explore/GroupingSummaryCard';
 import { OrthogroupDiffTable, type DiffSortKey } from '@/components/explore/OrthogroupDiffTable';
 import { OgDrawer } from '@/components/explore/OgDrawer';
 import { OgFunctionCategoriesChart } from '@/components/explore/OgFunctionCategoriesChart';
+import { TraitDownloadCard } from '@/components/download/TraitDownloadCard';
 import { isCategoryId, type CategoryId } from '@/lib/og-functional-categories';
 import { useOrthogroupDiff } from '@/hooks/useOrthogroupDiff';
 import { useOrthogroupDiffEntries } from '@/hooks/useOrthogroupDiffEntries';
@@ -153,6 +154,7 @@ export function ExplorePage() {
             groupingDoc={groupingDoc}
             cultivarNameMap={cultivarNameMap}
           />
+          <TraitDownloadCard traitId={traitId} />
         </div>
         {entriesState.kind === 'ready' && (
           <OgFunctionCategoriesChart
