@@ -14,6 +14,7 @@
     "check:traits-schema": "npx tsx scripts/check-traits-schema.ts",
     "check:cross-language": "npx tsx scripts/check-cross-language-parity.ts",
     "check:download-bundles": "npx tsx scripts/verify-download-bundles.ts",
+    "check:download-determinism": "functions-python/venv/bin/python3 scripts/check-download-determinism.py",
     "generate:downloads": "functions-python/venv/bin/python3 scripts/generate-download-bundles.py",
     "promote:downloads": "functions-python/venv/bin/python3 scripts/promote-download-bundles.py",
     "upload:genomes": "functions-python/venv/bin/python3 scripts/upload-genome-files.py",

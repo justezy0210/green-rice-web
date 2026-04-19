@@ -179,6 +179,7 @@ try {
 } catch {
   // bedtools optional — static checks still run
 }
+const SAMPLE_BED = resolve(REPO_ROOT, 'scripts/fixtures/sample.bed');
 
 for (const t of traitIds) {
   const p = join(STAGING, 'traits', t, versionTag, 'candidate_irgsp_coords.bed');
@@ -196,6 +197,18 @@ for (const t of traitIds) {
         execSync(`bedtools sort -i "${p}"`, { stdio: 'ignore' });
       } catch {
         err(`bedtools sort failed for ${t}`);
+      }
+      // Intersect against a tiny fixture that spans realistic IRGSP
+      // chromosomes — a zero-row result or a bedtools crash is a fail.
+      try {
+        const out = execSync(`bedtools intersect -a "${SAMPLE_BED}" -b "${p}"`, {
+          encoding: 'utf-8',
+        });
+        if (out.trim() === '') {
+          err(`bedtools intersect produced 0 rows for ${t} — BED file may be empty or mis-chromed`);
+        }
+      } catch {
+        err(`bedtools intersect failed for ${t}`);
       }
     }
   }
