@@ -14,7 +14,12 @@ const REPO_ROOT = resolve(HERE, '..');
 const SRC_DIR = resolve(REPO_ROOT, 'data');
 const DEST_DIR = resolve(REPO_ROOT, 'functions-python/generated_manifests');
 
-const MANIFESTS = ['traits.json', 'cultivars.json', 'reference.json'];
+const MANIFESTS = [
+  'traits.json',
+  'cultivars.json',
+  'reference.json',
+  'download_versions.json',
+];
 
 mkdirSync(DEST_DIR, { recursive: true });
 

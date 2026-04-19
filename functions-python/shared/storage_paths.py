@@ -44,3 +44,27 @@ def orthofinder_matrix_path(version: int) -> str:
 
 def orthofinder_og_descriptions_path(version: int) -> str:
     return f"orthofinder/v{version}/og_descriptions.json"
+
+
+# ─────────────────────────────────────────────────────────────
+# Discovery download bundles (/download page artifacts)
+# ─────────────────────────────────────────────────────────────
+
+def _version_tag(orthofinder_version: int, grouping_version: int) -> str:
+    return f"v{orthofinder_version}_g{grouping_version}"
+
+
+def download_trait_dir(orthofinder_version: int, grouping_version: int, trait_id: str) -> str:
+    return f"downloads/traits/{trait_id}/{_version_tag(orthofinder_version, grouping_version)}"
+
+
+def download_cross_trait_dir(orthofinder_version: int, grouping_version: int) -> str:
+    return f"downloads/cross-trait/{_version_tag(orthofinder_version, grouping_version)}"
+
+
+def download_staging_dir(run_id: str) -> str:
+    return f"downloads/_staging/{run_id}"
+
+
+def download_manifest_path() -> str:
+    return "downloads/_manifest.json"

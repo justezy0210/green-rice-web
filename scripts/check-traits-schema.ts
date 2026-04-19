@@ -13,6 +13,7 @@ const HERE = dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = resolve(HERE, '..');
 
 const TRAITS_JSON = resolve(REPO_ROOT, 'data/traits.json');
+const DOWNLOAD_VERSIONS_JSON = resolve(REPO_ROOT, 'data/download_versions.json');
 const TRAIT_ID_UNION_FILE = resolve(REPO_ROOT, 'src/types/traits.ts');
 
 const REQUIRED_FIELDS = ['id', 'label', 'type', 'keys', 'direction', 'labels', 'unit'];
@@ -80,11 +81,29 @@ for (const member of unionSet) {
   if (!jsonIds.has(member)) errors.push(`TraitId union member "${member}" not found in data/traits.json`);
 }
 
+// download_versions.json schema check
+try {
+  const dv = JSON.parse(readFileSync(DOWNLOAD_VERSIONS_JSON, 'utf-8'));
+  const of = dv.activeOrthofinderVersion;
+  const gv = dv.activeGroupingVersion;
+  if (!Number.isInteger(of) || of <= 0) {
+    errors.push(`data/download_versions.json: activeOrthofinderVersion must be a positive integer`);
+  }
+  if (!Number.isInteger(gv) || gv <= 0) {
+    errors.push(`data/download_versions.json: activeGroupingVersion must be a positive integer`);
+  }
+  if (typeof dv.updatedAt !== 'string' || !dv.updatedAt) {
+    errors.push(`data/download_versions.json: updatedAt must be a non-empty string`);
+  }
+} catch (e) {
+  errors.push(`data/download_versions.json: ${(e as Error).message}`);
+}
+
 if (errors.length > 0) {
-  console.error('\n\x1b[31m✗ data/traits.json schema errors:\x1b[0m\n');
+  console.error('\n\x1b[31m✗ SSOT schema errors:\x1b[0m\n');
   for (const e of errors) console.error(`  ${e}`);
   console.error('');
   process.exit(1);
 }
 
-console.log(`\n\x1b[32m✓ data/traits.json matches TraitId union (${jsonIds.size} traits)\x1b[0m\n`);
+console.log(`\n\x1b[32m✓ data/traits.json matches TraitId union (${jsonIds.size} traits) · download_versions.json valid\x1b[0m\n`);

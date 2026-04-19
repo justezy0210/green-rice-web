@@ -75,6 +75,29 @@ def load_reference() -> dict:
     return raw
 
 
+_DOWNLOAD_VERSIONS_REQUIRED_FIELDS = {
+    "activeOrthofinderVersion",
+    "activeGroupingVersion",
+    "updatedAt",
+}
+
+
+def load_download_versions() -> dict:
+    raw = _load("download_versions.json")
+    missing = _DOWNLOAD_VERSIONS_REQUIRED_FIELDS - raw.keys()
+    if missing:
+        raise ManifestError(f"download_versions.json missing fields: {sorted(missing)}")
+    for field in ("activeOrthofinderVersion", "activeGroupingVersion"):
+        value = raw[field]
+        if not isinstance(value, int) or value <= 0:
+            raise ManifestError(
+                f"download_versions.json: {field!r} must be a positive integer, got {value!r}"
+            )
+    if not isinstance(raw["updatedAt"], str):
+        raise ManifestError("download_versions.json: updatedAt must be a string")
+    return raw
+
+
 _CULTIVAR_REQUIRED_FIELDS = {"id"}
 
 
