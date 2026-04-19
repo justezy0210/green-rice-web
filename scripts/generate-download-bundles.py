@@ -49,6 +49,7 @@ from shared.storage_paths import (  # noqa: E402
     download_manifest_path,
     download_staging_dir,
     download_trait_dir,
+    orthofinder_og_categories_path,
     orthofinder_og_descriptions_path,
 )
 
@@ -246,12 +247,35 @@ def load_diff_from_firestore(db, bucket, trait: str) -> list[DiffEntry]:
     return out
 
 
-def load_grouping_from_firestore(db, trait: str) -> GroupingSummary:
+def canonical_group_order(trait_meta: dict) -> list[str]:
+    """Canonical lo→hi label order for a trait.
+
+    - multi-env traits label groups as the `keys` array (e.g. heading_date
+      → ["early","normal","late"]).
+    - single-continuous / binary traits label groups as
+      [labels.low, labels.high] per rev2 §4a.
+    """
+    if trait_meta.get("type") == "multi-env":
+        return list(trait_meta["keys"])
+    labels = trait_meta.get("labels") or {}
+    low = labels.get("low")
+    high = labels.get("high")
+    out: list[str] = []
+    if isinstance(low, str):
+        out.append(low)
+    if isinstance(high, str):
+        out.append(high)
+    return out
+
+
+def load_grouping_from_firestore(
+    db, trait: str, trait_meta: dict, total_cultivars: int,
+) -> GroupingSummary:
     doc = db.collection("groupings").document(trait).get()
     if not doc.exists:
         return GroupingSummary(
             usable=False, method="none", group_labels=[], group_sizes=[],
-            n_observed=0, n_missing=0, note="no grouping document",
+            n_observed=0, n_missing=total_cultivars, note="no grouping document",
         )
     data = doc.to_dict()
     summary = data.get("summary") or {}
@@ -266,16 +290,51 @@ def load_grouping_from_firestore(db, trait: str) -> GroupingSummary:
             continue
         sizes[lbl] = sizes.get(lbl, 0) + 1
 
-    labels = sorted(sizes.keys())
+    # Order: canonical lo→hi from trait metadata, filtered to what's
+    # actually present in sizes. Any unexpected label from the grouping
+    # pipeline is appended at the end to avoid silent data loss.
+    canonical = canonical_group_order(trait_meta)
+    ordered: list[str] = [lbl for lbl in canonical if lbl in sizes]
+    for lbl in sorted(sizes.keys()):
+        if lbl not in ordered:
+            ordered.append(lbl)
+
+    n_observed = int(quality.get("nObserved", 0))
     return GroupingSummary(
         usable=bool(quality.get("usable", False)),
         method=summary.get("method", "none"),
-        group_labels=labels,
-        group_sizes=[sizes[l] for l in labels],
-        n_observed=int(quality.get("nObserved", 0)),
-        n_missing=max(0, int(quality.get("nObserved", 0)) - int(quality.get("nUsedInModel", 0))),
+        group_labels=ordered,
+        group_sizes=[sizes[l] for l in ordered],
+        n_observed=n_observed,
+        n_missing=max(0, total_cultivars - n_observed),
         note=str(quality.get("note", "")),
     )
+
+
+# ─────────────────────────────────────────────────────────────
+# OG category (LLM-precomputed) loader
+# ─────────────────────────────────────────────────────────────
+
+
+def load_og_categories(bucket, active_of: int) -> dict[str, str]:
+    """Load orthofinder/v{of}/og_categories.json if present.
+
+    Returns {ogId: primary_category_string}. Missing file → {} (downstream
+    callers leave llmCategory as NA). Mirrors the UI's useOgCategories
+    hook so the two stay in sync.
+    """
+    path = orthofinder_og_categories_path(active_of)
+    blob = bucket.blob(path)
+    if not blob.exists():
+        return {}
+    raw = json.loads(blob.download_as_text())
+    categories = raw.get("categories") or {}
+    out: dict[str, str] = {}
+    for og_id, entry in categories.items():
+        primary = entry.get("p") if isinstance(entry, dict) else None
+        if isinstance(primary, str) and primary:
+            out[og_id] = primary
+    return out
 
 
 # ─────────────────────────────────────────────────────────────
@@ -500,6 +559,34 @@ def git_short_hash() -> str:
         return os.environ.get("APP_VERSION", "unknown")
 
 
+def assert_final_prefixes_empty(
+    bucket, orthofinder_version: int, grouping_version: int, trait_ids: list[str],
+) -> None:
+    """Refuse to run if any `downloads/traits/{t}/v{of}_g{g}/` or
+    `downloads/cross-trait/v{of}_g{g}/` prefix already has objects.
+
+    Mirrors promote's pre-flight (rev2 §2 immutability) — running at
+    generator start prevents operators from waiting for a full
+    staging+verify run before discovering the collision.
+    """
+    prefixes = [f"{download_cross_trait_dir(orthofinder_version, grouping_version)}/"]
+    for t in trait_ids:
+        prefixes.append(f"{download_trait_dir(orthofinder_version, grouping_version, t)}/")
+
+    collisions: list[str] = []
+    for prefix in prefixes:
+        blobs = list(bucket.list_blobs(prefix=prefix, max_results=1))
+        if blobs:
+            collisions.append(prefix)
+    if collisions:
+        raise RuntimeError(
+            "Refusing to run: the following final prefixes already contain objects. "
+            "Version pairs are immutable once promoted — bump orthofinder or grouping "
+            "version in data/download_versions.json and regenerate.\n  "
+            + "\n  ".join(collisions)
+        )
+
+
 def init_firebase():
     import firebase_admin
     from firebase_admin import credentials, firestore, storage
@@ -539,7 +626,9 @@ def main() -> int:
 
     traits = load_traits()
     cultivars = load_cultivars()
+    total_cultivars = len(cultivars)
     pangenome_cultivars = [c["id"] for c in cultivars if c.get("pangenome")]
+    trait_meta_by_id = {t["id"]: t for t in traits}
 
     generated_at = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
     app_version = git_short_hash()
@@ -549,23 +638,37 @@ def main() -> int:
     staging_root.mkdir(parents=True, exist_ok=True)
 
     # ── IRGSP transcript index (coords for BED) ────────────────
+    # REQUIRED for BED generation. Running without it silently produces
+    # header-only BEDs for usable traits, which verifier also does not
+    # catch today — fail loudly at the start instead.
     gff_path = PROJECT_ROOT / "data" / "irgsp-1.0.gff"
-    transcript_index: dict[str, GeneCoord] = {}
-    if gff_path.exists():
-        transcript_index = build_transcript_index(gff_path)
-        print(f"Indexed {len(transcript_index)} IRGSP transcript ids from GFF")
-    else:
-        print(f"WARN: {gff_path} missing — BED files will be header-only")
+    if not gff_path.exists():
+        raise RuntimeError(
+            f"Missing {gff_path}. BED coordinates need the IRGSP GFF — "
+            "drop irgsp-1.0.gff at data/ (not tracked in git; pulled from the reference release)."
+        )
+    transcript_index = build_transcript_index(gff_path)
+    print(f"Indexed {len(transcript_index)} IRGSP transcript ids from GFF")
 
     # ── Firebase handles (skipped in dry-run) ──────────────────
     db = None
     bucket = None
     og_counts: dict[str, dict[str, int]] = {}
+    og_categories: dict[str, str] = {}
     if not args.dry_run:
         db, bucket = init_firebase()
+
+        # Immutability pre-flight: refuse if any final prefix already has
+        # objects for this (of, g). Bumping the version in
+        # data/download_versions.json is the only republish path.
+        assert_final_prefixes_empty(bucket, of, g, [t["id"] for t in traits])
+
         print("Loading Orthogroups.GeneCount.tsv …")
         _header_cultivars, og_counts = load_copycount_tsv(bucket, of)
         print(f"  loaded {len(og_counts)} OGs")
+        print("Loading og_categories.json …")
+        og_categories = load_og_categories(bucket, of)
+        print(f"  loaded {len(og_categories)} categories")
     else:
         print("DRY RUN: Firestore + Storage reads skipped; outputs will be header-only")
 
@@ -578,11 +681,24 @@ def main() -> int:
         entries: list[DiffEntry] = []
         grouping = GroupingSummary(
             usable=False, method="none", group_labels=[], group_sizes=[],
-            n_observed=0, n_missing=0, note="(dry-run — not fetched)",
+            n_observed=0, n_missing=total_cultivars, note="(dry-run — not fetched)",
         )
         if not args.dry_run:
-            grouping = load_grouping_from_firestore(db, trait_id)
+            grouping = load_grouping_from_firestore(
+                db, trait_id, trait_meta_by_id[trait_id], total_cultivars,
+            )
             entries = load_diff_from_firestore(db, bucket, trait_id)
+            # Apply LLM category from the Firebase lookup (diff entries
+            # don't carry this field; match the UI's useOgCategories hook).
+            entries = [
+                DiffEntry(
+                    og_id=e.og_id, p_value=e.p_value, p_value_adj_bh=e.p_value_adj_bh,
+                    log2_fc=e.log2_fc, effect_size=e.effect_size,
+                    irgsp_transcripts=e.irgsp_transcripts, description=e.description,
+                    llm_category=og_categories.get(e.og_id),
+                )
+                for e in entries
+            ]
 
         trait_dir = staging_root / "traits" / trait_id / f"v{of}_g{g}"
         trait_dir.mkdir(parents=True, exist_ok=True)
