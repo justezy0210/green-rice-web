@@ -98,7 +98,8 @@ export async function fetchOgTubeMap(
 // ─────────────────────────────────────────────────────────────
 
 const _regionData = new Map<string, RegionData>();
-let _manifestPromise: Promise<OgRegionManifest | null> | null = null;
+let _manifestData: OgRegionManifest | null = null;
+let _manifestInflight: Promise<OgRegionManifest | null> | null = null;
 
 export async function fetchOgRegion(
   ogId: string,
@@ -123,15 +124,38 @@ export async function fetchOgRegion(
 export async function fetchOgRegionManifest(
   signal?: AbortSignal,
 ): Promise<OgRegionManifest | null> {
-  if (_manifestPromise) return _manifestPromise;
-  _manifestPromise = (async () => {
-    try {
-      return await downloadJson<OgRegionManifest>(ogRegionManifestPath(), signal);
-    } catch {
-      return null;
-    }
-  })();
-  return _manifestPromise;
+  if (_manifestData) return _manifestData;
+  // Share an in-flight request across concurrent callers, but let its own
+  // signal-free fetch finish even if a caller aborts — otherwise a
+  // strict-mode double-mount poisons the cache with a null result.
+  if (!_manifestInflight) {
+    _manifestInflight = (async () => {
+      try {
+        const data = await downloadJson<OgRegionManifest>(ogRegionManifestPath());
+        _manifestData = data;
+        return data;
+      } catch {
+        return null;
+      } finally {
+        _manifestInflight = null;
+      }
+    })();
+  }
+  const result = await raceWithAbort(_manifestInflight, signal);
+  return result;
+}
+
+function raceWithAbort<T>(p: Promise<T>, signal?: AbortSignal): Promise<T | null> {
+  if (!signal) return p;
+  if (signal.aborted) return Promise.resolve(null);
+  return new Promise<T | null>((resolve) => {
+    const onAbort = () => resolve(null);
+    signal.addEventListener('abort', onAbort, { once: true });
+    p.then((v) => {
+      signal.removeEventListener('abort', onAbort);
+      resolve(v);
+    });
+  });
 }
 
 // ─────────────────────────────────────────────────────────────
