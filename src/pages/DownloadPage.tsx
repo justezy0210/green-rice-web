@@ -3,6 +3,7 @@ import { useSearchParams } from 'react-router-dom';
 import { useCultivars } from '@/hooks/useCultivars';
 import { useGenomeSummary } from '@/hooks/useGenomeSummary';
 import { GenomeDownloadSection } from '@/components/cultivar/GenomeDownloadSection';
+import { DiscoveryDownloadSection } from '@/components/download/DiscoveryDownloadSection';
 
 export function DownloadPage() {
   const [params, setParams] = useSearchParams();
@@ -43,14 +44,26 @@ export function DownloadPage() {
   };
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-bold text-gray-900">Downloads</h1>
         <p className="text-sm text-gray-500 mt-1">
-          Select a cultivar to download its genome assembly and annotation files.
+          Discovery results (candidate OG tables, BED coordinates, copy-count matrices) and
+          per-cultivar genome assemblies.
         </p>
       </div>
 
+      <section className="space-y-3">
+        <DiscoveryDownloadSection />
+      </section>
+
+      <section className="space-y-3">
+        <div className="px-1">
+          <h2 className="text-lg font-semibold text-gray-900">Per-cultivar genomes</h2>
+          <p className="text-xs text-gray-500 mt-0.5">
+            Select a cultivar to download its genome assembly and annotation files.
+          </p>
+        </div>
       <div className="grid grid-cols-1 lg:grid-cols-[220px_1fr] gap-4 items-start">
         <aside className="border border-gray-200 rounded-lg bg-white overflow-hidden flex flex-col h-[calc(100vh-10rem)] lg:sticky lg:top-20">
           <div className="px-3 py-2 border-b border-gray-100 text-xs font-medium text-gray-500 uppercase tracking-wide flex items-center justify-between">
@@ -131,6 +144,7 @@ export function DownloadPage() {
           )}
         </section>
       </div>
+      </section>
     </div>
   );
 }

@@ -49,6 +49,19 @@ service firebase.storage {
       allow write: if false;
     }
 
+    // Discovery result downloads (public read; written by scripts/generate-download-bundles.py).
+    // Files live under downloads/traits/{trait}/v{of}_g{g}/ and downloads/cross-trait/v{of}_g{g}/.
+    // Bundle manifest at downloads/_manifest.json drives the /download UI.
+    // Staging prefix downloads/_staging/** is deliberately NOT readable — it holds pre-promotion
+    // artifacts that must not be linkable until verification passes.
+    match /downloads/_staging/{path=**} {
+      allow read, write: if false;
+    }
+    match /downloads/{path=**} {
+      allow read: if true;
+      allow write: if false;
+    }
+
     match /{allPaths=**} {
       allow read, write: if false;
     }

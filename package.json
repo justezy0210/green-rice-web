@@ -13,6 +13,8 @@
     "check:manifest-freshness": "npx tsx scripts/check-manifest-freshness.ts",
     "check:traits-schema": "npx tsx scripts/check-traits-schema.ts",
     "check:cross-language": "npx tsx scripts/check-cross-language-parity.ts",
+    "check:download-bundles": "npx tsx scripts/verify-download-bundles.ts",
+    "generate:downloads": "functions-python/venv/bin/python3 scripts/generate-download-bundles.py",
     "check:py": "functions-python/venv/bin/python3 -m pytest -q functions-python/tests",
     "check:all": "npm run lint && npm run type-check && npm run check:arch && npm run check:traits-schema && npm run check:manifest-freshness && npm run check:cross-language && npm run check:py",
     "preview": "vite preview"
