@@ -16,6 +16,7 @@
     "check:download-bundles": "npx tsx scripts/verify-download-bundles.ts",
     "generate:downloads": "functions-python/venv/bin/python3 scripts/generate-download-bundles.py",
     "promote:downloads": "functions-python/venv/bin/python3 scripts/promote-download-bundles.py",
+    "upload:genomes": "functions-python/venv/bin/python3 scripts/upload-genome-files.py",
     "check:py": "functions-python/venv/bin/python3 -m pytest -q functions-python/tests",
     "check:all": "npm run lint && npm run type-check && npm run check:arch && npm run check:traits-schema && npm run check:manifest-freshness && npm run check:cross-language && npm run check:py",
     "preview": "vite preview"
