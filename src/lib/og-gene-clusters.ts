@@ -8,8 +8,7 @@ import type {
 } from '@/types/orthogroup';
 import type { CultivarGroupAssignment } from '@/types/grouping';
 
-export const IRGSP_CULTIVAR = IRGSP_DISPLAY_NAME;
-export const IRGSP_CLUSTER_PREFIX = 'irgsp_';
+const IRGSP_CLUSTER_PREFIX = 'irgsp_';
 
 const DEFAULT_THRESHOLD = 25_000; // 25kb — subject to pilot tuning
 
@@ -118,7 +117,7 @@ export function buildReferenceCluster(
 
   return {
     id: `${IRGSP_CLUSTER_PREFIX}${chr}_${start}`,
-    cultivar: IRGSP_CULTIVAR,
+    cultivar: IRGSP_DISPLAY_NAME,
     chr,
     start,
     end,

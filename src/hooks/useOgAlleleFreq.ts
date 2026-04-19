@@ -1,9 +1,10 @@
 import { useEffect, useState } from 'react';
 import { fetchOgAlleleFreq } from '@/lib/orthogroup-service';
+import type { TraitId } from '@/types/grouping';
 import type { OgAlleleFreqPayload } from '@/types/orthogroup';
 
 export function useOgAlleleFreq(
-  traitId: string | null,
+  traitId: TraitId | null,
   orthofinderVersion: number | null,
   groupingVersion: number | null,
 ): OgAlleleFreqPayload | null {

@@ -28,15 +28,10 @@ export const TRAITS = [
 
 export type TraitId = (typeof TRAITS)[number]['id'];
 
-export const TRAIT_IDS: readonly TraitId[] = TRAITS.map((t) => t.id);
 export const DEFAULT_TRAIT_ID: TraitId = 'heading_date';
 
-const TRAIT_BY_ID = new Map<string, TraitDef>(TRAITS.map((t) => [t.id, t]));
+const TRAIT_IDS_SET = new Set<string>(TRAITS.map((t) => t.id));
 
 export function isTraitId(v: string | null | undefined): v is TraitId {
-  return typeof v === 'string' && TRAIT_BY_ID.has(v);
-}
-
-export function traitLabel(id: TraitId): string {
-  return TRAIT_BY_ID.get(id)?.label ?? id;
+  return typeof v === 'string' && TRAIT_IDS_SET.has(v);
 }

@@ -1,6 +1,6 @@
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import type { TraitId } from '@/types/grouping';
-import { TRAITS } from '@/config/traits';
+import { TRAITS, isTraitId } from '@/config/traits';
 
 interface Props {
   value: TraitId | null;
@@ -14,7 +14,7 @@ export function TraitSelector({ value, onChange }: Props) {
     <Select
       value={value ?? NONE}
       onValueChange={(v) => {
-        if (v && v !== NONE) onChange(v as TraitId);
+        if (isTraitId(v)) onChange(v);
       }}
     >
       <SelectTrigger className="w-64 h-9 text-sm">

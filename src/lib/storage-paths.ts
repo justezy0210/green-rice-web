@@ -1,10 +1,10 @@
 /**
  * Firebase Storage path builders for per-OG / per-version artifacts.
  *
- * Centralising these here keeps the upload-side (Python) and the read-side
- * (TS) layouts from drifting. Any path surfaced below is consumed by the
- * pipeline scripts as well — keep the string shapes stable, or update the
- * pipeline in lockstep.
+ * Read-side only. The write-side layout (Python pipeline scripts and the TS
+ * upload scripts under `scripts/`) still composes these paths manually, so
+ * any change here must be mirrored there by hand until a cross-language
+ * manifest replaces both.
  */
 
 export function ogGeneCoordsPath(chunkKey: string): string {

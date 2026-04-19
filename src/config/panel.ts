@@ -17,16 +17,10 @@ interface CultivarEntry {
 
 const ENTRIES: readonly CultivarEntry[] = (cultivarsJson.cultivars ?? []) as CultivarEntry[];
 
-export const ALL_CULTIVAR_IDS: readonly string[] = ENTRIES.map((c) => c.id);
-export const PANGENOME_CULTIVAR_IDS: readonly string[] = ENTRIES.filter((c) => c.pangenome).map(
-  (c) => c.id,
-);
-
-export const TOTAL_CULTIVARS = ALL_CULTIVAR_IDS.length;
-export const PANGENOME_CULTIVAR_COUNT = PANGENOME_CULTIVAR_IDS.length;
+export const TOTAL_CULTIVARS = ENTRIES.length;
+export const PANGENOME_CULTIVAR_COUNT = ENTRIES.filter((c) => c.pangenome).length;
 export const TRAIT_COUNT = TRAITS.length;
 
-export const REFERENCE_DISPLAY_NAME = IRGSP_DISPLAY_NAME;
 export const REFERENCE_SHORT_NAME = `${IRGSP_DISPLAY_NAME} reference`;
 
 /** "16 cultivars", "11 of 16 aligned", etc. are built from these. */
@@ -35,5 +29,4 @@ export const PANEL_LABEL = {
   panelSizeFull: `${TOTAL_CULTIVARS} cultivars`,
   coverageFraction: `${PANGENOME_CULTIVAR_COUNT}/${TOTAL_CULTIVARS}`,
   coverageOf: `${PANGENOME_CULTIVAR_COUNT} of ${TOTAL_CULTIVARS}`,
-  coverageCompact: `${PANGENOME_CULTIVAR_COUNT}/${TOTAL_CULTIVARS}`,
 } as const;

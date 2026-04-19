@@ -13,6 +13,7 @@ import {
   ogRegionPath,
   ogTubeMapPath,
 } from '@/lib/storage-paths';
+import type { TraitId } from '@/types/grouping';
 import type {
   OgAlleleFreqPayload,
   OgGeneCoords,
@@ -140,7 +141,7 @@ export async function fetchOgRegionManifest(
 const _afData = new Map<string, OgAlleleFreqPayload>();
 
 export async function fetchOgAlleleFreq(
-  traitId: string,
+  traitId: TraitId,
   orthofinderVersion: number,
   groupingVersion: number,
   signal?: AbortSignal,
