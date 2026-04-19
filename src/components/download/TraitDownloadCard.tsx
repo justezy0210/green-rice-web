@@ -1,6 +1,4 @@
-import { useState } from 'react';
-import { ref as storageRef, getDownloadURL } from 'firebase/storage';
-import { storage } from '@/lib/firebase';
+import { publicDownloadUrl } from '@/lib/download-urls';
 import { useDownloadManifest } from '@/hooks/useDownloadManifest';
 import type { DownloadManifest } from '@/types/download-manifest';
 
@@ -72,41 +70,16 @@ export function TraitDownloadCard({ traitId }: Props) {
 }
 
 function FileLink({ path, name }: { path: string; name: string }) {
-  const [state, setState] = useState<{ url?: string; error?: string }>({});
-
-  const resolve = async () => {
-    if (state.url || state.error) return;
-    try {
-      const url = await getDownloadURL(storageRef(storage, path));
-      setState({ url });
-    } catch (err) {
-      setState({ error: err instanceof Error ? err.message : 'unavailable' });
-    }
-  };
-
-  if (state.error) {
-    return <span className="text-red-500 font-mono">{name} · error</span>;
-  }
-  if (state.url) {
-    return (
-      <a
-        href={state.url}
-        download={name}
-        target="_blank"
-        rel="noopener noreferrer"
-        className="font-mono text-green-700 hover:underline truncate"
-      >
-        {name}
-      </a>
-    );
-  }
+  // Public-read paths (downloads/**) — no network call to resolve URL.
   return (
-    <button
-      type="button"
-      onClick={resolve}
-      className="font-mono text-gray-700 hover:text-green-700 hover:underline truncate text-left"
+    <a
+      href={publicDownloadUrl(path)}
+      download={name}
+      target="_blank"
+      rel="noopener noreferrer"
+      className="font-mono text-green-700 hover:underline truncate"
     >
       {name}
-    </button>
+    </a>
   );
 }

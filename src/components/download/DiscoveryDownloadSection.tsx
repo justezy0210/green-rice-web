@@ -1,8 +1,6 @@
-import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { ref as storageRef, getDownloadURL } from 'firebase/storage';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { storage } from '@/lib/firebase';
+import { publicDownloadUrl } from '@/lib/download-urls';
 import { useDownloadManifest } from '@/hooks/useDownloadManifest';
 import type { DownloadManifest } from '@/types/download-manifest';
 
@@ -147,39 +145,16 @@ function CrossTraitRow({ manifest }: { manifest: DownloadManifest }) {
 }
 
 function CrossTraitLink({ path, name }: { path: string; name: string }) {
-  const [state, setState] = useState<{ url?: string; error?: string }>({});
-
-  const resolve = async () => {
-    if (state.url || state.error) return;
-    try {
-      const url = await getDownloadURL(storageRef(storage, path));
-      setState({ url });
-    } catch (err) {
-      setState({ error: err instanceof Error ? err.message : 'unavailable' });
-    }
-  };
-
-  if (state.error) return <span className="text-red-500 text-xs">{name} · error</span>;
-  if (state.url) {
-    return (
-      <a
-        href={state.url}
-        download={name}
-        target="_blank"
-        rel="noopener noreferrer"
-        className="font-mono text-xs text-green-700 hover:underline"
-      >
-        {name}
-      </a>
-    );
-  }
+  // Public-read path — no network round-trip to resolve a token.
   return (
-    <button
-      type="button"
-      onClick={resolve}
-      className="font-mono text-xs text-gray-700 hover:text-green-700 hover:underline"
+    <a
+      href={publicDownloadUrl(path)}
+      download={name}
+      target="_blank"
+      rel="noopener noreferrer"
+      className="font-mono text-xs text-green-700 hover:underline"
     >
       {name}
-    </button>
+    </a>
   );
 }

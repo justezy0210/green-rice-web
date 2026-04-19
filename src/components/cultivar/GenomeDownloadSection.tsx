@@ -1,7 +1,5 @@
-import { useEffect, useState } from 'react';
-import { ref as storageRef, getDownloadURL } from 'firebase/storage';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { storage } from '@/lib/firebase';
+import { publicDownloadUrl } from '@/lib/download-urls';
 import type { FileUploadStatus, GenomeSummary } from '@/types/genome';
 
 interface Props {
@@ -75,38 +73,11 @@ function DownloadRow({ entry }: { entry: Entry }) {
   );
 }
 
-type DownloadState = { key: string; url?: string; error?: string };
-
 function DownloadButton({ storagePath, fileName }: { storagePath: string; fileName: string }) {
-  const [state, setState] = useState<DownloadState>({ key: '' });
-
-  useEffect(() => {
-    let cancelled = false;
-    getDownloadURL(storageRef(storage, storagePath))
-      .then((u) => {
-        if (!cancelled) setState({ key: storagePath, url: u });
-      })
-      .catch((err) => {
-        if (!cancelled) setState({
-          key: storagePath,
-          error: err instanceof Error ? err.message : 'Unavailable',
-        });
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [storagePath]);
-
-  const isCurrent = state.key === storagePath;
-  const url = isCurrent ? state.url : undefined;
-  const error = isCurrent ? state.error : undefined;
-
-  if (error) {
-    return <span className="text-xs text-red-500 shrink-0">Error</span>;
-  }
-  if (!url) {
-    return <span className="text-xs text-gray-400 shrink-0">Preparing…</span>;
-  }
+  // downloads/** and genomes/** are public-read (storage.rules), so we
+  // can construct the public `?alt=media` URL directly and hand the
+  // browser a ready-to-click anchor with zero network wait.
+  const url = publicDownloadUrl(storagePath);
   return (
     <a
       href={url}
