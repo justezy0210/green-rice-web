@@ -98,13 +98,12 @@ export function TraitDownloadCard({ traitId }: Props) {
 }
 
 function FileLink({ path, name }: { path: string; name: string }) {
-  // Public-read paths (downloads/**) — no network call to resolve URL.
+  // Server-side Content-Disposition: attachment drives the download;
+  // no target="_blank" so there's no empty-tab flash.
   return (
     <a
       href={publicDownloadUrl(path)}
       download={name}
-      target="_blank"
-      rel="noopener noreferrer"
       className="font-mono text-green-700 hover:underline truncate"
     >
       {name}

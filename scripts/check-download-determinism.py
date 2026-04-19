@@ -70,6 +70,10 @@ def main() -> int:
         files_a = walk_tsv_bed(run_a)
         rel_keys = [f.relative_to(run_a).as_posix() for f in files_a]
 
+        if not rel_keys:
+            print("\n✗ Determinism check failed: generator produced zero TSV/BED files")
+            return 1
+
         diffs: list[str] = []
         missing_in_b: list[str] = []
         for rel in rel_keys:

@@ -185,6 +185,9 @@ def upload_one(
     # upload_from_filename streams in chunks internally — fine for multi-GB.
     blob.upload_from_filename(str(local), content_type=content_type)
     blob.cache_control = "public, max-age=3600"
+    # Force save-as rather than inline open. The HTML `download` attribute
+    # is ignored for cross-origin URLs, so the server has to declare it.
+    blob.content_disposition = f'attachment; filename="{STORAGE_NAME[ftype]}"'
     blob.patch()
 
     # Firestore update — mirror the web service

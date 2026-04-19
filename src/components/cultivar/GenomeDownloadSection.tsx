@@ -74,16 +74,14 @@ function DownloadRow({ entry }: { entry: Entry }) {
 }
 
 function DownloadButton({ storagePath, fileName }: { storagePath: string; fileName: string }) {
-  // downloads/** and genomes/** are public-read (storage.rules), so we
-  // can construct the public `?alt=media` URL directly and hand the
-  // browser a ready-to-click anchor with zero network wait.
+  // genomes/** is public-read (storage.rules) and every file is stamped
+  // with Content-Disposition: attachment — hand the browser a direct
+  // anchor, zero network wait, no empty-tab flash.
   const url = publicDownloadUrl(storagePath);
   return (
     <a
       href={url}
       download={fileName}
-      target="_blank"
-      rel="noopener noreferrer"
       className="px-3 py-1.5 text-xs font-medium rounded-md text-white bg-green-600 hover:bg-green-700 shrink-0"
     >
       Download

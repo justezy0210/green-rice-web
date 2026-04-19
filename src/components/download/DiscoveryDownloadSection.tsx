@@ -164,13 +164,12 @@ function CrossTraitRow({ manifest }: { manifest: DownloadManifest }) {
 }
 
 function CrossTraitLink({ path, name }: { path: string; name: string }) {
-  // Public-read path — no network round-trip to resolve a token.
+  // Server-side Content-Disposition: attachment drives the download;
+  // target="_blank" would just flash an empty tab.
   return (
     <a
       href={publicDownloadUrl(path)}
       download={name}
-      target="_blank"
-      rel="noopener noreferrer"
       className="font-mono text-xs text-green-700 hover:underline"
     >
       {name}

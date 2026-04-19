@@ -20,7 +20,7 @@
  * Non-zero exit on any failure. Stdin is not read.
  */
 
-import { execSync } from 'node:child_process';
+import { execFileSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
 import { readFileSync, readdirSync, statSync } from 'node:fs';
 import { join, resolve, dirname } from 'node:path';
@@ -174,7 +174,7 @@ for (const t of traitIds) {
 
 let hasBedtools = false;
 try {
-  execSync('bedtools --version', { stdio: 'ignore' });
+  execFileSync('bedtools', ['--version'], { stdio: 'ignore' });
   hasBedtools = true;
 } catch {
   // bedtools optional — static checks still run
@@ -194,14 +194,16 @@ for (const t of traitIds) {
     const lines = readFileSync(p, 'utf-8').split('\n').filter((l) => l && !l.startsWith('#'));
     if (lines.length > 1) {
       try {
-        execSync(`bedtools sort -i "${p}"`, { stdio: 'ignore' });
+        execFileSync('bedtools', ['sort', '-i', p], { stdio: 'ignore' });
       } catch {
         err(`bedtools sort failed for ${t}`);
       }
-      // Intersect against a tiny fixture that spans realistic IRGSP
-      // chromosomes — a zero-row result or a bedtools crash is a fail.
+      // Intersect against a fixture spanning every IRGSP chromosome so
+      // a trait whose candidates happen to cluster on a single chrom
+      // still produces a non-empty intersect result. The check is:
+      // "valid BED → non-empty intersect against genome-wide fixture".
       try {
-        const out = execSync(`bedtools intersect -a "${SAMPLE_BED}" -b "${p}"`, {
+        const out = execFileSync('bedtools', ['intersect', '-a', SAMPLE_BED, '-b', p], {
           encoding: 'utf-8',
         });
         if (out.trim() === '') {

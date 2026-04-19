@@ -1,3 +1,12 @@
-chr01	0	40000000	smoke_test_chr01	0	.
+chr01	0	45000000	smoke_test_chr01	0	.
 chr02	0	40000000	smoke_test_chr02	0	.
-chr06	0	40000000	smoke_test_chr06	0	.
+chr03	0	40000000	smoke_test_chr03	0	.
+chr04	0	40000000	smoke_test_chr04	0	.
+chr05	0	35000000	smoke_test_chr05	0	.
+chr06	0	35000000	smoke_test_chr06	0	.
+chr07	0	35000000	smoke_test_chr07	0	.
+chr08	0	30000000	smoke_test_chr08	0	.
+chr09	0	25000000	smoke_test_chr09	0	.
+chr10	0	25000000	smoke_test_chr10	0	.
+chr11	0	35000000	smoke_test_chr11	0	.
+chr12	0	30000000	smoke_test_chr12	0	.
