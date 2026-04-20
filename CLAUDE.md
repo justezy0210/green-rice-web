@@ -1,17 +1,29 @@
 # CLAUDE.md — Green Rice Web
 
-> **이 리소스는 16개 한국 temperate japonica 품종에서 형질 그룹을 구분하는 후보 유전자 및 유전체 요소를 orthogroup, 변이, 그래프 기반 증거로 우선순위화해 제시하는 표현형 기반 후보 발견 데이터베이스이며, 후속 생물학적 검증의 출발점을 제공한다.**
+> **이 리소스는 16개 한국 temperate japonica 품종의 de novo assembly, gene annotation, orthogroup, pangenome graph를 gene·orthogroup·cultivar·region 단위로 통합 탐색하는 비교유전체(pan-genome) 데이터베이스이며, 형질 그룹을 구분하는 후보 증거를 별도 분석 모듈로 함께 제공한다.**
 
-**정체성 lock (2026-04-18)**: 새 UI copy · 기능 · 플랜 작성 전에 반드시 확인: [`docs/product-specs/scope.md`](docs/product-specs/scope.md)
+**정체성 업데이트 (2026-04-20)**: 2026-04-18 phenotype-first lock에서 entity-centered pangenome resource로 재프레이밍. 새 UI copy · 기능 · 플랜 작성 전에 반드시 확인: [`docs/product-specs/scope.md`](docs/product-specs/scope.md)
+
+엔티티 계층 (UI · URL · 설명문 모두 이 순서로):
+1. Cultivar / Gene / Orthogroup / Region — 1급 (primary surface)
+2. Trait Association — 2급 (overlay/module, trait-first 서사 금지)
 
 금지된 프레이밍 (exclusion list):
+- **Validated** PAV / LoF / pseudogene confirmed / causal / driver / determinant
 - Marker / primer / KASP / CAPS / InDel design
 - Parent-pair polymorphism workflow
 - MAS / GS / GEBV
-- Validated PAV / pseudogene / causal
 - "한국 벼 전체 대표" 일반화
+- Anchor-locus AF를 tier gating 없이 OG-level 증거처럼 표시
 
-1차 사용자: trait biologist · QTL 후속 연구자 · upstream (pre-MAS) breeder. Molecular breeder는 주 사용자 아님.
+허용된 표현 (이전 금지 해제):
+- Evidence-graded PAV state (present-complete, present-fragmented, absent-syntenic-deletion, absent-annotation-missing, duplicated, ambiguous) — evidence 공개 필수, "not validation-grade" 라벨 필수
+
+1차 사용자 (동등):
+- Comparative genomics researcher — gene/OG/cultivar/region browsing
+- Trait biologist · QTL 후속 · pre-MAS breeder — phenotype association 모듈
+
+Molecular breeder · MAS/GS 오퍼레이터는 primary user 아님.
 
 ## Tech Stack
 

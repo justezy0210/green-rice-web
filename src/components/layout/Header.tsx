@@ -5,7 +5,7 @@ import { useAdminClaim } from '@/hooks/useAdminClaim';
 
 const NAV_ITEMS = [
   { path: '/', label: 'Overview' },
-  { path: '/explore', label: 'Explore' },
+  { path: '/explore', label: 'Trait Association' },
   { path: '/download', label: 'Downloads' },
 ];
 
@@ -20,13 +20,13 @@ export function Header() {
         <Link
           to="/"
           className="flex items-center gap-2 font-semibold text-green-700"
-          title="Korean temperate japonica phenotype-driven candidate discovery database"
+          title="Korean japonica comparative pangenome resource"
         >
           <span className="text-2xl">🌾</span>
           <span className="flex flex-col leading-tight">
             <span className="text-base">Green Rice DB</span>
             <span className="text-[10px] font-normal text-gray-500 tracking-wide">
-              Phenotype-driven candidate discovery · Korean temperate japonica
+              Comparative pangenome resource · Korean temperate japonica
             </span>
           </span>
         </Link>

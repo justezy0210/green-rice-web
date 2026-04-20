@@ -4,7 +4,8 @@ import { Card, CardContent } from '@/components/ui/card';
 import { OgDetailAlleleFreqTab } from '@/components/og-detail/OgDetailAlleleFreqTab';
 import { OgDetailGeneTab } from '@/components/og-detail/OgDetailGeneTab';
 import { OgDetailGraphTab } from '@/components/og-detail/OgDetailGraphTab';
-import { ScopePanel } from '@/components/og-detail/ScopePanel';
+import { OgAnchorTierBadge } from '@/components/explore/OgAnchorTierBadge';
+import { ScopeStrip } from '@/components/common/ScopeStrip';
 import { useOrthogroupDiff } from '@/hooks/useOrthogroupDiff';
 import { useOrthogroupDiffEntries } from '@/hooks/useOrthogroupDiffEntries';
 import { useOgDrilldown } from '@/hooks/useOgDrilldown';
@@ -13,6 +14,7 @@ import { useOgGeneCoords } from '@/hooks/useOgGeneCoords';
 import { useCultivars } from '@/hooks/useCultivars';
 import { buildGroupColorMap } from '@/components/dashboard/distribution-helpers';
 import { buildGeneClusters, buildReferenceCluster, formatClusterSummary } from '@/lib/og-gene-clusters';
+import { classifyAnchorTier } from '@/lib/og-anchor-tier';
 import type { TraitId } from '@/types/grouping';
 import type { OrthogroupDiffEntry, GeneCluster } from '@/types/orthogroup';
 
@@ -20,7 +22,7 @@ const TABS = ['members', 'af', 'graph'] as const;
 type TabId = (typeof TABS)[number];
 const TAB_LABELS: Record<TabId, string> = {
   members: 'Gene Locations',
-  af: 'Gene-region Variants',
+  af: 'Anchor-locus Variants',
   graph: 'Pangenome Graph',
 };
 
@@ -86,6 +88,12 @@ export function OgDetailPage() {
     if (!selectedClusterId) return clusters[0] ?? null;
     return clusters.find((c) => c.id === selectedClusterId) ?? clusters[0] ?? null;
   }, [clusters, selectedClusterId]);
+
+  const tierMetrics = useMemo(() => {
+    if (!selectedCluster || selectedCluster.source === 'reference') return null;
+    if (!ogCoords) return null;
+    return classifyAnchorTier(selectedCluster, ogCoords);
+  }, [selectedCluster, ogCoords]);
 
   const primaryDesc = rep
     ? Object.values(rep.descriptions ?? {}).find((d) => d && d !== 'NA') ?? null
@@ -201,6 +209,7 @@ export function OgDetailPage() {
             ) : clusters.length === 0 && ogCoords ? (
               <span className="text-gray-400 italic">No gene clusters for this OG</span>
             ) : null}
+            {tierMetrics && <OgAnchorTierBadge metrics={tierMetrics} />}
           </div>
         </CardContent>
       </Card>
@@ -225,11 +234,11 @@ export function OgDetailPage() {
         </nav>
       </div>
 
-      <p className="text-[11px] text-gray-600 bg-green-50 border border-green-200 rounded px-3 py-2">
-        This candidate was prioritized by orthogroup copy-count difference between phenotype groups. The Variants and Graph tabs provide supporting sequence and structural context — not confirmation.
-      </p>
-
-      <ScopePanel />
+      <ScopeStrip>
+        Orthogroup-level evidence. Anchor-locus variants are shown as
+        locus-local evidence only, gated by anchor representativeness.
+        Not causal, not marker-ready.
+      </ScopeStrip>
 
       {/* Tab content */}
       {activeTab === 'members' && (
@@ -254,6 +263,7 @@ export function OgDetailPage() {
           afSummary={afSummary}
           groupLabels={groupLabels}
           groupColorMap={groupColorMap}
+          tierMetrics={tierMetrics}
         />
       )}
       {activeTab === 'graph' && (

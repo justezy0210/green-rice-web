@@ -11,13 +11,19 @@ interface Props {
   summary: OgVariantSummary;
   groupLabels: string[];
   groupColorMap: Record<string, { bg: string; border: string }>;
+  title?: string;
 }
 
-export function OgDrawerAlleleFreqSection({ summary, groupLabels, groupColorMap }: Props) {
+export function OgDrawerAlleleFreqSection({
+  summary,
+  groupLabels,
+  groupColorMap,
+  title = 'Anchor-locus variants',
+}: Props) {
   return (
     <section className="px-4 py-3 border-b border-gray-100 text-xs">
       <h3 className="font-medium text-gray-500 uppercase tracking-wide mb-2">
-        Gene-region variants
+        {title}
       </h3>
 
       <div className="flex gap-4 text-gray-600 mb-2">

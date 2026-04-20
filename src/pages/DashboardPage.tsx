@@ -1,32 +1,15 @@
 import { useState } from 'react';
-import { Link, useNavigate, useSearchParams } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { usePhenotypeData } from '@/hooks/usePhenotypeData';
 import { PhenotypeDistributionChart } from '@/components/dashboard/PhenotypeDistributionChart';
 import { TraitQualityOverview } from '@/components/dashboard/TraitQualityOverview';
+import { EntityCardsGrid } from '@/components/dashboard/EntityCardsGrid';
 import {
   PANEL_LABEL,
   REFERENCE_SHORT_NAME,
   TOTAL_CULTIVARS,
   TRAIT_COUNT,
 } from '@/config/panel';
-import { FIELD_TO_TRAIT_ID, type PhenotypeFieldKey } from '@/types/grouping';
-
-function dashboardTraitToExploreUrl(trait: string | null, season: string | null): string {
-  // Dashboard chart writes ?trait=<dashboardKey>&season=<early|normal|late>.
-  // The dashboard key is either "days_to_heading" (expanded via `season`) or
-  // a PhenotypeFieldKey (culmLength, panicleLength, …). Map it to an
-  // Explore TraitId and hand Explore a pre-selected trait.
-  let fieldKey: PhenotypeFieldKey | null = null;
-  if (trait === 'days_to_heading' || trait === null) {
-    const s = season && ['early', 'normal', 'late'].includes(season) ? season : 'early';
-    fieldKey = s as PhenotypeFieldKey;
-  } else if ((Object.keys(FIELD_TO_TRAIT_ID) as PhenotypeFieldKey[]).includes(trait as PhenotypeFieldKey)) {
-    fieldKey = trait as PhenotypeFieldKey;
-  }
-  if (!fieldKey) return '/explore';
-  const traitId = FIELD_TO_TRAIT_ID[fieldKey];
-  return `/explore?trait=${encodeURIComponent(traitId)}`;
-}
 
 export function DashboardPage() {
   const { records, loading, error } = usePhenotypeData();
@@ -34,11 +17,6 @@ export function DashboardPage() {
   const [highlightIdx, setHighlightIdx] = useState(-1);
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
-  const exploreUrl = dashboardTraitToExploreUrl(
-    searchParams.get('trait'),
-    searchParams.get('season'),
-  );
 
   const suggestions = dropdownOpen
     ? records.filter((r) => {
@@ -85,18 +63,18 @@ export function DashboardPage() {
 
   return (
     <div className="space-y-6 pb-8">
-      {/* Hero — identity + panel summary + primary CTA */}
+      {/* Hero — identity + panel summary + cultivar lookup */}
       <section className="rounded-lg border border-green-100 bg-gradient-to-br from-green-50 to-white px-6 py-6">
         <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-6">
           <div className="max-w-2xl space-y-3">
             <h1 className="text-2xl font-bold text-gray-900">
-              Phenotype-driven candidate discovery for Korean rice
+              Korean japonica comparative pangenome resource
             </h1>
             <p className="text-sm text-gray-600 leading-relaxed">
-              This resource prioritizes candidate genes and genomic elements that distinguish trait
-              groups across {TOTAL_CULTIVARS} Korean temperate japonica cultivars using orthogroup,
-              variant, and graph-based evidence — as a starting point for downstream biological
-              validation.
+              Explore de novo assemblies, gene annotations, orthogroups, and
+              pangenome graph across {TOTAL_CULTIVARS} Korean temperate
+              japonica cultivars. Phenotype-associated candidates are
+              available as one of several analysis surfaces.
             </p>
             <div className="flex flex-wrap gap-x-6 gap-y-1 pt-1 text-[11px] text-gray-500">
               <span>{records.length} cultivars loaded</span>
@@ -104,17 +82,6 @@ export function DashboardPage() {
               <span>Cactus pangenome ({PANEL_LABEL.coverageOf} assembled)</span>
               <span>OrthoFinder orthogroups</span>
               <span>{REFERENCE_SHORT_NAME}</span>
-            </div>
-            <div className="pt-2 flex items-center gap-3">
-              <Link
-                to={exploreUrl}
-                className="inline-flex items-center gap-1 bg-green-600 hover:bg-green-700 text-white text-sm font-medium rounded-md px-4 py-2 transition-colors"
-              >
-                Start exploring candidates <span aria-hidden>→</span>
-              </Link>
-              <span className="text-[11px] text-gray-500">
-                Pick a trait · see candidate orthogroups per proposed phenotype group
-              </span>
             </div>
           </div>
 
@@ -157,13 +124,11 @@ export function DashboardPage() {
                 </ul>
               )}
             </div>
-            <p className="text-[10px] text-gray-400">
-              Lookup is a supporting utility — the discovery workflow starts at{' '}
-              <Link to="/explore" className="text-green-700 hover:underline">Explore</Link>.
-            </p>
           </aside>
         </div>
       </section>
+
+      <EntityCardsGrid />
 
       <div className="grid grid-cols-1 lg:grid-cols-6 gap-6 items-stretch">
         <div className="lg:col-span-4">

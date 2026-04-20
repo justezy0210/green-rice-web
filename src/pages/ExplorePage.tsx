@@ -12,6 +12,7 @@ import { useOrthogroupDiffEntries } from '@/hooks/useOrthogroupDiffEntries';
 import { useOgCategories } from '@/hooks/useOgCategories';
 import { useOgAlleleFreq } from '@/hooks/useOgAlleleFreq';
 import { useCultivars } from '@/hooks/useCultivars';
+import { ScopeStrip } from '@/components/common/ScopeStrip';
 import type { TraitId } from '@/types/grouping';
 import { DEFAULT_TRAIT_ID, isTraitId } from '@/config/traits';
 import { PANEL_LABEL } from '@/config/panel';
@@ -140,13 +141,23 @@ export function ExplorePage() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 items-stretch">
         <div className="flex flex-col gap-3">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">Explore Candidates</h1>
+            <div className="flex items-baseline gap-2">
+              <h1 className="text-2xl font-bold text-gray-900">Trait Association</h1>
+              <span className="text-[10px] uppercase tracking-wide text-amber-700 bg-amber-50 border border-amber-200 rounded px-1.5 py-0.5">
+                beta
+              </span>
+            </div>
             <p className="text-sm text-gray-500 mt-1">
               Orthogroups ranked by copy-count contrast between proposed
               phenotype groups across the {PANEL_LABEL.panelSize} Korean
               temperate japonica panel.
             </p>
           </div>
+          <ScopeStrip>
+            Candidate prioritization for phenotype follow-up. Not causal,
+            not marker-ready. Anchor-locus AF is tier-gated per OG — see
+            each OG detail page.
+          </ScopeStrip>
           <div className="flex flex-col gap-1">
             <label className="text-xs text-gray-500">Trait</label>
             <TraitSelector value={traitId} onChange={setTrait} />

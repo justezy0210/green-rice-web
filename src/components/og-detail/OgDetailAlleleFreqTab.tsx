@@ -1,18 +1,23 @@
 import { useState } from 'react';
 import { useOgRegion, useOgRegionManifest } from '@/hooks/useOgRegion';
 import { OgDrawerAlleleFreqSection } from '@/components/explore/OgDrawerAlleleFreqSection';
+import { OgAnchorTierBadge } from '@/components/explore/OgAnchorTierBadge';
+import { ScopeStrip } from '@/components/common/ScopeStrip';
 import {
   findManifestCluster,
   resolveClusterRegionStatus,
   statusCopy,
   type ClusterRegionStatus,
 } from '@/lib/cluster-region-status';
+import type { TierMetrics } from '@/lib/og-anchor-tier';
 import { Layer2CoverageBadge } from './Layer2CoverageBadge';
-import type {
-  GeneCluster,
-  OgVariantSummary,
-  RegionData,
-} from '@/types/orthogroup';
+import {
+  ClusterHeader,
+  EmptyState,
+  FrameNote,
+} from './af-tab-helpers';
+import { toOgVariantSummary } from '@/lib/og-region-af-summary';
+import type { GeneCluster, OgVariantSummary } from '@/types/orthogroup';
 
 interface Props {
   ogId: string;
@@ -20,6 +25,7 @@ interface Props {
   afSummary: OgVariantSummary | null;
   groupLabels: string[];
   groupColorMap: Record<string, { bg: string; border: string }>;
+  tierMetrics: TierMetrics | null;
 }
 
 export function OgDetailAlleleFreqTab({
@@ -28,6 +34,7 @@ export function OgDetailAlleleFreqTab({
   afSummary,
   groupLabels,
   groupColorMap,
+  tierMetrics,
 }: Props) {
   const isReference = selectedCluster?.source === 'reference';
   const region = useOgRegion(
@@ -36,6 +43,7 @@ export function OgDetailAlleleFreqTab({
   );
   const { manifest } = useOgRegionManifest();
   const [showOgLevel, setShowOgLevel] = useState(false);
+  const [showGatedAf, setShowGatedAf] = useState(false);
 
   const manifestEntry = !isReference && selectedCluster
     ? findManifestCluster(manifest, ogId, selectedCluster.id)
@@ -43,6 +51,49 @@ export function OgDetailAlleleFreqTab({
   const regionStatus: ClusterRegionStatus | null = !isReference && selectedCluster
     ? resolveClusterRegionStatus(region.data, manifestEntry)
     : null;
+
+  // Tier gating applies only to cultivar-anchored clusters, not the
+  // IRGSP reference pseudo-cluster (which aggregates across gene bodies).
+  const applyTierGating = !isReference && !!tierMetrics;
+  const tier = tierMetrics?.tier;
+
+  if (applyTierGating && tier === 'nonrepresentative' && !showGatedAf) {
+    return (
+      <div className="space-y-2">
+        <ScopeStrip tone="hold">
+          Anchor locus represents this OG poorly (occupancy{' '}
+          {Math.round((tierMetrics?.occupancy ?? 0) * 100)}% of cultivars,
+          threshold 40%). Anchor-locus AF is not shown by default — it
+          would not be an OG-level signal for this cluster.
+        </ScopeStrip>
+        {tierMetrics && (
+          <div className="px-1">
+            <OgAnchorTierBadge metrics={tierMetrics} />
+          </div>
+        )}
+        <div className="border border-gray-200 rounded-lg p-6 text-center text-xs text-gray-500">
+          <button
+            type="button"
+            onClick={() => setShowGatedAf(true)}
+            className="inline-block px-3 py-1 rounded border border-gray-300 bg-white hover:bg-gray-50 text-gray-700"
+          >
+            Show anyway (locus-local only)
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  const tierHeader = applyTierGating && tierMetrics ? (
+    <div className="flex flex-wrap items-center gap-2 px-1">
+      <OgAnchorTierBadge metrics={tierMetrics} />
+      {tier === 'mixed' && (
+        <span className="text-[11px] text-amber-800">
+          Mixed anchor occupancy — read as locus-local evidence, not OG-wide.
+        </span>
+      )}
+    </div>
+  ) : null;
 
   // IRGSP reference pseudo-cluster: use OG-level AF directly.
   if (isReference && afSummary) {
@@ -69,6 +120,7 @@ export function OgDetailAlleleFreqTab({
             summary={afSummary}
             groupLabels={groupLabels}
             groupColorMap={groupColorMap}
+            title="IRGSP gene-body variants"
           />
         </div>
       </div>
@@ -95,22 +147,35 @@ export function OgDetailAlleleFreqTab({
   if (region.data) {
     const clusterAf = toOgVariantSummary(region.data);
     if (clusterAf && clusterAf.variants.length > 0) {
+      const afSection = (
+        <div className="border border-gray-200 rounded-lg overflow-hidden bg-white">
+          <OgDrawerAlleleFreqSection
+            summary={clusterAf}
+            groupLabels={groupLabels}
+            groupColorMap={groupColorMap}
+          />
+        </div>
+      );
       return (
         <div className="space-y-2">
           <ClusterHeader region={region.data} statusTone={statusTone} />
+          {tierHeader}
           <FrameNote />
           {statusTone?.caveat && (
             <p className={`text-[11px] px-2 py-1 rounded border ${statusTone.toneClass}`}>
               {statusTone.caveat}
             </p>
           )}
-          <div className="border border-gray-200 rounded-lg overflow-hidden bg-white">
-            <OgDrawerAlleleFreqSection
-              summary={clusterAf}
-              groupLabels={groupLabels}
-              groupColorMap={groupColorMap}
-            />
-          </div>
+          {tier === 'mixed' ? (
+            <details className="border border-amber-200 rounded-lg bg-amber-50/40 px-3 py-2">
+              <summary className="cursor-pointer select-none text-[11px] text-amber-900">
+                Show locus-local variant table ({clusterAf.totalVariants} variants) — not OG-wide
+              </summary>
+              <div className="mt-2">{afSection}</div>
+            </details>
+          ) : (
+            afSection
+          )}
         </div>
       );
     }
@@ -171,112 +236,3 @@ export function OgDetailAlleleFreqTab({
   );
 }
 
-function ClusterHeader({
-  region,
-  statusTone,
-}: {
-  region: RegionData;
-  statusTone: ReturnType<typeof statusCopy> | null;
-}) {
-  const lift = region.liftover;
-  return (
-    <div className="text-[11px] text-gray-500 flex items-center gap-3 flex-wrap px-1">
-      <span>
-        Source:{' '}
-        <span className="text-green-700 font-medium">cluster-derived lifted region</span>
-      </span>
-      <span>
-        Anchor:{' '}
-        <span className="font-mono text-gray-700">{region.anchor.cultivar}</span>
-      </span>
-      <span className="font-mono">
-        {region.anchor.regionSpan.chr}:
-        {region.anchor.regionSpan.start.toLocaleString()}-
-        {region.anchor.regionSpan.end.toLocaleString()}
-      </span>
-      {lift.irgspRegion && (
-        <span>
-          → IRGSP{' '}
-          <span className="font-mono">
-            {lift.irgspRegion.chr}:{lift.irgspRegion.start.toLocaleString()}-
-            {lift.irgspRegion.end.toLocaleString()}
-          </span>
-        </span>
-      )}
-      {statusTone?.badge && (
-        <span className={`text-[10px] px-1.5 py-0.5 rounded border ${statusTone.toneClass}`}>
-          {statusTone.badge}
-        </span>
-      )}
-      <Layer2CoverageBadge />
-    </div>
-  );
-}
-
-function FrameNote() {
-  return (
-    <p className="text-[11px] text-gray-600 bg-gray-50 border border-gray-200 rounded px-3 py-2">
-      Supporting variant evidence for this candidate. AF values are ALT-path frequencies within each
-      phenotype group — not per-cultivar copy counts, and not proof of which variant explains the
-      trait or the presence/absence of this OG.
-    </p>
-  );
-}
-
-
-function EmptyState({
-  title,
-  hint,
-  action,
-}: {
-  title: string;
-  hint?: string;
-  action?: React.ReactNode;
-}) {
-  return (
-    <div className="border border-gray-200 rounded-lg p-8 text-center text-sm text-gray-600">
-      {title}
-      {hint && <p className="text-xs text-gray-400 mt-1">{hint}</p>}
-      {action}
-    </div>
-  );
-}
-
-function toOgVariantSummary(r: RegionData): OgVariantSummary | null {
-  if (!r.alleleFrequency) {
-    return r.liftover.irgspRegion
-      ? {
-          geneRegions: [
-            {
-              geneId: `${r.anchor.cultivar}_cluster`,
-              chr: r.liftover.irgspRegion.chr,
-              start: r.liftover.irgspRegion.start,
-              end: r.liftover.irgspRegion.end,
-            },
-          ],
-          totalVariants: 0,
-          variants: [],
-        }
-      : null;
-  }
-  const variants = r.alleleFrequency.variants;
-  return {
-    geneRegions: r.liftover.irgspRegion
-      ? [
-          {
-            geneId: `${r.anchor.cultivar}_cluster`,
-            chr: r.liftover.irgspRegion.chr,
-            start: r.liftover.irgspRegion.start,
-            end: r.liftover.irgspRegion.end,
-          },
-        ]
-      : [],
-    totalVariants: variants.length,
-    // Default to genomic position (chr then pos). ΔAF ordering was removed
-    // to prevent reading AF as a ranking axis — it is supporting evidence only.
-    variants: [...variants].sort((a, b) => {
-      if (a.chr !== b.chr) return a.chr.localeCompare(b.chr);
-      return a.pos - b.pos;
-    }),
-  };
-}
