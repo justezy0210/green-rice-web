@@ -70,21 +70,18 @@ npm run check:all    # lint + type-check + arch check
 8. **`@/` alias 사용** — `../../` 상대경로 import 금지.
 9. **코드 내 모든 문자열은 영어** — UI 텍스트, 에러 메시지, 로그, 주석, 변수명 등 코드에 포함되는 모든 언어는 영어로 통일한다. 한국어는 문서(`docs/`, `CLAUDE.md`)에서만 사용.
 
-## External Validation (Codex CLI) — MANDATORY
+## External Validation (Codex CLI) — ON DEMAND
 
-Claude가 리드, Codex가 외부 검증자. `verify` 스킬로 호출. 아래 시점에 자동 실행.
+Claude가 리드, Codex는 사용자가 명시적으로 요청할 때만 외부 검증자로 호출. 시점 기반 자동 실행 금지.
 
-| 시점 | 모드 | 트리거 조건 |
-|------|------|------------|
-| `exec-plans/active/`에 계획 작성 후 | `plan-review` | 계획 파일 작성 완료 즉시 |
-| 서비스/훅/Cloud Function 추가·변경 후 | `script-review` | 구현 태스크 완료 시 |
-| 레이어/폴더 구조 변경 후 | `structure-review` | 디렉토리 재편, 규칙 변경 시 |
-| 커밋 직전 또는 기타 종합 점검 | `general-review` | uncommitted 변경이 큰 경우 |
+**트리거**: 사용자의 `/verify` 명령, "검증해줘", "논의해줘" 같은 명시적 요청.
 
 **검증 결과 처리 규칙:**
 1. Codex 출력 요약 + 이슈별 수정안 제시 후 사용자 승인을 받고 수정
 2. 임의로 코드 변경 금지 — 승인된 이슈만 반영
-3. 계획 검증은 최대 2회, 나머지는 구현 시 해결
+3. 한 번 요청된 검증 내 루프 금지 — 이슈 전부 한 번에 뽑고, 재검증은 사용자가 다시 요청할 때만
+
+**자체 검토는 리드 책임:** 검증이 없어도 계획/구현/커밋은 Claude의 자체 책임으로 완결.
 
 ## Data Flow
 
