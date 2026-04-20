@@ -7,6 +7,7 @@ import { DownloadPage } from '@/pages/DownloadPage';
 import { LoginPage } from '@/pages/LoginPage';
 import { AdminPage } from '@/pages/AdminPage';
 import { CultivarDetailPage } from '@/pages/CultivarDetailPage';
+import { CultivarsListPage } from '@/pages/CultivarsListPage';
 import { OgDetailPage } from '@/pages/OgDetailPage';
 import { ProtectedRoute } from '@/components/auth/ProtectedRoute';
 
@@ -19,8 +20,10 @@ export default function App() {
             <Route path="/" element={<DashboardPage />} />
             <Route path="/explore" element={<ExplorePage />} />
             <Route path="/explore/og/:ogId" element={<OgDetailPage />} />
+            <Route path="/og/:ogId" element={<OgDetailPage />} />
             <Route path="/download" element={<DownloadPage />} />
             <Route path="/login" element={<LoginPage />} />
+            <Route path="/cultivars" element={<CultivarsListPage />} />
             <Route path="/cultivar/:name" element={<CultivarDetailPage />} />
             <Route path="/admin" element={<ProtectedRoute requireAdmin><AdminPage /></ProtectedRoute>} />
           </Routes>

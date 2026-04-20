@@ -4,6 +4,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { OgDetailAlleleFreqTab } from '@/components/og-detail/OgDetailAlleleFreqTab';
 import { OgDetailGeneTab } from '@/components/og-detail/OgDetailGeneTab';
 import { OgDetailGraphTab } from '@/components/og-detail/OgDetailGraphTab';
+import { OgPavEvidenceCard } from '@/components/og-detail/OgPavEvidenceCard';
 import { OgAnchorTierBadge } from '@/components/explore/OgAnchorTierBadge';
 import { ScopeStrip } from '@/components/common/ScopeStrip';
 import { useOrthogroupDiff } from '@/hooks/useOrthogroupDiff';
@@ -15,6 +16,7 @@ import { useCultivars } from '@/hooks/useCultivars';
 import { buildGroupColorMap } from '@/components/dashboard/distribution-helpers';
 import { buildGeneClusters, buildReferenceCluster, formatClusterSummary } from '@/lib/og-gene-clusters';
 import { classifyAnchorTier } from '@/lib/og-anchor-tier';
+import { classifyPavEvidence } from '@/lib/pav-evidence';
 import type { TraitId } from '@/types/grouping';
 import type { OrthogroupDiffEntry, GeneCluster } from '@/types/orthogroup';
 
@@ -95,6 +97,14 @@ export function OgDetailPage() {
     return classifyAnchorTier(selectedCluster, ogCoords);
   }, [selectedCluster, ogCoords]);
 
+  const pavRows = useMemo(() => {
+    if (!members || cultivars.length === 0) return [];
+    return classifyPavEvidence(
+      members,
+      cultivars.map((c) => c.id),
+    );
+  }, [members, cultivars]);
+
   const primaryDesc = rep
     ? Object.values(rep.descriptions ?? {}).find((d) => d && d !== 'NA') ?? null
     : null;
@@ -129,19 +139,23 @@ export function OgDetailPage() {
 
   return (
     <div className="space-y-4">
-      {/* Breadcrumb */}
+      {/* Breadcrumb — trait-aware when entered via Trait Association */}
       <div className="flex items-center gap-2 text-sm text-gray-500">
-        <Link
-          to={traitId ? `/explore?trait=${traitId}` : '/explore'}
-          className="hover:text-green-700 hover:underline"
-        >
-          ← Explore
-        </Link>
-        {traitId && (
+        {traitId ? (
           <>
+            <Link
+              to={`/explore?trait=${traitId}`}
+              className="hover:text-green-700 hover:underline"
+            >
+              ← Trait Association
+            </Link>
             <span>/</span>
             <span className="text-gray-400">{traitId.replace(/_/g, ' ')}</span>
           </>
+        ) : (
+          <Link to="/" className="hover:text-green-700 hover:underline">
+            ← Overview
+          </Link>
         )}
         <span>/</span>
         <span className="text-gray-900 font-medium">{ogId}</span>
@@ -239,6 +253,10 @@ export function OgDetailPage() {
         locus-local evidence only, gated by anchor representativeness.
         Not causal, not marker-ready.
       </ScopeStrip>
+
+      {pavRows.length > 0 && (
+        <OgPavEvidenceCard rows={pavRows} cultivarNameMap={cultivarNameMap} />
+      )}
 
       {/* Tab content */}
       {activeTab === 'members' && (

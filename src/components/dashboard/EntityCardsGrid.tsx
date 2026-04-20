@@ -26,9 +26,8 @@ const CARDS: Card[] = [
   {
     key: 'cultivars',
     title: 'Cultivars',
-    summary: 'Per-cultivar assembly and annotation stats, private OGs.',
-    href: null,
-    comingSoon: true,
+    summary: 'Per-cultivar assembly and annotation stats, phenotype profile.',
+    href: '/cultivars',
   },
   {
     key: 'trait-association',
