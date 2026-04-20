@@ -99,6 +99,83 @@ def _assert_empty(bucket, prefix: str) -> None:
         )
 
 
+def _preflight_invariants(graph_manifest: dict, af_run: Path) -> None:
+    """Source-list-free invariants — anything checkable from the staging
+    bundle alone. Source-referential checks (candidate list cross-match,
+    orphan file walk, AF cluster ⊆ graph) live in
+    scripts/verify-og-region-bundle.ts. See plan § Promote preflight
+    vs validator role separation.
+    """
+    print("Preflight invariants:")
+
+    totals = graph_manifest.get("totals", {})
+    cand = totals.get("candidateOgs")
+    emit = totals.get("ogsEmitted")
+    skip = totals.get("ogsSkipped")
+    clusters_emitted = totals.get("clustersEmitted")
+    if cand is None or emit is None or skip is None:
+        raise SystemExit("graph manifest totals missing candidate/emitted/skipped")
+    if emit + skip != cand:
+        raise SystemExit(
+            f"Manifest totals inconsistent: emitted({emit}) + skipped({skip}) "
+            f"!= candidateOgs({cand})"
+        )
+    print(f"  candidateOgs={cand} emitted={emit} skipped={skip} (sum ok)")
+
+    ogs = graph_manifest.get("ogs", {})
+    if len(ogs) != cand:
+        raise SystemExit(
+            f"ogs dict length {len(ogs)} != candidateOgs {cand}"
+        )
+    print(f"  ogs dict length={len(ogs)} (ok)")
+
+    status_counts = totals.get("statusCounts", {})
+    status_sum = (
+        status_counts.get("graph_ok", 0)
+        + status_counts.get("graph_empty", 0)
+        + status_counts.get("graph_error", 0)
+    )
+    if clusters_emitted is None:
+        raise SystemExit("graph manifest totals.clustersEmitted missing")
+    if status_sum != clusters_emitted:
+        raise SystemExit(
+            f"graph statusCounts sum {status_sum} != clustersEmitted {clusters_emitted}"
+        )
+    print(f"  graph statusCounts sum={status_sum} clustersEmitted={clusters_emitted} (ok)")
+
+    if graph_manifest.get("schemaVersion") != 2:
+        raise SystemExit(
+            f"graph manifest schemaVersion {graph_manifest.get('schemaVersion')!r} != 2"
+        )
+
+    trait_dirs = {p.name for p in af_run.iterdir() if p.is_dir()}
+    af_summary_path = af_run / "_manifest.json"
+    if not af_summary_path.is_file():
+        raise SystemExit(f"AF summary manifest missing: {af_summary_path}")
+    af_summary = json.loads(af_summary_path.read_text())
+    summary_traits = set((af_summary.get("traits") or {}).keys())
+
+    per_trait_manifest_keys: set[str] = set()
+    for t in trait_dirs:
+        mpath = af_run / t / "_manifest.json"
+        if not mpath.is_file():
+            raise SystemExit(f"per-trait AF manifest missing: {mpath}")
+        per_trait_manifest_keys.add(t)
+
+    if not (trait_dirs == summary_traits == per_trait_manifest_keys):
+        raise SystemExit(
+            f"AF trait mismatch: "
+            f"dirs={sorted(trait_dirs)} "
+            f"summary={sorted(summary_traits)} "
+            f"perTraitManifest={sorted(per_trait_manifest_keys)}"
+        )
+    print(
+        f"  AF trait dirs={len(trait_dirs)} "
+        f"summary={len(summary_traits)} "
+        f"perTraitManifest={len(per_trait_manifest_keys)} (match)"
+    )
+
+
 def _smoke(path: str) -> None:
     url = (
         f"https://firebasestorage.googleapis.com/v0/b/{BUCKET}/o/"
@@ -127,13 +204,16 @@ def main() -> int:
     of = int(gm["orthofinderVersion"])
     g = int(gm["groupingVersion"])
 
+    # ── Pre-flight (bundle invariants, no network) ───────────
+    _preflight_invariants(gm, af_run)
+
     bucket = init_firebase()
 
-    # ── Pre-flight ────────────────────────────────────────────
+    # ── Pre-flight (immutability, network) ───────────────────
     print("Pre-flight: immutability checks…")
     _assert_empty(bucket, f"og_region_graph/v{of}_g{g}/")
     _assert_empty(bucket, f"og_region_af/v{of}_g{g}/")
-    print("  all clear")
+    print(f"  final prefixes empty: og_region_graph/v{of}_g{g}/, og_region_af/v{of}_g{g}/")
 
     # ── Enumerate uploads ────────────────────────────────────
     graph_files: list[tuple[Path, str]] = []  # (local, dest)
@@ -201,17 +281,30 @@ def main() -> int:
     _upload(bucket, pointer_local, og_region_pointer_path(), create_only=False)
     print(f"Pointer flipped → {og_region_pointer_path()}")
 
+    pointer_blob = bucket.blob(og_region_pointer_path())
+    pointer_blob.reload()
+    print(
+        f"Pointer object generation={pointer_blob.generation}  "
+        "← overwrite id, not content hash"
+    )
+
     # ── Post-promote smoke ───────────────────────────────────
     print("Post-promote smoke…")
-    _smoke(og_region_pointer_path())
-    _smoke(og_region_graph_manifest_path(of, g))
+    smoke_targets: list[tuple[str, str]] = []
+    smoke_targets.append(("pointer", og_region_pointer_path()))
+    smoke_targets.append(("graph manifest", og_region_graph_manifest_path(of, g)))
     first_trait = sorted(pointer["afManifests"].keys())[0]
-    _smoke(pointer["afManifests"][first_trait])
+    smoke_targets.append(
+        (f"af manifest [{first_trait}]", pointer["afManifests"][first_trait])
+    )
     if graph_files:
-        _smoke(graph_files[0][1])
+        smoke_targets.append(("sample per-cluster graph", graph_files[0][1]))
     if af_files:
-        _smoke(af_files[0][1])
-    print("  all 200")
+        smoke_targets.append(("sample per-cluster af", af_files[0][1]))
+    for label, path in smoke_targets:
+        _smoke(path)
+        print(f"  {label} 200")
+    print(f"Smoke count: {len(smoke_targets)} HEAD 200")
 
     print(f"\nPromote complete for v{of}_g{g}.")
     return 0

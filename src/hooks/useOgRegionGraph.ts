@@ -1,17 +1,25 @@
 import { useEffect, useState } from 'react';
 import { publicDownloadUrl } from '@/lib/download-urls';
 import { ogRegionGraphPath } from '@/lib/storage-paths';
+import { resolveRegionFetch, type RegionResolvedStatus } from '@/lib/region-fetch';
 import { useOgRegionPointer } from './useOgRegionPointer';
-import type { RegionDataGraph } from '@/types/og-region-v2';
+import type { RegionDataGraph, RegionFetchStatus } from '@/types/og-region-v2';
 
-type State = { key: string; data: RegionDataGraph | null };
-const EMPTY: State = { key: '', data: null };
+type State = {
+  key: string;
+  data: RegionDataGraph | null;
+  status: RegionResolvedStatus;
+};
+const EMPTY: State = { key: '', data: null, status: 'ok' };
 
-/** Per-cluster trait-neutral graph bundle. */
+/**
+ * Per-cluster trait-neutral graph bundle. See useOgRegionAf for the
+ * full state transition contract.
+ */
 export function useOgRegionGraph(
   ogId: string | null,
   clusterId: string | null,
-): { data: RegionDataGraph | null; loading: boolean } {
+): { data: RegionDataGraph | null; status: RegionFetchStatus; loading: boolean } {
   const { pointer } = useOgRegionPointer();
   const of = pointer?.activeOrthofinderVersion;
   const g = pointer?.activeGroupingVersion;
@@ -23,23 +31,25 @@ export function useOgRegionGraph(
   useEffect(() => {
     if (!key) return;
     const controller = new AbortController();
-    fetch(publicDownloadUrl(key), { signal: controller.signal })
-      .then(async (res) => {
-        if (!res.ok) throw new Error(`${res.status}`);
-        return (await res.json()) as RegionDataGraph;
-      })
-      .then((data) => {
-        if (!controller.signal.aborted) setState({ key, data });
-      })
-      .catch(() => {
-        if (!controller.signal.aborted) setState({ key, data: null });
-      });
+    resolveRegionFetch<RegionDataGraph>(
+      fetch(publicDownloadUrl(key), { signal: controller.signal }),
+    ).then((result) => {
+      if (controller.signal.aborted) return;
+      setState({ key, ...result });
+    });
     return () => controller.abort();
   }, [key]);
 
+  if (!key) {
+    return { data: null, status: 'idle', loading: false };
+  }
   const isCurrent = state.key === key;
+  if (!isCurrent) {
+    return { data: null, status: 'loading', loading: true };
+  }
   return {
-    data: isCurrent ? state.data : null,
-    loading: Boolean(key) && !isCurrent,
+    data: state.data,
+    status: state.status,
+    loading: false,
   };
 }

@@ -144,6 +144,21 @@ export interface AfSummaryManifest {
   >;
 }
 
+// ─── Runtime fetch state (per-cluster hooks) ─────────────────
+
+/**
+ * State machine for per-cluster region fetches. Distinguishes a pointer
+ * that targets an absent object (`missing` — 404) from transient or
+ * unknown failures (`unavailable` — 5xx, 403, network, JSON parse).
+ * Abort events never transition state; the next effect overwrites.
+ */
+export type RegionFetchStatus =
+  | 'idle'
+  | 'loading'
+  | 'ok'
+  | 'missing'
+  | 'unavailable';
+
 // ─── Per-cluster graph JSON body ─────────────────────────────
 
 export type GraphReasonCode =
