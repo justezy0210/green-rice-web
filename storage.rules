@@ -43,6 +43,12 @@ service firebase.storage {
       allow write: if false;
     }
 
+    // Gene → orthogroup reverse index (public read; built by scripts/build-gene-og-index.py).
+    match /gene_index/{path=**} {
+      allow read: if true;
+      allow write: if false;
+    }
+
     // Per-OG cluster region data (graph + AF bundle; public read; written server-side only).
     match /og_region/{path=**} {
       allow read: if true;

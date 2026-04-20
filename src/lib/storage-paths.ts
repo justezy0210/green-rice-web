@@ -111,3 +111,11 @@ export function orthofinderBaegilmiAnnotationPath(version: number): string {
 export function orthofinderOgCategoriesPath(version: number): string {
   return `orthofinder/v${version}/og_categories.json`;
 }
+
+export function geneIndexManifestPath(version: number): string {
+  return `gene_index/v${version}/_manifest.json`;
+}
+
+export function geneIndexPartitionPath(version: number, prefix: string): string {
+  return `gene_index/v${version}/by_prefix/${prefix}.json`;
+}

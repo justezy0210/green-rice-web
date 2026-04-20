@@ -12,9 +12,8 @@ const CARDS: Card[] = [
   {
     key: 'genes',
     title: 'Genes',
-    summary: 'Annotated genes across 16 assemblies, functional annotation, orthogroup membership.',
-    href: null,
-    comingSoon: true,
+    summary: 'Lookup by gene ID across panel cultivars, orthogroup membership.',
+    href: '/genes',
   },
   {
     key: 'orthogroups',

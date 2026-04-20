@@ -56,3 +56,6 @@ data/Orthogroups*.tsv
 
 # Negative-case preflight fixtures (generated locally, not for git)
 scripts/test-fixtures/
+
+# Script dry-run output (generated locally)
+tmp/
