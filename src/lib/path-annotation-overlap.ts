@@ -157,7 +157,7 @@ export function annotationDisplay(status: PathAnnotationStatus): AnnotationDispl
     case 'no_annotation':
       return {
         badge: '—',
-        label: 'no OG member in cultivar',
+        label: 'no annotated member',
         tooltip: `No OG member annotated anywhere in this cultivar's GFF3. Could be a true absence, an annotation gap, or an orthogroup assignment issue.`,
         dim: true,
       };

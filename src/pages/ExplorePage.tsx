@@ -139,11 +139,24 @@ export function ExplorePage() {
     <div className="space-y-6 pb-8">
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 items-stretch">
         <div className="flex flex-col gap-3">
-          <div>
+          <div className="space-y-2">
             <h1 className="text-2xl font-bold text-gray-900">Explore Candidates</h1>
-            <p className="text-sm text-gray-500 mt-1">
-              Pick a trait to see orthogroups where copy count differs between proposed phenotype groups across the {PANEL_LABEL.panelSize} Korean temperate japonica panel. Starting point for follow-up validation — not association confirmation.
-            </p>
+            <div
+              role="note"
+              className="rounded-md border-l-4 border-amber-300 bg-amber-50/60 px-3 py-2 text-[11px] leading-relaxed"
+            >
+              <p className="font-medium text-amber-900">
+                Candidate discovery — exploratory only
+              </p>
+              <p className="mt-0.5 text-amber-800">
+                Ranked by copy-count differences between proposed phenotype
+                groups across the {PANEL_LABEL.panelSize} Korean temperate
+                japonica panel. Starting points for wet-lab or bioinformatic
+                follow-up — they do <span className="font-semibold">not</span>{' '}
+                establish causality, and the proposed grouping is not a
+                validated biological class.
+              </p>
+            </div>
           </div>
           <div className="flex flex-col gap-1">
             <label className="text-xs text-gray-500">Trait</label>
