@@ -149,7 +149,10 @@ def run_doc_dict(
 
 
 def entity_index_dict(
-    og_id: str, linked: list[tuple[str, ScoredCandidate, str]], now_iso: str
+    entity_type: str,
+    entity_id: str,
+    linked: list[tuple[str, ScoredCandidate, str]],
+    now_iso: str,
 ) -> dict:
     top = [
         {
@@ -164,8 +167,8 @@ def entity_index_dict(
     ]
     top.sort(key=lambda x: x["rank"])
     return {
-        "entityType": "og",
-        "entityId": og_id,
+        "entityType": entity_type,
+        "entityId": entity_id,
         "linkedRuns": sorted({r for r, _, _ in linked}),
         "topCandidates": top,
         "latestUpdatedAt": now_iso,
@@ -181,7 +184,8 @@ def process_trait(
     *,
     dry_run: bool,
     out_dir: Path,
-    entity_accumulator: dict[str, list],
+    og_accumulator: dict[str, list],
+    gene_accumulator: dict[str, list],
 ) -> tuple[str, int]:
     doc_ref = db.collection("orthogroup_diffs").document(trait_id)
     snap = doc_ref.get()
@@ -212,7 +216,9 @@ def process_trait(
 
     # Accumulate reverse index
     for c in ranked:
-        entity_accumulator.setdefault(c.primary_og_id, []).append((run_id, c, trait_id))
+        og_accumulator.setdefault(c.primary_og_id, []).append((run_id, c, trait_id))
+        if c.lead_gene_id:
+            gene_accumulator.setdefault(c.lead_gene_id, []).append((run_id, c, trait_id))
 
     if dry_run:
         trait_dir = out_dir / "analysis_runs" / run_id
@@ -289,34 +295,53 @@ def process_trait(
 
 
 def write_entity_index(
-    db, out_dir: Path, entity_accumulator: dict[str, list], *, dry_run: bool, now_iso: str
+    db,
+    out_dir: Path,
+    og_accumulator: dict[str, list],
+    gene_accumulator: dict[str, list],
+    *,
+    dry_run: bool,
+    now_iso: str,
 ) -> None:
-    if not entity_accumulator:
+    groups = [
+        ("og", og_accumulator),
+        ("gene", gene_accumulator),
+    ]
+    total = sum(len(acc) for _, acc in groups)
+    if total == 0:
         print("no candidates produced; skipping entity_analysis_index")
         return
+
     if dry_run:
         idx_dir = out_dir / "entity_analysis_index"
         idx_dir.mkdir(parents=True, exist_ok=True)
-        for og_id, linked in entity_accumulator.items():
-            (idx_dir / f"og_{og_id}.json").write_text(
-                json.dumps(entity_index_dict(og_id, linked, now_iso), indent=2)
-            )
-        print(f"dry-run: wrote {len(entity_accumulator)} entity_analysis_index stubs")
+        for entity_type, accumulator in groups:
+            for entity_id, linked in accumulator.items():
+                (idx_dir / f"{entity_type}_{entity_id}.json").write_text(
+                    json.dumps(
+                        entity_index_dict(entity_type, entity_id, linked, now_iso),
+                        indent=2,
+                    )
+                )
+        for entity_type, accumulator in groups:
+            print(f"dry-run: {len(accumulator)} entity_analysis_index/{entity_type}_* stubs")
         return
 
     batch = db.batch()
     ops = 0
-    for og_id, linked in entity_accumulator.items():
-        ref = db.collection("entity_analysis_index").document(f"og_{og_id}")
-        batch.set(ref, entity_index_dict(og_id, linked, now_iso))
-        ops += 1
-        if ops >= 450:
-            batch.commit()
-            batch = db.batch()
-            ops = 0
+    for entity_type, accumulator in groups:
+        for entity_id, linked in accumulator.items():
+            ref = db.collection("entity_analysis_index").document(f"{entity_type}_{entity_id}")
+            batch.set(ref, entity_index_dict(entity_type, entity_id, linked, now_iso))
+            ops += 1
+            if ops >= 450:
+                batch.commit()
+                batch = db.batch()
+                ops = 0
     if ops:
         batch.commit()
-    print(f"wrote {len(entity_accumulator)} entity_analysis_index documents")
+    for entity_type, accumulator in groups:
+        print(f"wrote {len(accumulator)} entity_analysis_index/{entity_type}_* documents")
 
 
 def main() -> int:
@@ -348,7 +373,8 @@ def main() -> int:
         trait_ids = [d.id for d in db.collection("orthogroup_diffs").stream()]
         trait_ids.sort()
 
-    entity_accumulator: dict[str, list] = {}
+    og_accumulator: dict[str, list] = {}
+    gene_accumulator: dict[str, list] = {}
     total_runs = 0
     total_candidates = 0
     now_iso = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
@@ -362,19 +388,25 @@ def main() -> int:
             args.scoring,
             dry_run=args.dry_run,
             out_dir=args.out_dir,
-            entity_accumulator=entity_accumulator,
+            og_accumulator=og_accumulator,
+            gene_accumulator=gene_accumulator,
         )
         if run_id:
             total_runs += 1
             total_candidates += n
 
     write_entity_index(
-        db, args.out_dir, entity_accumulator, dry_run=args.dry_run, now_iso=now_iso
+        db,
+        args.out_dir,
+        og_accumulator,
+        gene_accumulator,
+        dry_run=args.dry_run,
+        now_iso=now_iso,
     )
 
     print(
         f"\nDone. {total_runs} runs · {total_candidates} candidates · "
-        f"{len(entity_accumulator)} unique OGs"
+        f"{len(og_accumulator)} unique OGs · {len(gene_accumulator)} unique lead genes"
     )
     return 0
 

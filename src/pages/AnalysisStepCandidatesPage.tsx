@@ -104,16 +104,25 @@ function CandidateTable({
   candidates: Candidate[];
 }) {
   return (
-    <table className="w-full text-sm">
+    <table className="w-full text-sm table-fixed">
+      <colgroup>
+        <col className="w-12" />
+        <col className="w-28" />
+        <col className="w-20" />
+        <col />
+        <col />
+        <col />
+        <col className="w-20" />
+      </colgroup>
       <thead>
         <tr className="text-[10px] uppercase tracking-wide text-gray-500 border-b border-gray-200">
-          <th className="text-left px-2 py-1.5">Rank</th>
-          <th className="text-left px-2 py-1.5">OG</th>
-          <th className="text-left px-2 py-1.5">Type</th>
-          <th className="text-left px-2 py-1.5">Group specificity</th>
-          <th className="text-left px-2 py-1.5">OG pattern</th>
-          <th className="text-left px-2 py-1.5">Function</th>
-          <th className="text-right px-2 py-1.5">Score</th>
+          <th className="text-left pl-3 pr-2 py-1.5">Rank</th>
+          <th className="text-left px-3 py-1.5">OG</th>
+          <th className="text-left px-3 py-1.5">Type</th>
+          <th className="text-left px-3 py-1.5">Group specificity</th>
+          <th className="text-left px-3 py-1.5">OG pattern</th>
+          <th className="text-left px-3 py-1.5">Function</th>
+          <th className="text-right pl-3 pr-4 py-1.5">Score</th>
         </tr>
       </thead>
       <tbody>
@@ -122,8 +131,8 @@ function CandidateTable({
             key={c.candidateId}
             className="border-b border-gray-100 hover:bg-green-50 transition-colors"
           >
-            <td className="px-2 py-1.5 text-gray-500 tabular-nums">{c.rank}</td>
-            <td className="px-2 py-1.5">
+            <td className="pl-3 pr-2 py-1.5 text-gray-500 tabular-nums">{c.rank}</td>
+            <td className="px-3 py-1.5">
               <Link
                 to={`/analysis/${runId}/candidate/${c.candidateId}`}
                 className="text-green-700 hover:underline font-mono text-[12px]"
@@ -131,21 +140,21 @@ function CandidateTable({
                 {c.primaryOgId}
               </Link>
             </td>
-            <td className="px-2 py-1.5">
+            <td className="px-3 py-1.5">
               <span className="text-[10px] font-medium text-gray-600 bg-gray-100 px-1.5 py-0.5 rounded">
                 {c.candidateType}
               </span>
             </td>
-            <td className="px-2 py-1.5 text-[11px] text-gray-600 truncate max-w-xs">
+            <td className="px-3 py-1.5 text-[11px] text-gray-600 truncate">
               {c.groupSpecificitySummary ?? '—'}
             </td>
-            <td className="px-2 py-1.5 text-[11px] text-gray-600 truncate max-w-xs">
+            <td className="px-3 py-1.5 text-[11px] text-gray-600 truncate">
               {c.orthogroupPatternSummary ?? '—'}
             </td>
-            <td className="px-2 py-1.5 text-[11px] text-gray-600 truncate max-w-xs">
+            <td className="px-3 py-1.5 text-[11px] text-gray-600 truncate">
               {c.functionSummary ?? <span className="text-gray-400">no annotation</span>}
             </td>
-            <td className="px-2 py-1.5 text-right tabular-nums font-medium text-gray-900">
+            <td className="pl-3 pr-4 py-1.5 text-right tabular-nums font-medium text-gray-900">
               {c.totalScore.toFixed(3)}
             </td>
           </tr>
