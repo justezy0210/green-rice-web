@@ -49,6 +49,27 @@ service firebase.storage {
       allow write: if false;
     }
 
+    // Gene model + functional annotation index (public read; built by
+    // scripts/build-gene-models.py from funannotate_v2 GFF3).
+    match /gene_models/{path=**} {
+      allow read: if true;
+      allow write: if false;
+    }
+
+    // Compact functional search index (gzipped; built by
+    // scripts/build-functional-search-index.py on top of gene_models).
+    match /functional_index/{path=**} {
+      allow read: if true;
+      allow write: if false;
+    }
+
+    // OG → trait hits (p < threshold) — compact badge index
+    // (gzipped; built by scripts/build-trait-hits-index.py).
+    match /trait_hits/{path=**} {
+      allow read: if true;
+      allow write: if false;
+    }
+
     // Per-OG cluster region data (graph + AF bundle; public read; written server-side only).
     match /og_region/{path=**} {
       allow read: if true;

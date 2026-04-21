@@ -2,7 +2,13 @@ import { useMemo } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ScopeStrip } from '@/components/common/ScopeStrip';
+import { GeneModelSvg } from '@/components/gene/GeneModelSvg';
+import {
+  GeneAnnotationCard,
+  LegendSwatch,
+} from '@/components/gene/GeneAnnotationCard';
 import { useGeneLookup } from '@/hooks/useGeneIndex';
+import { useGeneModel } from '@/hooks/useGeneModel';
 import { useOgGeneCoords } from '@/hooks/useOgGeneCoords';
 import { useOgDrilldown } from '@/hooks/useOgDrilldown';
 import { useCultivars } from '@/hooks/useCultivars';
@@ -11,6 +17,7 @@ export function GeneDetailPage() {
   const { geneId: rawGeneId } = useParams<{ geneId: string }>();
   const geneId = rawGeneId ? decodeURIComponent(rawGeneId) : null;
   const lookup = useGeneLookup(geneId);
+  const model = useGeneModel(geneId);
   const { data: ogCoords } = useOgGeneCoords(lookup.entry?.og ?? null);
   const { members } = useOgDrilldown(lookup.entry?.og ?? null, lookup.version);
   const { cultivars } = useCultivars();
@@ -34,6 +41,7 @@ export function GeneDetailPage() {
         id: c.id,
         name: c.name,
         count: members[c.id]?.length ?? 0,
+        geneIds: members[c.id] ?? [],
       }))
       .sort((a, b) => a.name.localeCompare(b.name));
   }, [members, cultivars]);
@@ -128,11 +136,54 @@ export function GeneDetailPage() {
         </CardContent>
       </Card>
 
+      {model.entry && (
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-base">
+              Gene model
+              <span className="ml-2 text-xs font-normal text-gray-500">
+                representative transcript · {model.entry.transcript.id}
+              </span>
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <GeneModelSvg gene={model.entry} />
+            <div className="flex flex-wrap gap-3 text-[11px] text-gray-500">
+              <LegendSwatch color="rgba(22, 163, 74, 0.9)" label="CDS" />
+              <LegendSwatch color="rgba(156, 163, 175, 0.55)" label="UTR" />
+              <LegendSwatch color="#d1d5db" label="intron" thin />
+              <span className="ml-auto">
+                Only the longest-CDS representative transcript is shown.
+                Alternative isoforms deferred.
+              </span>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {model.entry?.annotation && (
+        <GeneAnnotationCard annotation={model.entry.annotation} />
+      )}
+
+      {model.loading && !model.entry && (
+        <p className="text-[11px] text-gray-400">
+          Loading gene model partition (~20–40 MB, cached after first load)…
+        </p>
+      )}
+
+      {!model.loading && model.notFound && (
+        <p className="text-[11px] text-amber-700 bg-amber-50 border border-amber-200 rounded px-3 py-2">
+          This gene is in the orthogroup index but has no gene-model entry.
+          Possible causes: non-funannotate cultivar, ID mismatch, or missing
+          mRNA feature in the source GFF3.
+        </p>
+      )}
+
       <ScopeStrip>
-        Gene detail is resolved from the orthogroup membership index. Functional
-        annotation (Pfam / InterPro / GO), transcript structure, and
-        cross-cultivar synteny are not yet surfaced at this level — open the
-        orthogroup for OG-wide context.
+        Gene detail resolves from the orthogroup membership index + funannotate
+        gene model. Variants, transcript isoforms, and cross-cultivar synteny
+        are deferred. Open the orthogroup for OG-wide context, or the region
+        page for the locus-level graph view.
       </ScopeStrip>
 
       {copyMatrix.length > 0 && (
@@ -155,16 +206,39 @@ export function GeneDetailPage() {
                     : c.count === 1
                       ? 'border-green-200 bg-green-50 text-green-700'
                       : 'border-violet-200 bg-violet-50 text-violet-700';
-                return (
-                  <span
-                    key={c.id}
-                    className={`text-[11px] inline-flex items-center gap-1 px-2 py-0.5 rounded border ${tone} ${isThis ? 'ring-1 ring-green-400' : ''}`}
-                    title={isThis ? 'this gene\'s cultivar' : undefined}
-                  >
+                const baseCls = `text-[11px] inline-flex items-center gap-1 px-2 py-0.5 rounded border ${tone} ${isThis ? 'ring-1 ring-green-400' : ''}`;
+                const body = (
+                  <>
                     <span className="font-mono text-[10px]">{c.name}</span>
                     <span className="opacity-60">·</span>
                     <span className="tabular-nums">{c.count}</span>
-                  </span>
+                  </>
+                );
+                if (c.count === 0) {
+                  return (
+                    <span
+                      key={c.id}
+                      className={baseCls}
+                      title="no annotated OG member in this cultivar"
+                    >
+                      {body}
+                    </span>
+                  );
+                }
+                const target = c.geneIds[0];
+                const tip =
+                  c.count > 1
+                    ? `${c.count} copies in ${c.name} — opens first: ${target}`
+                    : `opens ${target}`;
+                return (
+                  <Link
+                    key={c.id}
+                    to={`/genes/${encodeURIComponent(target)}`}
+                    className={`${baseCls} hover:ring-1 hover:ring-green-400 transition`}
+                    title={isThis ? "this gene's cultivar" : tip}
+                  >
+                    {body}
+                  </Link>
                 );
               })}
             </div>
@@ -174,3 +248,4 @@ export function GeneDetailPage() {
     </div>
   );
 }
+

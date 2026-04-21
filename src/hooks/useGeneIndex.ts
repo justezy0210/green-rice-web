@@ -139,7 +139,19 @@ export function useGeneLookup(geneId: string | null): {
       const prefix = prefixForGeneId(geneId);
       const partition = await fetchPartition(version, prefix);
       if (cancelled) return;
-      const entry = partition?.entries[geneId] ?? null;
+      let entry: GeneIndexEntry | null = partition?.entries[geneId] ?? null;
+      // gene_index keys are transcript-level ("baegilmi_g1.t1").
+      // If the URL carries a bare gene id (from functional search), fall back
+      // to the first matching "${geneId}.tN" transcript.
+      if (!entry && partition && !/\.t\d+$/.test(geneId)) {
+        const prefixStr = `${geneId}.t`;
+        for (const k of Object.keys(partition.entries)) {
+          if (k.startsWith(prefixStr)) {
+            entry = partition.entries[k];
+            break;
+          }
+        }
+      }
       setState({ key, entry, notFound: partition !== null && entry === null });
     })();
     return () => {
@@ -161,10 +173,12 @@ export function useGeneLookup(geneId: string | null): {
  *   - 1 char: fetches every partition whose prefix starts with that char
  *   - 2+ chars: fetches just the exact 2-char prefix partition
  * Results are substring-matched against the query, case-insensitive.
+ * `limit` is a safety cap (default 1000) — the UI is expected to paginate
+ * further if needed.
  */
 export function useGeneSearch(
   query: string,
-  limit = 50,
+  limit = 1000,
 ): {
   results: { geneId: string; entry: GeneIndexEntry }[];
   loading: boolean;

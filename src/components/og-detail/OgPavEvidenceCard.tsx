@@ -1,3 +1,4 @@
+import { Link } from 'react-router-dom';
 import { ScopeStrip } from '@/components/common/ScopeStrip';
 import {
   summarizePav,
@@ -70,19 +71,34 @@ export function OgPavEvidenceCard({ rows, cultivarNameMap }: Props) {
             r.geneIds.length > 0
               ? `${r.geneCount} gene${r.geneCount > 1 ? 's' : ''}: ${r.geneIds.join(', ')}`
               : 'no OG member annotated in this cultivar GFF3';
-          return (
-            <span
-              key={r.cultivar}
-              title={tooltip}
-              className={`text-[11px] inline-flex items-center gap-1 px-2 py-0.5 rounded border ${chip.className}`}
-            >
+          const baseCls = `text-[11px] inline-flex items-center gap-1 px-2 py-0.5 rounded border ${chip.className}`;
+          const body = (
+            <>
               <span className="font-mono text-[10px]">{name}</span>
               <span className="opacity-60">·</span>
               <span>{chip.label}</span>
               {r.geneCount > 1 && (
                 <span className="opacity-70 tabular-nums">×{r.geneCount}</span>
               )}
-            </span>
+            </>
+          );
+          if (r.geneIds.length === 0) {
+            return (
+              <span key={r.cultivar} title={tooltip} className={baseCls}>
+                {body}
+              </span>
+            );
+          }
+          const target = r.geneIds[0];
+          return (
+            <Link
+              key={r.cultivar}
+              to={`/genes/${encodeURIComponent(target)}`}
+              title={tooltip}
+              className={`${baseCls} hover:ring-1 hover:ring-green-400 transition`}
+            >
+              {body}
+            </Link>
           );
         })}
       </div>

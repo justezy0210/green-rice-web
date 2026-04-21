@@ -119,3 +119,22 @@ export function geneIndexManifestPath(version: number): string {
 export function geneIndexPartitionPath(version: number, prefix: string): string {
   return `gene_index/v${version}/by_prefix/${prefix}.json`;
 }
+
+export function geneModelsManifestPath(version: number): string {
+  return `gene_models/v${version}/_manifest.json`;
+}
+
+export function geneModelsPartitionPath(version: number, prefix: string): string {
+  return `gene_models/v${version}/by_prefix/${prefix}.json`;
+}
+
+export function functionalIndexPath(version: number): string {
+  return `functional_index/v${version}/index.json`;
+}
+
+export function traitHitsIndexPath(
+  orthofinderVersion: number,
+  groupingVersion: number,
+): string {
+  return `trait_hits/v${orthofinderVersion}_g${groupingVersion}/index.json`;
+}

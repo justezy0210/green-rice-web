@@ -5,6 +5,7 @@ import { OgDetailAlleleFreqTab } from '@/components/og-detail/OgDetailAlleleFreq
 import { OgDetailGeneTab } from '@/components/og-detail/OgDetailGeneTab';
 import { OgDetailGraphTab } from '@/components/og-detail/OgDetailGraphTab';
 import { OgPavEvidenceCard } from '@/components/og-detail/OgPavEvidenceCard';
+import { OgCoreShellBadge } from '@/components/og-detail/OgCoreShellBadge';
 import { OgAnchorTierBadge } from '@/components/explore/OgAnchorTierBadge';
 import { ScopeStrip } from '@/components/common/ScopeStrip';
 import { useOrthogroupDiff } from '@/hooks/useOrthogroupDiff';
@@ -17,6 +18,8 @@ import { buildGroupColorMap } from '@/components/dashboard/distribution-helpers'
 import { buildGeneClusters, buildReferenceCluster, formatClusterSummary } from '@/lib/og-gene-clusters';
 import { classifyAnchorTier } from '@/lib/og-anchor-tier';
 import { classifyPavEvidence } from '@/lib/pav-evidence';
+import { classifyCopyArchitecture } from '@/lib/og-copy-architecture';
+import { isReferencePathCultivar } from '@/lib/irgsp-constants';
 import type { TraitId } from '@/types/grouping';
 import type { OrthogroupDiffEntry, GeneCluster } from '@/types/orthogroup';
 
@@ -105,6 +108,16 @@ export function OgDetailPage() {
     );
   }, [members, cultivars]);
 
+  const architecture = useMemo(() => {
+    if (!members || cultivars.length === 0) return null;
+    const counts: Record<string, number> = {};
+    for (const c of cultivars) {
+      if (isReferencePathCultivar(c.id)) continue;
+      counts[c.id] = members[c.id]?.length ?? 0;
+    }
+    return classifyCopyArchitecture(counts);
+  }, [members, cultivars]);
+
   const primaryDesc = rep
     ? Object.values(rep.descriptions ?? {}).find((d) => d && d !== 'NA') ?? null
     : null;
@@ -178,26 +191,29 @@ export function OgDetailPage() {
                 <p className="text-sm text-gray-400 mt-0.5">Non-IRGSP-linked orthogroup</p>
               )}
             </div>
-            {traitId && (
-              <span
-                className="text-xs px-2 py-1 rounded border border-green-200 bg-green-50 text-green-700 shrink-0"
-                title={
-                  groupLabels.length === 2
-                    ? `OG-level copy-count candidate: Mann-Whitney U on the OG copy count between '${groupLabels[0]}' and '${groupLabels[1]}'. Copy-count shift is at the orthogroup level, not resolved to a specific locus.`
-                    : undefined
-                }
-              >
-                OG-level CNV candidate · {traitId.replace(/_/g, ' ')}
-                {diffEntry && (
-                  <>
-                    {' · '}
-                    <span className="tabular-nums">
-                      Δmean {diffEntry.meanDiff.toFixed(2)}
-                    </span>
-                  </>
-                )}
-              </span>
-            )}
+            <div className="flex flex-col items-end gap-1 shrink-0">
+              {architecture && <OgCoreShellBadge architecture={architecture} />}
+              {traitId && (
+                <span
+                  className="text-xs px-2 py-1 rounded border border-green-200 bg-green-50 text-green-700"
+                  title={
+                    groupLabels.length === 2
+                      ? `OG-level copy-count candidate: Mann-Whitney U on the OG copy count between '${groupLabels[0]}' and '${groupLabels[1]}'. Copy-count shift is at the orthogroup level, not resolved to a specific locus.`
+                      : undefined
+                  }
+                >
+                  OG-level CNV candidate · {traitId.replace(/_/g, ' ')}
+                  {diffEntry && (
+                    <>
+                      {' · '}
+                      <span className="tabular-nums">
+                        Δmean {diffEntry.meanDiff.toFixed(2)}
+                      </span>
+                    </>
+                  )}
+                </span>
+              )}
+            </div>
           </div>
 
           {/* Anchor cluster + group stats */}
@@ -224,6 +240,14 @@ export function OgDetailPage() {
               <span className="text-gray-400 italic">No gene clusters for this OG</span>
             ) : null}
             {tierMetrics && <OgAnchorTierBadge metrics={tierMetrics} />}
+            {architecture && (
+              <span
+                className="text-[11px] text-gray-500"
+                title="Panel-scoped copy-count distribution. Not validation-grade."
+              >
+                {architecture.architectureLabel}
+              </span>
+            )}
           </div>
         </CardContent>
       </Card>
