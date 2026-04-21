@@ -1,20 +1,38 @@
 import { Link } from 'react-router-dom';
 import { Card, CardContent } from '@/components/ui/card';
+import { TRAITS } from '@/config/traits';
+import { encodeRunId } from '@/lib/analysis-run-id';
 
-const PHASE_1_NOTE =
-  'Phase 1 — /analysis information architecture is in place. Workflow steps ' +
-  'activate in Phase 2 (orthogroups + candidates with the existing OG copy ' +
-  'matrix), Phase 3 (variants, after SV matrix precompute), and Phase 4 ' +
-  '(intersections). See docs/exec-plans/active/2026-04-21-site-rebuild-analysis-workflow.md.';
+const GROUPING_V = 4;
+const ORTHOFINDER_V = 6;
+const SV_V = 0;
+const GENE_MODEL_V = 11;
+const SCORING_V = 0;
+
+const PHASE_NOTE =
+  'Phase 2A · client-side candidate derivation from OrthoFinder × trait Mann-Whitney U. ' +
+  'Step 3 (variants) and Step 4 (intersections) activate after SV matrix precompute.';
 
 export function AnalysisHomePage() {
+  const runs = TRAITS.map((t) => ({
+    trait: t,
+    runId: encodeRunId({
+      traitId: t.id,
+      groupingVersion: GROUPING_V,
+      orthofinderVersion: ORTHOFINDER_V,
+      svReleaseVersion: SV_V,
+      geneModelVersion: GENE_MODEL_V,
+      scoringVersion: SCORING_V,
+    }),
+  }));
+
   return (
     <div className="space-y-4">
       <div>
         <h1 className="text-xl font-semibold text-gray-900">Analysis</h1>
         <p className="text-sm text-gray-600 mt-1">
-          5-step candidate-discovery workflow over the 16-cultivar panel.
-          Entity pages remain the primary browsing surface at{' '}
+          5-step candidate-discovery workflow. Entity pages remain the primary
+          browsing surface at{' '}
           <Link to="/cultivars" className="text-green-700 hover:underline">
             /cultivars
           </Link>
@@ -31,31 +49,41 @@ export function AnalysisHomePage() {
       </div>
 
       <Card>
-        <CardContent className="py-6 text-sm text-gray-600">
-          <div className="text-xs uppercase tracking-wide text-gray-400 mb-2">
-            Status
-          </div>
-          <p>{PHASE_1_NOTE}</p>
+        <CardContent className="py-4">
+          <p className="text-xs uppercase tracking-wide text-gray-500 mb-2">
+            Phase
+          </p>
+          <p className="text-[12px] text-gray-600 leading-snug">{PHASE_NOTE}</p>
         </CardContent>
       </Card>
 
       <Card>
-        <CardContent className="py-6">
-          <div className="text-xs uppercase tracking-wide text-gray-400 mb-2">
-            Start a run (Phase 2)
-          </div>
-          <p className="text-sm text-gray-500">
-            Trait selector and recent runs will appear here once{' '}
-            <code className="text-[11px] bg-gray-100 px-1 py-0.5 rounded">
-              analysis_runs
-            </code>{' '}
-            documents are populated. For now, navigate directly to a candidate
-            run URL if you know its runId (format:{' '}
-            <code className="text-[11px] bg-gray-100 px-1 py-0.5 rounded">
-              {'{trait}_g{v}_of{v}_sv{v}_gm{v}_sc{v}'}
-            </code>
-            ).
-          </p>
+        <CardContent className="py-4">
+          <h2 className="text-xs uppercase tracking-wide text-gray-500 mb-3">
+            Active runs — {TRAITS.length} traits
+          </h2>
+          <ul className="divide-y divide-gray-100">
+            {runs.map((r) => (
+              <li key={r.runId}>
+                <Link
+                  to={`/analysis/${r.runId}`}
+                  className="flex items-center justify-between gap-3 py-2 px-1 rounded hover:bg-green-50 transition-colors"
+                >
+                  <span className="min-w-0">
+                    <span className="text-sm font-medium text-gray-900 block">
+                      {r.trait.label}
+                    </span>
+                    <span className="font-mono text-[10px] text-gray-500 block truncate">
+                      {r.runId}
+                    </span>
+                  </span>
+                  <span className="text-xs text-green-700 shrink-0">
+                    Open →
+                  </span>
+                </Link>
+              </li>
+            ))}
+          </ul>
         </CardContent>
       </Card>
     </div>

@@ -51,28 +51,6 @@ function AnalysisStepPageBase({ stepKey, title, phase, description }: StepPagePr
   );
 }
 
-export function AnalysisStepPhenotypePage() {
-  return (
-    <AnalysisStepPageBase
-      stepKey="phenotype"
-      title="Step 1 — Phenotype"
-      phase="Phase 2"
-      description="Proposed group definition, group balance, and QC placeholders. Small-sample candidate-discovery framing."
-    />
-  );
-}
-
-export function AnalysisStepOrthogroupsPage() {
-  return (
-    <AnalysisStepPageBase
-      stepKey="orthogroups"
-      title="Step 2 — Orthogroups"
-      phase="Phase 2"
-      description="OG ranking by copy-count contrast between proposed phenotype groups, with function facets."
-    />
-  );
-}
-
 export function AnalysisStepVariantsPage() {
   return (
     <AnalysisStepPageBase
@@ -95,13 +73,3 @@ export function AnalysisStepIntersectionsPage() {
   );
 }
 
-export function AnalysisStepCandidatesPage() {
-  return (
-    <AnalysisStepPageBase
-      stepKey="candidates"
-      title="Step 5 — Candidates"
-      phase="Phase 2 (og_only type)"
-      description="Ranked candidate list with 7-axis evidence scoreboard. Candidate is a module-scoped first-class object."
-    />
-  );
-}

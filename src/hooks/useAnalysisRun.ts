@@ -9,11 +9,11 @@ interface UseAnalysisRunState {
 }
 
 const PLACEHOLDER_STEP_AVAILABILITY: Record<AnalysisStepKey, AnalysisStepStatus> = {
-  phenotype: 'pending',
-  orthogroups: 'pending',
+  phenotype: 'ready',
+  orthogroups: 'ready',
   variants: 'disabled',
   intersections: 'disabled',
-  candidates: 'pending',
+  candidates: 'ready',
 };
 
 /**
