@@ -13,11 +13,6 @@ const TRAIT_IDS: ReadonlySet<TraitId> = new Set<TraitId>([
   'bacterial_leaf_blight',
 ]);
 
-export function encodeRunId(parts: RunIdParts): RunId {
-  const { traitId, groupingVersion, orthofinderVersion, svReleaseVersion, geneModelVersion, scoringVersion } = parts;
-  return `${traitId}_g${groupingVersion}_of${orthofinderVersion}_sv${svReleaseVersion}_gm${geneModelVersion}_sc${scoringVersion}`;
-}
-
 const RUN_ID_PATTERN = /^([a-z_]+)_g(\d+)_of(\d+)_sv(\d+)_gm(\d+)_sc(\d+)$/;
 
 export function decodeRunId(runId: RunId): RunIdParts | null {

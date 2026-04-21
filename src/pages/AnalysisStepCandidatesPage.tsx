@@ -13,7 +13,7 @@ export function AnalysisStepCandidatesPage() {
   const { runId } = useParams<{ runId: string }>();
   const validRunId = runId && isValidRunId(runId) ? runId : null;
   const { run, error } = useAnalysisRun(validRunId);
-  const { candidates, loading, source } = useCandidates(validRunId);
+  const { candidates, loading } = useCandidates(validRunId);
   const [page, setPage] = useState(0);
 
   if (!validRunId) return <Navigate to="/analysis" replace />;
@@ -39,15 +39,6 @@ export function AnalysisStepCandidatesPage() {
             Ranked candidate list for trait <strong>{run.traitId}</strong>.{' '}
             <code className="text-[11px] bg-gray-100 px-1 py-0.5 rounded">og_only</code>{' '}
             type from OG × trait Mann-Whitney U.
-            {source === 'derived' && (
-              <span className="ml-1 text-[11px] text-amber-700">
-                (client-side fallback — run{' '}
-                <code className="text-[10px] bg-amber-50 border border-amber-200 px-1 rounded">
-                  scripts/build-analysis-run.py
-                </code>{' '}
-                to materialize)
-              </span>
-            )}
           </p>
         </header>
 

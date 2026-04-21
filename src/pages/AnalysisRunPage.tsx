@@ -44,16 +44,19 @@ function AnalysisRunOverview({
         </header>
 
         <Card>
-          <CardContent className="py-5 text-sm text-gray-700">
+          <CardContent className="py-5 text-sm text-gray-700 space-y-1">
             <p className="text-xs uppercase tracking-wide text-gray-400 mb-2">
-              Status
+              Summary
             </p>
             <p>
-              Phase 1 placeholder run. Step contents activate in Phase 2 once
-              <code className="text-[11px] bg-gray-100 px-1 py-0.5 rounded mx-1">
-                analysis_runs/{runId}
-              </code>
-              is materialized.
+              <strong className="text-gray-900 tabular-nums">
+                {run.candidateCount}
+              </strong>{' '}
+              candidates · status <code className="text-[11px] bg-gray-100 px-1 py-0.5 rounded">{run.status}</code>
+            </p>
+            <p className="text-[11px] text-gray-500">
+              Pick a step on the left, or jump to{' '}
+              <span className="text-green-700">Candidates</span> via the stepper.
             </p>
           </CardContent>
         </Card>
