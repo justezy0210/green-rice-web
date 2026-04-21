@@ -126,10 +126,14 @@ export function GeneDetailPage() {
                 <span className="text-[10px] uppercase tracking-wide text-gray-500 block">
                   Position
                 </span>
-                <span className="font-mono">
+                <Link
+                  to={`/region/${encodeURIComponent(cultivar)}/${encodeURIComponent(coord.chr)}/${Math.max(0, coord.start - 5000)}-${coord.end + 5000}`}
+                  className="font-mono text-green-700 hover:underline"
+                  title="View this gene's region ± 5 kb"
+                >
                   {coord.chr}:{coord.start.toLocaleString()}-
                   {coord.end.toLocaleString()} ({coord.strand})
-                </span>
+                </Link>
               </div>
             )}
           </div>

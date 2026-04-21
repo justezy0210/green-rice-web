@@ -124,6 +124,41 @@ export function useGeneModel(geneId: string | null): {
   };
 }
 
+/**
+ * Iterate every gene in a single partition. Useful for coordinate-
+ * based queries (Region page) where we want all genes of one cultivar
+ * on one chromosome, not a single gene by id. Returns null while the
+ * partition is still loading.
+ */
+export function useGeneModelsPartition(prefix: string | null): {
+  partition: GeneModelPartition | null;
+  loading: boolean;
+} {
+  const version = useActiveOrthofinderVersion();
+  const key = prefix && version ? `v${version}|${prefix}` : '';
+  const [state, setState] = useState<{
+    key: string;
+    partition: GeneModelPartition | null;
+  }>({ key: '', partition: null });
+
+  useEffect(() => {
+    if (!key || !version || !prefix) return;
+    let cancelled = false;
+    fetchPartition(version, prefix).then((p) => {
+      if (!cancelled) setState({ key, partition: p });
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [key, version, prefix]);
+
+  const isCurrent = state.key === key;
+  return {
+    partition: isCurrent ? state.partition : null,
+    loading: Boolean(key) && !isCurrent,
+  };
+}
+
 export function useGeneModelsManifest(): {
   manifest: GeneModelManifest | null;
   loading: boolean;

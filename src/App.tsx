@@ -11,6 +11,7 @@ import { CultivarsListPage } from '@/pages/CultivarsListPage';
 import { GeneSearchPage } from '@/pages/GeneSearchPage';
 import { GeneDetailPage } from '@/pages/GeneDetailPage';
 import { OgDetailPage } from '@/pages/OgDetailPage';
+import { RegionPage } from '@/pages/RegionPage';
 import { ProtectedRoute } from '@/components/auth/ProtectedRoute';
 
 export default function App() {
@@ -29,6 +30,7 @@ export default function App() {
             <Route path="/cultivar/:name" element={<CultivarDetailPage />} />
             <Route path="/genes" element={<GeneSearchPage />} />
             <Route path="/genes/:geneId" element={<GeneDetailPage />} />
+            <Route path="/region/:cultivar/:chr/:range" element={<RegionPage />} />
             <Route path="/admin" element={<ProtectedRoute requireAdmin><AdminPage /></ProtectedRoute>} />
           </Routes>
         </Layout>

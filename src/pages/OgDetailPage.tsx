@@ -232,10 +232,21 @@ export function OgDetailPage() {
               </span>
             )}
             {selectedCluster ? (
-              <span className="font-mono text-[11px]">
-                Anchor: <strong className="text-gray-900">{selectedCluster.cultivar}</strong>{' '}
-                {formatClusterSummary(selectedCluster)}
-              </span>
+              selectedCluster.source === 'reference' ? (
+                <span className="font-mono text-[11px]">
+                  Anchor: <strong className="text-gray-900">{selectedCluster.cultivar}</strong>{' '}
+                  {formatClusterSummary(selectedCluster)}
+                </span>
+              ) : (
+                <Link
+                  to={`/region/${encodeURIComponent(selectedCluster.cultivar)}/${encodeURIComponent(selectedCluster.chr)}/${Math.max(0, selectedCluster.start - 5000)}-${selectedCluster.end + 5000}`}
+                  title="View this cluster's region ± 5 kb"
+                  className="font-mono text-[11px] hover:text-green-700 hover:underline"
+                >
+                  Anchor: <strong className="text-gray-900">{selectedCluster.cultivar}</strong>{' '}
+                  {formatClusterSummary(selectedCluster)}
+                </Link>
+              )
             ) : clusters.length === 0 && ogCoords ? (
               <span className="text-gray-400 italic">No gene clusters for this OG</span>
             ) : null}
