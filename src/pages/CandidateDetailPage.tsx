@@ -4,14 +4,14 @@ import { ScopeStrip } from '@/components/common/ScopeStrip';
 import { AnalysisShell } from '@/components/analysis/AnalysisShell';
 import { CandidateScoreBoard } from '@/components/analysis/CandidateScoreBoard';
 import { useAnalysisRun } from '@/hooks/useAnalysisRun';
-import { useDerivedCandidates } from '@/hooks/useDerivedCandidates';
+import { useCandidate } from '@/hooks/useCandidates';
 import { isValidRunId } from '@/lib/analysis-run-id';
 
 export function CandidateDetailPage() {
   const { runId, candidateId } = useParams<{ runId: string; candidateId: string }>();
   const validRunId = runId && isValidRunId(runId) ? runId : null;
   const { run, error } = useAnalysisRun(validRunId);
-  const { candidates, loading } = useDerivedCandidates(validRunId);
+  const { candidate, loading } = useCandidate(validRunId, candidateId ?? null);
 
   if (!validRunId) return <Navigate to="/analysis" replace />;
   if (error || !run) {
@@ -21,8 +21,6 @@ export function CandidateDetailPage() {
       </div>
     );
   }
-
-  const candidate = candidates.find((c) => c.candidateId === candidateId);
 
   return (
     <AnalysisShell runId={validRunId} stepAvailability={run.stepAvailability}>

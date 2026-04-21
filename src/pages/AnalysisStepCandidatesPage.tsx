@@ -3,7 +3,7 @@ import { useParams, Link, Navigate } from 'react-router-dom';
 import { Card, CardContent } from '@/components/ui/card';
 import { AnalysisShell } from '@/components/analysis/AnalysisShell';
 import { useAnalysisRun } from '@/hooks/useAnalysisRun';
-import { useDerivedCandidates } from '@/hooks/useDerivedCandidates';
+import { useCandidates } from '@/hooks/useCandidates';
 import { isValidRunId } from '@/lib/analysis-run-id';
 import type { Candidate } from '@/types/candidate';
 
@@ -13,7 +13,7 @@ export function AnalysisStepCandidatesPage() {
   const { runId } = useParams<{ runId: string }>();
   const validRunId = runId && isValidRunId(runId) ? runId : null;
   const { run, error } = useAnalysisRun(validRunId);
-  const { candidates, loading } = useDerivedCandidates(validRunId);
+  const { candidates, loading, source } = useCandidates(validRunId);
   const [page, setPage] = useState(0);
 
   if (!validRunId) return <Navigate to="/analysis" replace />;
@@ -36,9 +36,18 @@ export function AnalysisStepCandidatesPage() {
             Step 5 — Candidates
           </h1>
           <p className="text-sm text-gray-600 mt-1">
-            Ranked candidate list for trait <strong>{run.traitId}</strong>.
-            Phase 2A · <code className="text-[11px] bg-gray-100 px-1 py-0.5 rounded">og_only</code>{' '}
-            type derived client-side from OG × trait Mann-Whitney U.
+            Ranked candidate list for trait <strong>{run.traitId}</strong>.{' '}
+            <code className="text-[11px] bg-gray-100 px-1 py-0.5 rounded">og_only</code>{' '}
+            type from OG × trait Mann-Whitney U.
+            {source === 'derived' && (
+              <span className="ml-1 text-[11px] text-amber-700">
+                (client-side fallback — run{' '}
+                <code className="text-[10px] bg-amber-50 border border-amber-200 px-1 rounded">
+                  scripts/build-analysis-run.py
+                </code>{' '}
+                to materialize)
+              </span>
+            )}
           </p>
         </header>
 

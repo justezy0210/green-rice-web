@@ -1,20 +1,24 @@
 import { Link } from 'react-router-dom';
 import { Card, CardContent } from '@/components/ui/card';
+import { useObservedInAnalyses } from '@/hooks/useObservedInAnalyses';
 import type { EntityAnalysisLink, EntityType } from '@/types/candidate';
 
 interface Props {
   entityType: EntityType;
   entityId: string;
+  /** If provided, bypasses the Firestore lookup. */
   links?: EntityAnalysisLink[];
 }
 
 /**
- * Entity-page backlink panel. Empty by design in Phase 1 — populated once
- * `entity_analysis_index/{entityType}_{entityId}` is written from
- * `analysis_runs` (Phase 2).
+ * Entity-page backlink panel. Fetches `entity_analysis_index/{entityType}_{entityId}`
+ * and lists the runs / candidates that reference this entity. Empty state
+ * remains while the Phase 2B precompute has not yet populated the index.
  */
 export function ObservedInAnalysesPanel({ entityType, entityId, links }: Props) {
-  const rows = links ?? [];
+  const remote = useObservedInAnalyses(entityType, links ? null : entityId);
+  const rows = links ?? remote.links;
+  const loading = links ? false : remote.loading;
   return (
     <Card>
       <CardContent className="py-4">
@@ -26,7 +30,9 @@ export function ObservedInAnalysesPanel({ entityType, entityId, links }: Props) 
             {entityType}:{entityId}
           </span>
         </div>
-        {rows.length === 0 ? (
+        {loading ? (
+          <p className="text-[12px] text-gray-400">Loading analyses…</p>
+        ) : rows.length === 0 ? (
           <p className="text-[12px] text-gray-500 leading-snug">
             No analysis runs reference this entity yet. This panel lists
             candidates across runs once{' '}

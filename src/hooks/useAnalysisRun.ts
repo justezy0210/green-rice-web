@@ -1,14 +1,21 @@
-import { useMemo } from 'react';
-import type { AnalysisRun, AnalysisStepKey, AnalysisStepStatus, RunId } from '@/types/analysis-run';
+import { useEffect, useMemo, useState } from 'react';
+import { subscribeAnalysisRun } from '@/lib/analysis-run-service';
+import type {
+  AnalysisRun,
+  AnalysisStepKey,
+  AnalysisStepStatus,
+  RunId,
+} from '@/types/analysis-run';
 import { decodeRunId } from '@/lib/analysis-run-id';
 
 interface UseAnalysisRunState {
   run: AnalysisRun | null;
   loading: boolean;
+  source: 'firestore' | 'synthesized' | 'none';
   error: Error | null;
 }
 
-const PLACEHOLDER_STEP_AVAILABILITY: Record<AnalysisStepKey, AnalysisStepStatus> = {
+const DERIVED_STEP_AVAILABILITY: Record<AnalysisStepKey, AnalysisStepStatus> = {
   phenotype: 'ready',
   orthogroups: 'ready',
   variants: 'disabled',
@@ -17,19 +24,30 @@ const PLACEHOLDER_STEP_AVAILABILITY: Record<AnalysisStepKey, AnalysisStepStatus>
 };
 
 /**
- * Phase 1 placeholder. Resolves runId parts client-side and returns a
- * synthesized AnalysisRun with pending/disabled step statuses. Firestore
- * wiring lands in Phase 2 once analysis_runs documents exist.
+ * Prefers Firestore `analysis_runs/{runId}`; falls back to a runId-decoded
+ * synthesized run so Phase 2A step pages still render before
+ * `scripts/build-analysis-run.py` has been executed.
  */
 export function useAnalysisRun(runId: RunId | null | undefined): UseAnalysisRunState {
-  return useMemo(() => {
-    if (!runId) return { run: null, loading: false, error: null };
+  const [firestore, setFirestore] = useState<{
+    run: AnalysisRun | null;
+    key: string;
+  } | null>(null);
+
+  useEffect(() => {
+    if (!runId) return;
+    const unsub = subscribeAnalysisRun(runId, (run) => {
+      setFirestore({ run, key: runId });
+    });
+    return () => unsub();
+  }, [runId]);
+
+  const synthesized = useMemo<AnalysisRun | null>(() => {
+    if (!runId) return null;
     const parts = decodeRunId(runId);
-    if (!parts) {
-      return { run: null, loading: false, error: new Error(`Invalid runId: ${runId}`) };
-    }
+    if (!parts) return null;
     const now = new Date().toISOString();
-    const run: AnalysisRun = {
+    return {
       runId,
       traitId: parts.traitId,
       groupingVersion: parts.groupingVersion,
@@ -41,11 +59,24 @@ export function useAnalysisRun(runId: RunId | null | undefined): UseAnalysisRunS
       sampleSetVersion: `gm${parts.geneModelVersion}`,
       sampleCount: parts.geneModelVersion === 11 ? 11 : parts.geneModelVersion,
       status: 'stale',
-      stepAvailability: PLACEHOLDER_STEP_AVAILABILITY,
+      stepAvailability: DERIVED_STEP_AVAILABILITY,
       candidateCount: 0,
       createdAt: now,
       updatedAt: now,
     };
-    return { run, loading: false, error: null };
   }, [runId]);
+
+  if (!runId) {
+    return { run: null, loading: false, source: 'none', error: null };
+  }
+  if (!decodeRunId(runId)) {
+    return { run: null, loading: false, source: 'none', error: new Error(`Invalid runId: ${runId}`) };
+  }
+  if (!firestore || firestore.key !== runId) {
+    return { run: null, loading: true, source: 'none', error: null };
+  }
+  if (firestore.run) {
+    return { run: firestore.run, loading: false, source: 'firestore', error: null };
+  }
+  return { run: synthesized, loading: false, source: 'synthesized', error: null };
 }
