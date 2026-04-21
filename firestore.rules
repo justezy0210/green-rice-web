@@ -20,6 +20,26 @@ service cloud.firestore {
       allow read: if true;
       allow write: if false;
     }
+
+    // Analysis-workflow runs (5-step module). Run headers + candidate
+    // subcollection are public-read; writes go through the admin SDK in
+    // scripts/build-analysis-run.py.
+    match /analysis_runs/{runId} {
+      allow read: if true;
+      allow write: if false;
+    }
+    match /analysis_runs/{runId}/candidates/{candidateId} {
+      allow read: if true;
+      allow write: if false;
+    }
+
+    // Entity → analysis-runs reverse index (og_*, gene_*, region_*, sv_*).
+    // Powers the "Observed in Analyses" panel on entity pages.
+    match /entity_analysis_index/{entityKey} {
+      allow read: if true;
+      allow write: if false;
+    }
+
     // Orthofinder state: admin-only read (exposes processing status + file paths).
     match /_orthofinder_meta/state {
       allow read: if request.auth != null && request.auth.token.admin == true;

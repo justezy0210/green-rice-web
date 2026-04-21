@@ -95,6 +95,14 @@ service firebase.storage {
       allow write: if false;
     }
 
+    // Analysis-workflow bundles (per-candidate gzipped evidence + any run
+    // exports). Public read; writes go through the admin SDK in
+    // scripts/build-analysis-run.py.
+    match /analysis_runs/{path=**} {
+      allow read: if true;
+      allow write: if false;
+    }
+
     // Discovery result downloads (public read; written by scripts/generate-download-bundles.py).
     // Files live under downloads/traits/{trait}/v{of}_g{g}/ and downloads/cross-trait/v{of}_g{g}/.
     // Bundle manifest at downloads/_manifest.json drives the /download UI.
