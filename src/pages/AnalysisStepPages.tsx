@@ -51,17 +51,6 @@ function AnalysisStepPageBase({ stepKey, title, phase, description }: StepPagePr
   );
 }
 
-export function AnalysisStepVariantsPage() {
-  return (
-    <AnalysisStepPageBase
-      stepKey="variants"
-      title="Step 3 — Variants"
-      phase="Phase 3 (after SV matrix release)"
-      description="Event-normalized SV table with per-group frequency and region jump."
-    />
-  );
-}
-
 export function AnalysisStepIntersectionsPage() {
   return (
     <AnalysisStepPageBase

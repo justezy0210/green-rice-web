@@ -14,12 +14,10 @@ import { OgDetailPage } from '@/pages/OgDetailPage';
 import { RegionPage } from '@/pages/RegionPage';
 import { AnalysisHomePage } from '@/pages/AnalysisHomePage';
 import { AnalysisRunPage } from '@/pages/AnalysisRunPage';
-import {
-  AnalysisStepVariantsPage,
-  AnalysisStepIntersectionsPage,
-} from '@/pages/AnalysisStepPages';
+import { AnalysisStepIntersectionsPage } from '@/pages/AnalysisStepPages';
 import { AnalysisStepPhenotypePage } from '@/pages/AnalysisStepPhenotypePage';
 import { AnalysisStepOrthogroupsPage } from '@/pages/AnalysisStepOrthogroupsPage';
+import { AnalysisStepVariantsPage } from '@/pages/AnalysisStepVariantsPage';
 import { AnalysisStepCandidatesPage } from '@/pages/AnalysisStepCandidatesPage';
 import { CandidateDetailPage } from '@/pages/CandidateDetailPage';
 import { ProtectedRoute } from '@/components/auth/ProtectedRoute';

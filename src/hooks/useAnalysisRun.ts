@@ -18,7 +18,7 @@ interface UseAnalysisRunState {
 const DERIVED_STEP_AVAILABILITY: Record<AnalysisStepKey, AnalysisStepStatus> = {
   phenotype: 'ready',
   orthogroups: 'ready',
-  variants: 'disabled',
+  variants: 'ready',
   intersections: 'disabled',
   candidates: 'ready',
 };
