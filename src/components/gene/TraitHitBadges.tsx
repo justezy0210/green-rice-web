@@ -23,7 +23,8 @@ function formatP(p: number): string {
 /**
  * Small badges showing traits where the OG has p < threshold. Compact form
  * uses trait abbreviations ("HD", "BLB"). Full trait name in tooltip and on
- * click navigates to /explore?trait=... for that trait's ranking view.
+ * click routes to the Analysis home; the specific run link lands in Phase 2
+ * once analysis_runs documents exist.
  */
 export function TraitHitBadges({ hits, max = 3, ogId }: Props) {
   if (hits.length === 0) return null;
@@ -35,7 +36,7 @@ export function TraitHitBadges({ hits, max = 3, ogId }: Props) {
         const tip =
           `${h.t}: p=${formatP(h.p)}` +
           (h.lfc !== undefined ? ` · log2FC ${h.lfc.toFixed(2)}` : '');
-        const to = `/explore?trait=${encodeURIComponent(h.t)}${ogId ? `&og=${ogId}` : ''}`;
+        const to = ogId ? `/og/${ogId}` : '/analysis';
         return (
           <Link
             key={h.t}

@@ -29,10 +29,10 @@ const CARDS: Card[] = [
     href: '/cultivars',
   },
   {
-    key: 'trait-association',
-    title: 'Trait Association',
-    summary: 'Orthogroups ranked by copy-count contrast between phenotype groups.',
-    href: '/explore',
+    key: 'analysis',
+    title: 'Analysis',
+    summary: '5-step candidate-discovery workflow over the 16-cultivar panel.',
+    href: '/analysis',
   },
 ];
 
@@ -48,7 +48,7 @@ export function EntityCardsGrid() {
             <>
               <div className="flex items-baseline justify-between">
                 <h3 className="text-sm font-semibold text-gray-900">{c.title}</h3>
-                {c.key === 'trait-association' && (
+                {c.key === 'analysis' && (
                   <span className="text-[10px] uppercase tracking-wide text-amber-700 bg-amber-50 border border-amber-200 rounded px-1.5 py-0.5">
                     beta
                   </span>

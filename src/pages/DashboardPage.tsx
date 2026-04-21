@@ -4,6 +4,8 @@ import { usePhenotypeData } from '@/hooks/usePhenotypeData';
 import { PhenotypeDistributionChart } from '@/components/dashboard/PhenotypeDistributionChart';
 import { TraitQualityOverview } from '@/components/dashboard/TraitQualityOverview';
 import { EntityCardsGrid } from '@/components/dashboard/EntityCardsGrid';
+import { StartAnalysisCard } from '@/components/dashboard/StartAnalysisCard';
+import { DataReadinessCard } from '@/components/dashboard/DataReadinessCard';
 import {
   PANEL_LABEL,
   REFERENCE_SHORT_NAME,
@@ -129,6 +131,11 @@ export function DashboardPage() {
       </section>
 
       <EntityCardsGrid />
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <StartAnalysisCard />
+        <DataReadinessCard />
+      </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-6 gap-6 items-stretch">
         <div className="lg:col-span-4">

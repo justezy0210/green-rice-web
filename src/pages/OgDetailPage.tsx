@@ -7,6 +7,7 @@ import { OgCoreShellBadge } from '@/components/og-detail/OgCoreShellBadge';
 import { ClusterContextCard } from '@/components/og-detail/ClusterContextCard';
 import { OgAnchorTierBadge } from '@/components/explore/OgAnchorTierBadge';
 import { ScopeStrip } from '@/components/common/ScopeStrip';
+import { ObservedInAnalysesPanel } from '@/components/entity/ObservedInAnalysesPanel';
 import { useOrthogroupDiff } from '@/hooks/useOrthogroupDiff';
 import { useOrthogroupDiffEntries } from '@/hooks/useOrthogroupDiffEntries';
 import { useOgDrilldown } from '@/hooks/useOgDrilldown';
@@ -144,10 +145,10 @@ export function OgDetailPage() {
         {traitId ? (
           <>
             <Link
-              to={`/explore?trait=${traitId}`}
+              to="/analysis"
               className="hover:text-green-700 hover:underline"
             >
-              ← Trait Association
+              ← Analysis
             </Link>
             <span>/</span>
             <span className="text-gray-400">{traitId.replace(/_/g, ' ')}</span>
@@ -284,6 +285,8 @@ export function OgDetailPage() {
         traitId={traitId}
         bundleAvailableIds={bundleAvailableIds}
       />
+
+      <ObservedInAnalysesPanel entityType="og" entityId={ogId} />
     </div>
   );
 }

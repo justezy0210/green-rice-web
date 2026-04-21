@@ -2,6 +2,7 @@ import { useMemo } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ScopeStrip } from '@/components/common/ScopeStrip';
+import { ObservedInAnalysesPanel } from '@/components/entity/ObservedInAnalysesPanel';
 import { GeneModelSvg } from '@/components/gene/GeneModelSvg';
 import {
   GeneAnnotationCard,
@@ -249,6 +250,8 @@ export function GeneDetailPage() {
           </CardContent>
         </Card>
       )}
+
+      <ObservedInAnalysesPanel entityType="gene" entityId={geneId} />
     </div>
   );
 }

@@ -2,6 +2,7 @@ import { useMemo } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ScopeStrip } from '@/components/common/ScopeStrip';
+import { ObservedInAnalysesPanel } from '@/components/entity/ObservedInAnalysesPanel';
 import { useGeneModelsPartition } from '@/hooks/useGeneModel';
 import { useOgRegionManifest } from '@/hooks/useOgRegion';
 import { useCultivars } from '@/hooks/useCultivars';
@@ -236,6 +237,13 @@ export function RegionPage() {
           )}
         </CardContent>
       </Card>
+
+      {cultivar && chr && parsed && (
+        <ObservedInAnalysesPanel
+          entityType="region"
+          entityId={`${cultivar}:${chr}:${start}-${end}`}
+        />
+      )}
     </div>
   );
 }

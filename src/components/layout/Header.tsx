@@ -5,7 +5,9 @@ import { useAdminClaim } from '@/hooks/useAdminClaim';
 
 const NAV_ITEMS = [
   { path: '/', label: 'Overview' },
-  { path: '/explore', label: 'Trait Association' },
+  { path: '/cultivars', label: 'Cultivars' },
+  { path: '/genes', label: 'Genes' },
+  { path: '/analysis', label: 'Analysis' },
   { path: '/download', label: 'Downloads' },
 ];
 

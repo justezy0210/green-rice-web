@@ -1,0 +1,65 @@
+import { Link } from 'react-router-dom';
+import { Card, CardContent } from '@/components/ui/card';
+import type { EntityAnalysisLink, EntityType } from '@/types/candidate';
+
+interface Props {
+  entityType: EntityType;
+  entityId: string;
+  links?: EntityAnalysisLink[];
+}
+
+/**
+ * Entity-page backlink panel. Empty by design in Phase 1 — populated once
+ * `entity_analysis_index/{entityType}_{entityId}` is written from
+ * `analysis_runs` (Phase 2).
+ */
+export function ObservedInAnalysesPanel({ entityType, entityId, links }: Props) {
+  const rows = links ?? [];
+  return (
+    <Card>
+      <CardContent className="py-4">
+        <div className="flex items-baseline justify-between mb-2">
+          <h3 className="text-xs uppercase tracking-wide text-gray-500">
+            Observed in analyses
+          </h3>
+          <span className="text-[10px] text-gray-400 font-mono">
+            {entityType}:{entityId}
+          </span>
+        </div>
+        {rows.length === 0 ? (
+          <p className="text-[12px] text-gray-500 leading-snug">
+            No analysis runs reference this entity yet. This panel lists
+            candidates across runs once{' '}
+            <Link to="/analysis" className="text-green-700 hover:underline">
+              Analysis
+            </Link>{' '}
+            is populated.
+          </p>
+        ) : (
+          <ul className="divide-y divide-gray-100 text-[12px]">
+            {rows.map((r) => (
+              <li key={`${r.runId}:${r.candidateId ?? 'run'}`} className="py-1.5">
+                <Link
+                  to={
+                    r.candidateId
+                      ? `/analysis/${r.runId}/candidate/${r.candidateId}`
+                      : `/analysis/${r.runId}`
+                  }
+                  className="text-gray-800 hover:text-green-700 hover:underline"
+                >
+                  <span className="font-mono text-[11px]">{r.runId}</span>
+                  {r.rank !== null && (
+                    <span className="ml-2 text-gray-500">rank {r.rank}</span>
+                  )}
+                  {r.candidateType && (
+                    <span className="ml-2 text-gray-500">{r.candidateType}</span>
+                  )}
+                </Link>
+              </li>
+            ))}
+          </ul>
+        )}
+      </CardContent>
+    </Card>
+  );
+}

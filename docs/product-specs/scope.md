@@ -1,6 +1,6 @@
-# Scope — Korean Japonica Comparative Pangenome Resource (updated 2026-04-20)
+# Scope — Korean Japonica Comparative Pangenome Resource (updated 2026-04-21)
 
-> **Previously** this resource was locked (2026-04-18) as a *phenotype-driven candidate discovery DB*. Today (2026-04-20) the identity is reframed as **a comparative pangenome resource with candidate discovery as one analysis module**. The pivot follows a methodology review that found the previous phenotype-first framing over-represented locus-level evidence as OG-level claims. Entity units (Gene, OG, Cultivar, Region) are now first-class; phenotype association is a module, not the spine.
+> **History.** 2026-04-18 locked the resource as a *phenotype-driven candidate discovery DB*. 2026-04-20 reframed the identity as **a comparative pangenome resource with candidate discovery as one analysis module** — entity units became first-class. 2026-04-21 expands the analysis module into a full **5-step analysis workflow** (`/analysis/:runId/*`) with a first-class `Candidate` object *inside the module*. Entity spine remains primary; the workflow is how the module exposes its output.
 
 ## Declaration
 
@@ -35,11 +35,29 @@ Both are first-class; neither framing subsumes the other.
 - Evidence-graded PAV state per OG × cultivar (see classes below)
 - Non-reference Korean japonica sequences not captured by Nipponbare
 
-### At the analysis module (overlay)
+### At the analysis module (5-step workflow)
 
-- Which OGs rank high for copy-count contrast between proposed phenotype groups
+Exposed as a dedicated module at `/analysis/:runId/*`. Not a replacement for the entity surfaces — it consumes them.
+
+- **Step 1 Phenotype** — proposed group definition, group balance, QC placeholders (PCA/kinship when available)
+- **Step 2 Orthogroups** — OG ranking by copy-count contrast between proposed phenotype groups
+- **Step 3 Variants** (available when SV matrix released) — event-normalized SV table with per-group frequency
+- **Step 4 Intersections** (available after Step 3) — OG × SV impact classes (gene body / CDS / promoter / upstream / cluster enclosure / CNV / inversion boundary / TE)
+- **Step 5 Candidates** — ranked candidate list with evidence on up to 7 axes (Group specificity, Function, OG pattern, SV impact, Synteny, Expression, QTL); each axis labelled `ready` / `pending` / `external-future` / `partial`
 - Per-cluster AF at the anchor locus for a given trait — **only when anchor representativeness warrants** (see tier gating)
-- Candidate tables for follow-up, with the evidence layer each claim rests on
+
+### `Candidate` — module-scoped first-class object
+
+`Candidate` is first-class **inside the analysis module**, not at the resource level. It is bound to a specific `runId` (frozen snapshot of trait · grouping version · OrthoFinder version · SV release · gene_model version · scoring version). The same OG can surface as different candidates across runs; candidates do not exist outside a run.
+
+URL: `/analysis/:runId/candidate/:candidateId`. Entity URLs stay canonical; the run context is passed as `?run=...` query only.
+
+Candidate types (for ranking/explanation only — not biological categories):
+- `og_only` — copy/PAV pattern only
+- `og_plus_sv` — OG with nearby or overlapping SV
+- `sv_regulatory` — OG present everywhere, SV in promoter/upstream group-specific
+- `cnv_dosage` — copy count × group
+- `haplotype_block` — inversion / large rearrangement inside an OG cluster
 
 ## What the DB CANNOT tell you
 
@@ -125,19 +143,29 @@ When a user finds an interesting candidate, standard follow-up is still:
 11. Unclear annotation / coords / provenance / versioning
 12. Negative cases hidden (traits where no strong candidate emerges)
 
-## Information architecture — entity spine
+## Information architecture — dual axis
 
-The spine of the resource is the entity graph, not trait contrast:
+The resource has two axes and they must stay separable.
 
 ```
-Cultivar ─┐
-          ├─ Gene ─ Orthogroup ─ Region / Graph
-          └─ (private OG, assembly stats, annotation summary)
+Browse axis (canonical, entity-first)
+  Cultivar ─┐
+            ├─ Gene ─ Orthogroup ─ Region / Graph
+            └─ (private OG, assembly stats, annotation summary)
 
-Trait Association ── overlay onto Orthogroup, never the root
+Analysis axis (module, runId-scoped)
+  /analysis/:runId ─ step1 phenotype
+                   ─ step2 orthogroups
+                   ─ step3 variants
+                   ─ step4 intersections
+                   ─ step5 candidates ─ /candidate/:candidateId
 ```
 
-Every URL, every panel title, every copy line must match this hierarchy. If a new surface would put Trait above Gene/OG/Cultivar, it belongs in the trait module, not at the resource level.
+**Primacy rule.** Entity pages (`/cultivar/:name`, `/genes/:geneId`, `/og/:ogId`, `/region/...`) are the resource-identity surface. They must be reachable without passing through the analysis module. Dashboard copy, README, and manuscript abstract stay entity-first.
+
+**Module rule.** The analysis module owns `/analysis/*` and all trait-first, candidate-first, ranking-first UI lives there. The module links *into* entity pages (`?run=...` query), and entity pages link *back* via an `Observed In Analyses` panel, but the module's URLs never escape to the resource root.
+
+If a new surface would put Trait Association above Gene/OG/Cultivar *at the resource level*, it belongs in the analysis module, not at the resource level. The module itself can be trait-first internally.
 
 ## How to use this doc
 
@@ -150,3 +178,4 @@ Every URL, every panel title, every copy line must match this hierarchy. If a ne
 
 - **2026-04-18** — Initial lock: *Phenotype-driven candidate discovery DB*.
 - **2026-04-20** — Reframed to *Comparative pangenome resource with phenotype-association module* after methodology review (anchor-locus AF over-representation). PAV banned-entirely → evidence-graded-allowed. Entity spine (Gene/OG/Cultivar/Region) promoted to first-class.
+- **2026-04-21** — Analysis module expanded from "trait association table" to a **5-step workflow** at `/analysis/:runId/*` with `Candidate` as a first-class object *inside the module*. IA restated as dual-axis (Browse + Analysis). Entity spine remains the resource identity. `runId` 6-tuple snapshot (`trait · groupingV · orthofinderV · svReleaseV · geneModelV · scoringV`) supports version coexistence (11-cultivar MVP ↔ 16-cultivar release, SV-off ↔ SV-on). Exclusion list unchanged.
