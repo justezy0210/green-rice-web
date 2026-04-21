@@ -6,11 +6,15 @@ interface Props {
   onClusterSelect?: (c: GeneCluster) => void;
 }
 
-export function ClusterPicker({ clusters, selectedCluster, onClusterSelect }: Props) {
+export function ClusterPicker({
+  clusters,
+  selectedCluster,
+  onClusterSelect,
+}: Props) {
   if (clusters.length === 0) return null;
   const value = selectedCluster?.id ?? clusters[0]?.id ?? '';
   return (
-    <div className="flex items-center gap-2 text-xs">
+    <div className="flex items-center gap-2 text-xs flex-wrap">
       <label className="text-gray-500">View:</label>
       <select
         value={value}
@@ -18,7 +22,7 @@ export function ClusterPicker({ clusters, selectedCluster, onClusterSelect }: Pr
           const next = clusters.find((c) => c.id === e.target.value);
           if (next) onClusterSelect?.(next);
         }}
-        className="text-[11px] border border-gray-200 rounded px-2 py-1 bg-white hover:border-gray-300 focus:border-green-600 focus:outline-none max-w-[560px] truncate"
+        className="text-[11px] border border-gray-200 rounded px-2 py-1 bg-white hover:border-gray-300 focus:border-green-600 focus:outline-none max-w-[620px] truncate"
         disabled={!onClusterSelect}
       >
         {clusters.map((c) => (

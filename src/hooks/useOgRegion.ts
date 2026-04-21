@@ -1,52 +1,66 @@
 import { useEffect, useState } from 'react';
-import { fetchOgRegion, fetchOgRegionManifest } from '@/lib/og-region-service';
 import { publicDownloadUrl } from '@/lib/download-urls';
 import { ogRegionPointerPath } from '@/lib/storage-paths';
 import type { OgRegionManifest, RegionData } from '@/types/orthogroup';
 import type { GraphManifest, OgRegionPointer } from '@/types/og-region-v2';
+import { useOgRegionGraph } from './useOgRegionGraph';
+import { useOgRegionAf } from './useOgRegionAf';
 
-type RegionState = { key: string; data: RegionData | null };
-const EMPTY_REGION: RegionState = { key: '', data: null };
-
+/**
+ * Per-cluster region data — v2-only adapter.
+ *
+ * The old trait-baked single-file path (`og_region/{og}/{cluster}.json`)
+ * was retired after the 2026-04-21 v6_g4 promote. This hook now combines
+ * the v2 graph bundle (trait-neutral) and the per-trait AF bundle into
+ * the legacy `RegionData` shape so existing Graph / AF tab components
+ * keep working without internal restructuring.
+ *
+ * When `traitId` is null (e.g. Graph tab), the AF side is skipped and
+ * the returned shape carries only graph + anchor + liftover.
+ */
 export function useOgRegion(
   ogId: string | null,
   clusterId: string | null,
+  traitId?: string | null,
 ): { data: RegionData | null; loading: boolean } {
-  const key = ogId && clusterId ? `${ogId}/${clusterId}` : '';
-  const [state, setState] = useState<RegionState>(EMPTY_REGION);
+  const g = useOgRegionGraph(ogId, clusterId);
+  const a = useOgRegionAf(ogId, clusterId, traitId ?? null);
 
-  useEffect(() => {
-    if (!ogId || !clusterId) return;
-    const controller = new AbortController();
-    fetchOgRegion(ogId, clusterId, controller.signal)
-      .then((result) => {
-        if (!controller.signal.aborted) setState({ key, data: result });
-      })
-      .catch(() => {
-        if (!controller.signal.aborted) setState({ key, data: null });
-      });
-    return () => controller.abort();
-  }, [ogId, clusterId, key]);
+  if (!g.data) {
+    return { data: null, loading: g.loading };
+  }
 
-  const isCurrent = state.key === key;
+  const merged: RegionData = {
+    schemaVersion: 1,
+    ogId: g.data.ogId,
+    clusterId: g.data.clusterId,
+    source: 'cultivar-anchor',
+    anchor: g.data.anchor,
+    liftover: g.data.liftover,
+    graph: g.data.graph,
+    alleleFrequency: a.data
+      ? { groupLabels: a.data.groupLabels, variants: a.data.variants }
+      : null,
+    status: {
+      graph: g.data.status.graph,
+      af: a.data?.status.af ?? 'no_variants',
+      errorMessage: g.data.status.errorMessage,
+    },
+  };
   return {
-    data: isCurrent ? state.data : null,
-    loading: Boolean(key) && !isCurrent,
+    data: merged,
+    loading: g.loading || (traitId ? a.loading : false),
   };
 }
 
 type ManifestState = 'idle' | 'loaded';
 
 /**
- * Dual-read adapter: prefers the v2 pointer + graph manifest published
- * under `downloads/_og_region_manifest.json` + `og_region_graph/v{of}_g{g}/
- * _manifest.json`. If those are missing (Release A transition or before
- * any v2 promote), falls back to the legacy single-trait
- * `og_region/_manifest.json`. Returns the legacy shape either way so
- * existing consumers (OgDrawer, OgDetailGraphTab, OgDetailAlleleFreqTab)
- * don't have to branch.
- *
- * Release B removes the legacy branch.
+ * v2-only manifest loader. Fetches the og_region v2 pointer, then the
+ * graph manifest it points to, and projects the result into the legacy
+ * `OgRegionManifest` shape for existing consumers (OgDrawer,
+ * OgDetailGraphTab, OgDetailAlleleFreqTab). Legacy v1 fallback was
+ * removed after the v6_g4 promote.
  */
 export function useOgRegionManifest(): {
   manifest: OgRegionManifest | null;
@@ -58,36 +72,26 @@ export function useOgRegionManifest(): {
   useEffect(() => {
     const controller = new AbortController();
     (async () => {
-      // 1. Try v2 pointer + graph manifest.
       try {
         const pRes = await fetch(publicDownloadUrl(ogRegionPointerPath()), {
           cache: 'no-store',
           signal: controller.signal,
         });
-        if (pRes.ok) {
-          const pointer = (await pRes.json()) as OgRegionPointer;
-          const gRes = await fetch(publicDownloadUrl(pointer.graphManifest), {
-            signal: controller.signal,
-          });
-          if (gRes.ok) {
-            const graph = (await gRes.json()) as GraphManifest;
-            const legacy = graphManifestToLegacy(graph);
-            if (!controller.signal.aborted) {
-              setManifest(legacy);
-              setStatus('loaded');
-            }
-            return;
-          }
+        if (!pRes.ok) {
+          if (!controller.signal.aborted) setStatus('loaded');
+          return;
         }
-      } catch {
-        // fall through to legacy
-      }
-
-      // 2. Fallback: legacy og_region/_manifest.json.
-      try {
-        const legacy = await fetchOgRegionManifest(controller.signal);
+        const pointer = (await pRes.json()) as OgRegionPointer;
+        const gRes = await fetch(publicDownloadUrl(pointer.graphManifest), {
+          signal: controller.signal,
+        });
+        if (!gRes.ok) {
+          if (!controller.signal.aborted) setStatus('loaded');
+          return;
+        }
+        const graph = (await gRes.json()) as GraphManifest;
         if (!controller.signal.aborted) {
-          setManifest(legacy);
+          setManifest(graphManifestToLegacy(graph));
           setStatus('loaded');
         }
       } catch {
@@ -101,9 +105,11 @@ export function useOgRegionManifest(): {
 }
 
 /**
- * Normalize a v2 graph manifest into the legacy shape the existing UI
- * consumers expect. Skipped OGs appear with `clusters: []` + `error`
- * set to the skipReason; emitted OGs carry their cluster array.
+ * Project v2 graph manifest → legacy OgRegionManifest shape. Skipped
+ * OGs carry `error: skipReason` with empty clusters; emitted OGs keep
+ * their cluster array. AF status is not in the graph manifest by
+ * design (useOgRegionAf carries it per cluster), so we fill
+ * `no_variants` as a placeholder that never asserts AF=ok.
  */
 function graphManifestToLegacy(graph: GraphManifest): OgRegionManifest {
   const ogs: OgRegionManifest['ogs'] = {};
@@ -121,10 +127,6 @@ function graphManifestToLegacy(graph: GraphManifest): OgRegionManifest {
           geneCount: c.geneCount,
           kind: c.kind,
           graphStatus: c.graphStatus,
-          // AF status is not in the graph manifest by design. Consumers
-          // that need it should move to useOgRegionAf. For legacy
-          // compatibility we say "no_variants" so nothing claims AF=ok
-          // without reading the AF bundle.
           afStatus: 'no_variants',
           variantCount: 0,
         })),

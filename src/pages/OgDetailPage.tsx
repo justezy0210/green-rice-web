@@ -2,10 +2,9 @@ import { useCallback, useMemo } from 'react';
 import { useParams, useSearchParams, Link } from 'react-router-dom';
 import { Card, CardContent } from '@/components/ui/card';
 import { OgDetailAlleleFreqTab } from '@/components/og-detail/OgDetailAlleleFreqTab';
-import { OgDetailGeneTab } from '@/components/og-detail/OgDetailGeneTab';
-import { OgDetailGraphTab } from '@/components/og-detail/OgDetailGraphTab';
 import { OgPavEvidenceCard } from '@/components/og-detail/OgPavEvidenceCard';
 import { OgCoreShellBadge } from '@/components/og-detail/OgCoreShellBadge';
+import { ClusterContextCard } from '@/components/og-detail/ClusterContextCard';
 import { OgAnchorTierBadge } from '@/components/explore/OgAnchorTierBadge';
 import { ScopeStrip } from '@/components/common/ScopeStrip';
 import { useOrthogroupDiff } from '@/hooks/useOrthogroupDiff';
@@ -14,6 +13,7 @@ import { useOgDrilldown } from '@/hooks/useOgDrilldown';
 import { useOgAlleleFreq } from '@/hooks/useOgAlleleFreq';
 import { useOgGeneCoords } from '@/hooks/useOgGeneCoords';
 import { useCultivars } from '@/hooks/useCultivars';
+import { useOgRegionManifest } from '@/hooks/useOgRegion';
 import { buildGroupColorMap } from '@/components/dashboard/distribution-helpers';
 import { buildGeneClusters, buildReferenceCluster, formatClusterSummary } from '@/lib/og-gene-clusters';
 import { classifyAnchorTier } from '@/lib/og-anchor-tier';
@@ -23,25 +23,11 @@ import { isReferencePathCultivar } from '@/lib/irgsp-constants';
 import type { TraitId } from '@/types/grouping';
 import type { OrthogroupDiffEntry, GeneCluster } from '@/types/orthogroup';
 
-const TABS = ['members', 'af', 'graph'] as const;
-type TabId = (typeof TABS)[number];
-const TAB_LABELS: Record<TabId, string> = {
-  members: 'Gene Locations',
-  af: 'Anchor-locus Variants',
-  graph: 'Pangenome Graph',
-};
-
-function isTab(v: string | null): v is TabId {
-  return v !== null && (TABS as readonly string[]).includes(v);
-}
-
 export function OgDetailPage() {
   const { ogId } = useParams<{ ogId: string }>();
   const [params, setParams] = useSearchParams();
 
   const traitId = (params.get('trait') ?? null) as TraitId | null;
-  const rawTab = params.get('tab');
-  const activeTab: TabId = isTab(rawTab) ? rawTab : 'members';
   const selectedClusterId = params.get('cluster');
 
   const { doc: diffDoc, groupingDoc } = useOrthogroupDiff(traitId);
@@ -52,9 +38,10 @@ export function OgDetailPage() {
     diffDoc?.groupingVersion ?? null,
   );
   const version = diffDoc?.orthofinderVersion ?? null;
-  const { members, loading: membersLoading } = useOgDrilldown(ogId ?? null, version);
+  const { members } = useOgDrilldown(ogId ?? null, version);
   const { data: ogCoords } = useOgGeneCoords(ogId ?? null);
   const { cultivars } = useCultivars();
+  const { manifest } = useOgRegionManifest();
 
   const cultivarNameMap = useMemo(() => {
     const m: Record<string, string> = {};
@@ -82,7 +69,6 @@ export function OgDetailPage() {
   const afSummary = ogId ? alleleFreq?.ogs[ogId] ?? null : null;
   const rep = diffEntry?.representative;
 
-  // Build clusters: cultivar-anchored (from coords) + IRGSP reference pseudo-cluster
   const clusters = useMemo(() => {
     const cultivarClusters = ogCoords ? buildGeneClusters(ogCoords) : [];
     const refCluster = buildReferenceCluster(rep ?? null, afSummary);
@@ -90,8 +76,14 @@ export function OgDetailPage() {
   }, [ogCoords, rep, afSummary]);
 
   const selectedCluster: GeneCluster | null = useMemo(() => {
-    if (!selectedClusterId) return clusters[0] ?? null;
-    return clusters.find((c) => c.id === selectedClusterId) ?? clusters[0] ?? null;
+    if (selectedClusterId) {
+      const byId = clusters.find((c) => c.id === selectedClusterId);
+      if (byId) return byId;
+    }
+    // Default: first cultivar-anchored cluster (the anchor-locus view has
+    // real variant data; reference cluster is only the OG-level summary).
+    const firstCultivar = clusters.find((c) => c.source === 'cultivar');
+    return firstCultivar ?? clusters[0] ?? null;
   }, [clusters, selectedClusterId]);
 
   const tierMetrics = useMemo(() => {
@@ -118,26 +110,21 @@ export function OgDetailPage() {
     return classifyCopyArchitecture(counts);
   }, [members, cultivars]);
 
+  const bundleAvailableIds = useMemo(() => {
+    if (!manifest || !ogId) return undefined;
+    const ogEntry = manifest.ogs[ogId];
+    if (!ogEntry?.clusters) return undefined;
+    return new Set(ogEntry.clusters.map((c) => c.clusterId));
+  }, [manifest, ogId]);
+
   const primaryDesc = rep
     ? Object.values(rep.descriptions ?? {}).find((d) => d && d !== 'NA') ?? null
     : null;
-
-  const setTab = useCallback(
-    (tab: TabId) => {
-      setParams((prev) => {
-        if (tab === 'members') prev.delete('tab');
-        else prev.set('tab', tab);
-        return prev;
-      });
-    },
-    [setParams],
-  );
 
   const setCluster = useCallback(
     (cluster: GeneCluster) => {
       setParams((prev) => {
         prev.set('cluster', cluster.id);
-        prev.set('tab', 'graph');
         return prev;
       });
     },
@@ -263,26 +250,6 @@ export function OgDetailPage() {
         </CardContent>
       </Card>
 
-      {/* Tabs */}
-      <div className="border-b border-gray-200">
-        <nav className="flex gap-0 -mb-px">
-          {TABS.map((tab) => (
-            <button
-              key={tab}
-              type="button"
-              onClick={() => setTab(tab)}
-              className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
-                activeTab === tab
-                  ? 'border-green-600 text-green-700'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-              }`}
-            >
-              {TAB_LABELS[tab]}
-            </button>
-          ))}
-        </nav>
-      </div>
-
       <ScopeStrip>
         Orthogroup-level evidence. Anchor-locus variants are shown as
         locus-local evidence only, gated by anchor representativeness.
@@ -293,44 +260,30 @@ export function OgDetailPage() {
         <OgPavEvidenceCard rows={pavRows} cultivarNameMap={cultivarNameMap} />
       )}
 
-      {/* Tab content */}
-      {activeTab === 'members' && (
-        <OgDetailGeneTab
-          ogId={ogId}
-          members={members}
-          loading={membersLoading}
-          cultivarNameMap={cultivarNameMap}
-          groupByCultivar={groupByCultivar}
-          groupColorMap={groupColorMap}
-          diffDoc={diffDoc}
-          representative={rep ?? null}
-          afSummary={afSummary}
-          onClusterSelect={setCluster}
-          selectedClusterId={selectedCluster?.id ?? null}
-        />
-      )}
-      {activeTab === 'af' && (
-        <OgDetailAlleleFreqTab
-          ogId={ogId}
-          selectedCluster={selectedCluster}
-          afSummary={afSummary}
-          groupLabels={groupLabels}
-          groupColorMap={groupColorMap}
-          tierMetrics={tierMetrics}
-        />
-      )}
-      {activeTab === 'graph' && (
-        <OgDetailGraphTab
-          ogId={ogId}
-          selectedCluster={selectedCluster}
-          clusters={clusters}
-          onClusterSelect={setCluster}
-          coords={ogCoords}
-          groupByCultivar={groupByCultivar}
-          groupColorMap={groupColorMap}
-          groupLabels={groupLabels}
-        />
-      )}
+      <ClusterContextCard
+        clusters={clusters}
+        selectedClusterId={selectedCluster?.id ?? null}
+        onClusterSelect={setCluster}
+        representative={rep ?? null}
+        afSummary={afSummary}
+        coords={ogCoords}
+        groupByCultivar={groupByCultivar}
+        groupLabels={groupLabels}
+        bundleAvailableIds={bundleAvailableIds}
+      />
+
+      <OgDetailAlleleFreqTab
+        ogId={ogId}
+        selectedCluster={selectedCluster}
+        clusters={clusters}
+        onClusterSelect={setCluster}
+        afSummary={afSummary}
+        groupLabels={groupLabels}
+        groupColorMap={groupColorMap}
+        tierMetrics={tierMetrics}
+        traitId={traitId}
+        bundleAvailableIds={bundleAvailableIds}
+      />
     </div>
   );
 }

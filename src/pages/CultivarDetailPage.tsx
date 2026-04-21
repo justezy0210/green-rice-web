@@ -6,6 +6,7 @@ import { RadarChartWrapper } from '@/components/charts/RadarChartWrapper';
 import { MiniSearch } from '@/components/cultivar/MiniSearch';
 import { GenomeDownloadSection } from '@/components/cultivar/GenomeDownloadSection';
 import { GenomeStatsCard } from '@/components/cultivar/GenomeStatsCard';
+import { ChromosomeBrowseCard } from '@/components/cultivar/ChromosomeBrowseCard';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { PHENOTYPE_FIELDS, getNumericValue } from '@/lib/utils';
 import { cultivarNameToId } from '@/lib/cultivar-helpers';
@@ -149,6 +150,8 @@ export function CultivarDetailPage() {
       </Card>
 
       <GenomeStatsCard genomeSummary={genomeSummary} />
+
+      <ChromosomeBrowseCard cultivarId={cultivarId} genomeSummary={genomeSummary} />
 
       <GenomeDownloadSection genomeSummary={genomeSummary} />
     </div>

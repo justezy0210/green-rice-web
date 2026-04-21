@@ -3,6 +3,7 @@ import { useOgRegion, useOgRegionManifest } from '@/hooks/useOgRegion';
 import { OgDrawerAlleleFreqSection } from '@/components/explore/OgDrawerAlleleFreqSection';
 import { OgAnchorTierBadge } from '@/components/explore/OgAnchorTierBadge';
 import { ScopeStrip } from '@/components/common/ScopeStrip';
+import { ClusterPicker } from './ClusterPicker';
 import {
   findManifestCluster,
   resolveClusterRegionStatus,
@@ -22,24 +23,53 @@ import type { GeneCluster, OgVariantSummary } from '@/types/orthogroup';
 interface Props {
   ogId: string;
   selectedCluster?: GeneCluster | null;
+  clusters?: GeneCluster[];
+  onClusterSelect?: (c: GeneCluster) => void;
   afSummary: OgVariantSummary | null;
   groupLabels: string[];
   groupColorMap: Record<string, { bg: string; border: string }>;
   tierMetrics: TierMetrics | null;
+  traitId: string | null;
+  /** IDs with an extractor bundle. Cultivar clusters not in this set are
+   * hidden from the picker (no data to show anyway). Reference cluster is
+   * always kept when `afSummary` exists because it carries OG-level AF. */
+  bundleAvailableIds?: Set<string>;
 }
 
-export function OgDetailAlleleFreqTab({
+export function OgDetailAlleleFreqTab(props: Props) {
+  const pickerClusters = (props.clusters ?? []).filter((c) => {
+    if (c.source === 'reference') return !!props.afSummary;
+    if (!props.bundleAvailableIds) return true;
+    return props.bundleAvailableIds.has(c.id);
+  });
+  return (
+    <div className="space-y-3">
+      {pickerClusters.length > 0 && (
+        <ClusterPicker
+          clusters={pickerClusters}
+          selectedCluster={props.selectedCluster ?? null}
+          onClusterSelect={props.onClusterSelect}
+        />
+      )}
+      <OgDetailAlleleFreqTabBody {...props} />
+    </div>
+  );
+}
+
+function OgDetailAlleleFreqTabBody({
   ogId,
   selectedCluster,
   afSummary,
   groupLabels,
   groupColorMap,
   tierMetrics,
+  traitId,
 }: Props) {
   const isReference = selectedCluster?.source === 'reference';
   const region = useOgRegion(
     ogId,
     !isReference ? selectedCluster?.id ?? null : null,
+    traitId,
   );
   const { manifest } = useOgRegionManifest();
   const [showOgLevel, setShowOgLevel] = useState(false);
