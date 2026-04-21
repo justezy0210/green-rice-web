@@ -40,6 +40,13 @@ service cloud.firestore {
       allow write: if false;
     }
 
+    // SV-matrix release headers (Phase 3). Storage bundles live under
+    // sv_matrix/{svReleaseId}/** and have their own rule.
+    match /sv_releases/{svReleaseId} {
+      allow read: if true;
+      allow write: if false;
+    }
+
     // Orthofinder state: admin-only read (exposes processing status + file paths).
     match /_orthofinder_meta/state {
       allow read: if request.auth != null && request.auth.token.admin == true;
