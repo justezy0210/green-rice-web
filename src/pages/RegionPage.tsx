@@ -14,15 +14,11 @@ import { useGeneModelsPartition } from '@/hooks/useGeneModel';
 import { useOgRegionManifest } from '@/hooks/useOgRegion';
 import { useCultivars } from '@/hooks/useCultivars';
 import {
+  computeOverlappingClusters,
+  computeOverlappingGenes,
   cultivarPrefix,
-  geneSearchText,
   parseRange,
-  rangeOverlaps,
 } from '@/lib/region-helpers';
-import type { GeneModelEntry } from '@/types/gene-model';
-
-/** Row shape used by the page: gene model entry + id + pre-lowered search haystack. */
-type RegionGene = GeneModelEntry & { id: string; searchText: string };
 
 const FLANK_BP = 5000;
 
@@ -55,26 +51,18 @@ export function RegionPage() {
   // list render behind React 19's concurrent scheduler.
   const deferredQuery = useDeferredValue(functionQuery);
 
-  const overlappingGenes = useMemo<RegionGene[]>(() => {
-    if (!partition || !rangeValid || !cultivar || !chr) return [];
-    const hits: RegionGene[] = [];
-    for (const id in partition.genes) {
-      const g = partition.genes[id];
-      if (g.cultivar !== cultivar) continue;
-      if (g.chr !== chr) continue;
-      if (!rangeOverlaps(g.start, g.end, start, end)) continue;
-      // Pre-compute the lowercased search haystack once; the filter
-      // below is then a single String.prototype.includes call.
-      const row: RegionGene = {
-        id,
-        ...g,
-        searchText: geneSearchText({ id, ...g }),
-      };
-      hits.push(row);
-    }
-    hits.sort((a, b) => a.start - b.start);
-    return hits;
-  }, [partition, rangeValid, cultivar, chr, start, end]);
+  const overlappingGenes = useMemo(
+    () =>
+      computeOverlappingGenes({
+        partition,
+        cultivar: cultivar ?? null,
+        chr: chr ?? null,
+        start,
+        end,
+        rangeValid,
+      }),
+    [partition, rangeValid, cultivar, chr, start, end],
+  );
 
   const visibleGenes = useMemo(() => {
     const q = deferredQuery.trim().toLowerCase();
@@ -82,35 +70,18 @@ export function RegionPage() {
     return overlappingGenes.filter((g) => g.searchText.includes(q));
   }, [overlappingGenes, deferredQuery]);
 
-  const overlappingClusters = useMemo(() => {
-    if (!manifest || !rangeValid || !cultivar || !chr) return [];
-    const out: {
-      ogId: string;
-      clusterId: string;
-      chr: string;
-      start: number;
-      end: number;
-      geneCount: number;
-    }[] = [];
-    for (const [ogId, og] of Object.entries(manifest.ogs)) {
-      if (!og.clusters) continue;
-      for (const c of og.clusters) {
-        if (c.cultivar !== cultivar) continue;
-        if (c.chr !== chr) continue;
-        if (!rangeOverlaps(c.start, c.end, start, end)) continue;
-        out.push({
-          ogId,
-          clusterId: c.clusterId,
-          chr: c.chr,
-          start: c.start,
-          end: c.end,
-          geneCount: c.geneCount,
-        });
-      }
-    }
-    out.sort((a, b) => a.start - b.start);
-    return out;
-  }, [manifest, rangeValid, cultivar, chr, start, end]);
+  const overlappingClusters = useMemo(
+    () =>
+      computeOverlappingClusters({
+        manifest,
+        cultivar: cultivar ?? null,
+        chr: chr ?? null,
+        start,
+        end,
+        rangeValid,
+      }),
+    [manifest, rangeValid, cultivar, chr, start, end],
+  );
 
   if (!cultivar || !chr || !parsed) {
     return (

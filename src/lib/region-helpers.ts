@@ -1,4 +1,22 @@
-import type { GeneModelEntry } from '@/types/gene-model';
+import type {
+  GeneModelEntry,
+  GeneModelPartition,
+} from '@/types/gene-model';
+import type { OgRegionManifest } from '@/types/og-region';
+
+export interface RegionGene extends GeneModelEntry {
+  id: string;
+  searchText: string;
+}
+
+export interface OverlappingClusterRow {
+  ogId: string;
+  clusterId: string;
+  chr: string;
+  start: number;
+  end: number;
+  geneCount: number;
+}
 
 export function parseRange(range: string | undefined): [number, number] | null {
   if (!range) return null;
@@ -43,4 +61,59 @@ export function geneSearchText(g: GeneModelEntry & { id: string }): string {
     if (a.go) parts.push(...a.go);
   }
   return parts.join(' ').toLowerCase();
+}
+
+/** Scan the loaded partition for genes that hit the (cultivar, chr, start-end) window. */
+export function computeOverlappingGenes(args: {
+  partition: GeneModelPartition | null;
+  cultivar: string | null;
+  chr: string | null;
+  start: number;
+  end: number;
+  rangeValid: boolean;
+}): RegionGene[] {
+  const { partition, cultivar, chr, start, end, rangeValid } = args;
+  if (!partition || !rangeValid || !cultivar || !chr) return [];
+  const hits: RegionGene[] = [];
+  for (const id in partition.genes) {
+    const g = partition.genes[id];
+    if (g.cultivar !== cultivar) continue;
+    if (g.chr !== chr) continue;
+    if (!rangeOverlaps(g.start, g.end, start, end)) continue;
+    hits.push({ id, ...g, searchText: geneSearchText({ id, ...g }) });
+  }
+  hits.sort((a, b) => a.start - b.start);
+  return hits;
+}
+
+/** Scan the og_region manifest for cluster entries anchored to the same window. */
+export function computeOverlappingClusters(args: {
+  manifest: OgRegionManifest | null;
+  cultivar: string | null;
+  chr: string | null;
+  start: number;
+  end: number;
+  rangeValid: boolean;
+}): OverlappingClusterRow[] {
+  const { manifest, cultivar, chr, start, end, rangeValid } = args;
+  if (!manifest || !rangeValid || !cultivar || !chr) return [];
+  const out: OverlappingClusterRow[] = [];
+  for (const [ogId, og] of Object.entries(manifest.ogs)) {
+    if (!og.clusters) continue;
+    for (const c of og.clusters) {
+      if (c.cultivar !== cultivar) continue;
+      if (c.chr !== chr) continue;
+      if (!rangeOverlaps(c.start, c.end, start, end)) continue;
+      out.push({
+        ogId,
+        clusterId: c.clusterId,
+        chr: c.chr,
+        start: c.start,
+        end: c.end,
+        geneCount: c.geneCount,
+      });
+    }
+  }
+  out.sort((a, b) => a.start - b.start);
+  return out;
 }
