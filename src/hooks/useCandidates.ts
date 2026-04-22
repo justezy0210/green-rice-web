@@ -12,8 +12,8 @@ interface CandidatesState {
 /**
  * Returns candidates for a run from Firestore
  * (`analysis_runs/{runId}/candidates`, produced by
- * `scripts/build-analysis-run.py`). Dataset is the product; the UI does
- * not recompute scoring.
+ * `scripts/promote-analysis-run.py` from the server-side 5-step run).
+ * Dataset is the product; the UI does not recompute scoring.
  */
 export function useCandidates(runId: RunId | null | undefined): CandidatesState {
   const [state, setState] = useState<{

@@ -11,7 +11,7 @@ interface UseAnalysisRunState {
 
 /**
  * Subscribes to `analysis_runs/{runId}` in Firestore. Runs that have not
- * been materialised by `scripts/build-analysis-run.py` resolve to
+ * been materialised by `scripts/promote-analysis-run.py` resolve to
  * `{ run: null }` — the UI should surface a "Run not found" message
  * rather than synthesise a placeholder.
  */

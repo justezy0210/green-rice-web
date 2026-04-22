@@ -105,7 +105,7 @@ export function AnalysisHomePage() {
             <p className="text-sm text-gray-500 leading-snug">
               No analysis runs present. Runs materialise once{' '}
               <code className="text-[11px] bg-gray-100 px-1 py-0.5 rounded">
-                scripts/build-analysis-run.py
+                scripts/promote-analysis-run.py
               </code>{' '}
               has been executed against Firestore.
             </p>

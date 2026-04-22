@@ -194,8 +194,8 @@ Layout (위에서 아래):
 - Design-doc `analysis-block-ui.md` — `shared_haplotype_block` → `shared_linked_block` 명칭 교체, Codex 보강 반영
 
 ### Delete / Deprecate
-- `scripts/build-analysis-run.py` — promote 스크립트가 흡수. Phase A promote 후 삭제.
-- `scripts/build-sv-matrix.py` — `sv_v1`은 이미 Firestore에 있고 재빌드 주기는 재로드 시점까지 필요 없음. Phase A 종료 시 deprecate 표시 or 삭제.
+- ~~`scripts/build-analysis-run.py`~~ — 삭제 완료 (2026-04-22). `promote-analysis-run.py`가 흡수. Python mirror (`functions-python/shared/candidate_scoring.py`) + 관련 테스트도 함께 제거.
+- `scripts/build-sv-matrix.py` — 유지. `sv_v1`은 Firestore에 이미 있지만, SV matrix 재돌림은 이 스크립트가 유일한 경로라 canonical path로 남김.
 
 ## MVP slicing (design-doc §MVP Path와 정합)
 
