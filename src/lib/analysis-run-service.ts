@@ -55,6 +55,13 @@ export async function fetchCandidate(
 }
 
 function hydrateCandidate(data: Record<string, unknown>): Candidate {
+  const totalScore = Number(data.totalScore ?? data.combinedScore ?? 0);
+  const combinedScore =
+    data.combinedScore !== undefined ? Number(data.combinedScore) : null;
+  const baseScore =
+    data.baseScore !== undefined ? Number(data.baseScore) : null;
+  const baseRank =
+    data.baseRank !== undefined ? Number(data.baseRank) : null;
   return {
     candidateId: String(data.candidateId ?? ''),
     runId: String(data.runId ?? '') as RunId,
@@ -64,8 +71,13 @@ function hydrateCandidate(data: Record<string, unknown>): Candidate {
     leadGeneId: (data.leadGeneId as string | null) ?? null,
     leadRegion: (data.leadRegion as Candidate['leadRegion']) ?? null,
     leadSvId: (data.leadSvId as string | null) ?? null,
+    bestSv: (data.bestSv as Candidate['bestSv']) ?? null,
+    blockId: (data.blockId as string | null) ?? null,
     rank: Number(data.rank ?? 0),
-    totalScore: Number(data.totalScore ?? 0),
+    baseRank,
+    baseScore,
+    combinedScore,
+    totalScore,
     scoreBreakdown: (data.scoreBreakdown as Candidate['scoreBreakdown']) ?? [],
     groupSpecificitySummary: (data.groupSpecificitySummary as string | null) ?? null,
     functionSummary: (data.functionSummary as string | null) ?? null,

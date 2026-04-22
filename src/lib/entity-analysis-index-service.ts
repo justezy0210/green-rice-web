@@ -16,6 +16,7 @@ export async function fetchEntityAnalysisIndex(
     entityId: data.entityId ?? entityId,
     linkedRuns: data.linkedRuns ?? [],
     topCandidates: data.topCandidates ?? [],
+    topBlocks: data.topBlocks ?? [],
     latestUpdatedAt: data.latestUpdatedAt ?? '',
   };
 }
