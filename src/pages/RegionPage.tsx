@@ -1,15 +1,10 @@
 import { useDeferredValue, useMemo, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
-import {
-  Card,
-  CardAction,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ScopeStrip } from '@/components/common/ScopeStrip';
 import { ObservedInAnalysesPanel } from '@/components/entity/ObservedInAnalysesPanel';
 import { OverlappingBlocksPanel } from '@/components/entity/OverlappingBlocksPanel';
+import { OverlappingGenesCard } from '@/components/region/OverlappingGenesCard';
 import { useGeneModelsPartition } from '@/hooks/useGeneModel';
 import { useOgRegionManifest } from '@/hooks/useOgRegion';
 import { useCultivars } from '@/hooks/useCultivars';
@@ -21,6 +16,15 @@ import {
 } from '@/lib/region-helpers';
 
 const FLANK_BP = 5000;
+/**
+ * Keeps the Overlapping-genes list renderable on dense regions
+ * (/region/baegilmi/chr01/0-44043118 → 6103 hits). DOM reconciliation
+ * of 6k Link nodes is the last remaining search-time cost after the
+ * dep-array and geneSearchText fixes. Users narrow the list with
+ * the filter; a "Show all" toggle is available when they really
+ * need the full view.
+ */
+const GENE_DISPLAY_LIMIT = 200;
 
 export function RegionPage() {
   const { cultivar, chr, range } = useParams<{
@@ -50,6 +54,7 @@ export function RegionPage() {
   // Keep the input field snappy while deferring the expensive filter /
   // list render behind React 19's concurrent scheduler.
   const deferredQuery = useDeferredValue(functionQuery);
+  const [showAllGenes, setShowAllGenes] = useState(false);
 
   const overlappingGenes = useMemo(
     () =>
@@ -69,6 +74,12 @@ export function RegionPage() {
     if (!q) return overlappingGenes;
     return overlappingGenes.filter((g) => g.searchText.includes(q));
   }, [overlappingGenes, deferredQuery]);
+
+  const displayedGenes = useMemo(() => {
+    if (showAllGenes) return visibleGenes;
+    if (visibleGenes.length <= GENE_DISPLAY_LIMIT) return visibleGenes;
+    return visibleGenes.slice(0, GENE_DISPLAY_LIMIT);
+  }, [visibleGenes, showAllGenes]);
 
   const overlappingClusters = useMemo(
     () =>
@@ -148,76 +159,18 @@ export function RegionPage() {
         </p>
       )}
 
-      <Card>
-        <CardHeader className="pb-2">
-          <CardTitle className="text-base">
-            Overlapping genes
-            <span className="ml-2 text-xs font-normal text-gray-500">
-              sorted by start
-              {deferredQuery.trim()
-                ? ` · ${visibleGenes.length}/${overlappingGenes.length} match`
-                : overlappingGenes.length > 0
-                  ? ` · ${overlappingGenes.length} total`
-                  : ''}
-            </span>
-          </CardTitle>
-          <CardAction className="flex items-center gap-2">
-            <input
-              type="search"
-              value={functionQuery}
-              onChange={(e) => setFunctionQuery(e.target.value)}
-              placeholder="Filter by function (product · Pfam · InterPro · GO)"
-              className="w-72 text-[12px] border border-gray-200 rounded px-2 py-1 bg-white focus:border-green-500 focus:ring-1 focus:ring-green-200 outline-none"
-            />
-            {functionQuery && (
-              <button
-                onClick={() => setFunctionQuery('')}
-                className="text-[11px] text-gray-500 hover:text-gray-800 px-2 py-1 border border-gray-200 rounded"
-              >
-                Clear
-              </button>
-            )}
-          </CardAction>
-        </CardHeader>
-        <CardContent>
-          {overlappingGenes.length === 0 ? (
-            <p className="text-sm text-gray-500">
-              {partitionLoading
-                ? 'Scanning…'
-                : 'No annotated genes in this region for this cultivar.'}
-            </p>
-          ) : visibleGenes.length === 0 ? (
-            <p className="text-sm text-gray-500">
-              No genes match{' '}
-              <code className="text-[11px] bg-gray-100 px-1 py-0.5 rounded">
-                {deferredQuery}
-              </code>{' '}
-              in this region.
-            </p>
-          ) : (
-            <ul className="divide-y divide-gray-100 text-sm">
-              {visibleGenes.map((g) => (
-                <li key={g.id}>
-                  <Link
-                    to={`/genes/${encodeURIComponent(g.id)}`}
-                    className="block py-1.5 px-1 rounded hover:bg-green-50 flex items-baseline justify-between gap-3"
-                  >
-                    <span className="font-mono text-gray-900">{g.id}</span>
-                    <span className="text-[11px] text-gray-500 whitespace-nowrap font-mono">
-                      {g.chr}:{g.start.toLocaleString()}-{g.end.toLocaleString()} ({g.strand})
-                      {g.annotation?.product && (
-                        <span className="ml-2 text-gray-600">
-                          · {g.annotation.product}
-                        </span>
-                      )}
-                    </span>
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          )}
-        </CardContent>
-      </Card>
+      <OverlappingGenesCard
+        overlappingGenes={overlappingGenes}
+        visibleGenes={visibleGenes}
+        displayedGenes={displayedGenes}
+        deferredQuery={deferredQuery}
+        functionQuery={functionQuery}
+        setFunctionQuery={setFunctionQuery}
+        partitionLoading={partitionLoading}
+        showAllGenes={showAllGenes}
+        toggleShowAll={() => setShowAllGenes((v) => !v)}
+        displayLimit={GENE_DISPLAY_LIMIT}
+      />
 
       <Card>
         <CardHeader className="pb-2">
