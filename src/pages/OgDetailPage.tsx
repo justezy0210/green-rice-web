@@ -1,11 +1,14 @@
-import { useCallback, useMemo } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { useParams, useSearchParams, Link } from 'react-router-dom';
 import { Card, CardContent } from '@/components/ui/card';
 import { OgDetailAlleleFreqTab } from '@/components/og-detail/OgDetailAlleleFreqTab';
-import { OgPavEvidenceCard } from '@/components/og-detail/OgPavEvidenceCard';
 import { OgCoreShellBadge } from '@/components/og-detail/OgCoreShellBadge';
 import { ClusterContextCard } from '@/components/og-detail/ClusterContextCard';
-import { OgAnchorTierBadge } from '@/components/explore/OgAnchorTierBadge';
+import { OgTraitHitChips } from '@/components/og-detail/OgTraitHitChips';
+import { OgActiveRunCard } from '@/components/og-detail/OgActiveRunCard';
+import { OgLeadSvCard } from '@/components/og-detail/OgLeadSvCard';
+import { OgCultivarCopyMap } from '@/components/og-detail/OgCultivarCopyMap';
+import { OgIntersectionsSection } from '@/components/og-detail/OgIntersectionsSection';
 import { ScopeStrip } from '@/components/common/ScopeStrip';
 import { ObservedInAnalysesPanel } from '@/components/entity/ObservedInAnalysesPanel';
 import { CandidateBlocksInAnalysesPanel } from '@/components/entity/CandidateBlocksInAnalysesPanel';
@@ -16,8 +19,9 @@ import { useOgAlleleFreq } from '@/hooks/useOgAlleleFreq';
 import { useOgGeneCoords } from '@/hooks/useOgGeneCoords';
 import { useCultivars } from '@/hooks/useCultivars';
 import { useOgRegionManifest } from '@/hooks/useOgRegion';
+import { useCandidate } from '@/hooks/useCandidates';
 import { buildGroupColorMap } from '@/components/dashboard/distribution-helpers';
-import { buildGeneClusters, buildReferenceCluster, formatClusterSummary } from '@/lib/og-gene-clusters';
+import { buildGeneClusters, buildReferenceCluster } from '@/lib/og-gene-clusters';
 import { classifyAnchorTier } from '@/lib/og-anchor-tier';
 import { classifyPavEvidence } from '@/lib/pav-evidence';
 import { classifyCopyArchitecture } from '@/lib/og-copy-architecture';
@@ -25,13 +29,19 @@ import { isReferencePathCultivar } from '@/lib/irgsp-constants';
 import type { TraitId } from '@/types/grouping';
 import type { OrthogroupDiffEntry, GeneCluster } from '@/types/orthogroup';
 
+const DEFAULT_INTERSECTION_RELEASE_ID = 'int_v1';
+
+function runIdFor(traitId: string): string {
+  return `${traitId}_g4_of6_sv1_gm11_sc1`;
+}
+
 export function OgDetailPage() {
   const { ogId } = useParams<{ ogId: string }>();
   const [params, setParams] = useSearchParams();
-
   const traitId = (params.get('trait') ?? null) as TraitId | null;
   const selectedClusterId = params.get('cluster');
 
+  const runId = traitId ? runIdFor(traitId) : null;
   const { doc: diffDoc, groupingDoc } = useOrthogroupDiff(traitId);
   const entriesState = useOrthogroupDiffEntries(diffDoc);
   const alleleFreq = useOgAlleleFreq(
@@ -44,14 +54,10 @@ export function OgDetailPage() {
   const { data: ogCoords } = useOgGeneCoords(ogId ?? null);
   const { cultivars } = useCultivars();
   const { manifest } = useOgRegionManifest();
-
-  const cultivarNameMap = useMemo(() => {
-    const m: Record<string, string> = {};
-    for (const c of cultivars) m[c.id] = c.name;
-    return m;
-  }, [cultivars]);
+  const { candidate, loading: candidateLoading } = useCandidate(runId, ogId ?? null);
 
   const groupByCultivar = groupingDoc?.assignments ?? null;
+  const groupLabels = diffDoc?.groupLabels ?? [];
   const groupColorMap = useMemo(
     () => (groupByCultivar ? buildGroupColorMap(groupByCultivar) : {}),
     [groupByCultivar],
@@ -70,6 +76,9 @@ export function OgDetailPage() {
 
   const afSummary = ogId ? alleleFreq?.ogs[ogId] ?? null : null;
   const rep = diffEntry?.representative;
+  const primaryDesc = rep
+    ? Object.values(rep.descriptions ?? {}).find((d) => d && d !== 'NA') ?? null
+    : null;
 
   const clusters = useMemo(() => {
     const cultivarClusters = ogCoords ? buildGeneClusters(ogCoords) : [];
@@ -82,8 +91,6 @@ export function OgDetailPage() {
       const byId = clusters.find((c) => c.id === selectedClusterId);
       if (byId) return byId;
     }
-    // Default: first cultivar-anchored cluster (the anchor-locus view has
-    // real variant data; reference cluster is only the OG-level summary).
     const firstCultivar = clusters.find((c) => c.source === 'cultivar');
     return firstCultivar ?? clusters[0] ?? null;
   }, [clusters, selectedClusterId]);
@@ -119,10 +126,6 @@ export function OgDetailPage() {
     return new Set(ogEntry.clusters.map((c) => c.clusterId));
   }, [manifest, ogId]);
 
-  const primaryDesc = rep
-    ? Object.values(rep.descriptions ?? {}).find((d) => d && d !== 'NA') ?? null
-    : null;
-
   const setCluster = useCallback(
     (cluster: GeneCluster) => {
       setParams((prev) => {
@@ -133,26 +136,25 @@ export function OgDetailPage() {
     [setParams],
   );
 
+  const [anchorExpanded, setAnchorExpanded] = useState(false);
+
   if (!ogId) {
     return <div className="py-20 text-center text-gray-500">No orthogroup specified.</div>;
   }
 
-  const groupLabels = diffDoc?.groupLabels ?? [];
-
   return (
     <div className="space-y-4">
-      {/* Breadcrumb — trait-aware when entered via Trait Association */}
       <div className="flex items-center gap-2 text-sm text-gray-500">
         {traitId ? (
           <>
             <Link
-              to="/analysis"
+              to={`/analysis/${runIdFor(traitId)}`}
               className="hover:text-green-700 hover:underline"
             >
-              ← Analysis
+              ← {traitId.replace(/_/g, ' ')} run
             </Link>
             <span>/</span>
-            <span className="text-gray-400">{traitId.replace(/_/g, ' ')}</span>
+            <span className="text-gray-400">OG</span>
           </>
         ) : (
           <Link to="/" className="hover:text-green-700 hover:underline">
@@ -163,7 +165,6 @@ export function OgDetailPage() {
         <span className="text-gray-900 font-medium">{ogId}</span>
       </div>
 
-      {/* Header */}
       <Card>
         <CardContent className="py-4 space-y-2">
           <div className="flex items-start justify-between gap-4">
@@ -182,75 +183,36 @@ export function OgDetailPage() {
             </div>
             <div className="flex flex-col items-end gap-1 shrink-0">
               {architecture && <OgCoreShellBadge architecture={architecture} />}
-              {traitId && (
-                <span
-                  className="text-xs px-2 py-1 rounded border border-green-200 bg-green-50 text-green-700"
-                  title={
-                    groupLabels.length === 2
-                      ? `OG-level copy-count candidate: Mann-Whitney U on the OG copy count between '${groupLabels[0]}' and '${groupLabels[1]}'. Copy-count shift is at the orthogroup level, not resolved to a specific locus.`
-                      : undefined
-                  }
-                >
-                  OG-level CNV candidate · {traitId.replace(/_/g, ' ')}
-                  {diffEntry && (
-                    <>
-                      {' · '}
-                      <span className="tabular-nums">
-                        Δmean {diffEntry.meanDiff.toFixed(2)}
-                      </span>
-                    </>
-                  )}
+              {architecture && (
+                <span className="text-[10px] text-gray-500" title="Panel-scoped copy-count distribution. Not validation-grade.">
+                  {architecture.architectureLabel}
                 </span>
               )}
             </div>
           </div>
-
-          {/* Anchor cluster + group stats */}
-          <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-gray-600 pt-1">
-            {diffEntry && (
-              <span className="tabular-nums">
-                Δmean <strong className="text-gray-900">{diffEntry.meanDiff.toFixed(2)}</strong>
-                <span className="mx-1.5 text-gray-300">·</span>
-                p <strong className="text-gray-900">{formatP(diffEntry.pValue)}</strong>
-                {diffEntry.log2FoldChange !== null && (
-                  <>
-                    <span className="mx-1.5 text-gray-300">·</span>
-                    log₂FC <strong className="text-gray-900">{diffEntry.log2FoldChange.toFixed(2)}</strong>
-                  </>
-                )}
-              </span>
-            )}
-            {selectedCluster ? (
-              selectedCluster.source === 'reference' ? (
-                <span className="font-mono text-[11px]">
-                  Anchor: <strong className="text-gray-900">{selectedCluster.cultivar}</strong>{' '}
-                  {formatClusterSummary(selectedCluster)}
-                </span>
-              ) : (
-                <Link
-                  to={`/region/${encodeURIComponent(selectedCluster.cultivar)}/${encodeURIComponent(selectedCluster.chr)}/${Math.max(0, selectedCluster.start - 5000)}-${selectedCluster.end + 5000}`}
-                  title="View this cluster's region ± 5 kb"
-                  className="font-mono text-[11px] hover:text-green-700 hover:underline"
-                >
-                  Anchor: <strong className="text-gray-900">{selectedCluster.cultivar}</strong>{' '}
-                  {formatClusterSummary(selectedCluster)}
-                </Link>
-              )
-            ) : clusters.length === 0 && ogCoords ? (
-              <span className="text-gray-400 italic">No gene clusters for this OG</span>
-            ) : null}
-            {tierMetrics && <OgAnchorTierBadge metrics={tierMetrics} />}
-            {architecture && (
-              <span
-                className="text-[11px] text-gray-500"
-                title="Panel-scoped copy-count distribution. Not validation-grade."
-              >
-                {architecture.architectureLabel}
-              </span>
-            )}
+          <div className="pt-1">
+            <OgTraitHitChips ogId={ogId} activeTraitId={traitId} />
           </div>
         </CardContent>
       </Card>
+
+      {runId && (
+        <OgActiveRunCard
+          runId={runId}
+          candidate={candidate}
+          loading={candidateLoading}
+        />
+      )}
+
+      {candidate?.bestSv && (
+        <OgLeadSvCard
+          bestSv={candidate.bestSv}
+          traitId={traitId}
+          groupLabels={groupLabels}
+          meansByGroup={candidate.meansByGroup}
+          presenceByGroup={candidate.presenceByGroup}
+        />
+      )}
 
       <ScopeStrip>
         Orthogroup-level evidence. Anchor-locus variants are shown as
@@ -258,43 +220,65 @@ export function OgDetailPage() {
         Not causal, not marker-ready.
       </ScopeStrip>
 
-      {pavRows.length > 0 && (
-        <OgPavEvidenceCard rows={pavRows} cultivarNameMap={cultivarNameMap} />
+      {members && pavRows.length > 0 && cultivars.length > 0 && (
+        <OgCultivarCopyMap
+          members={members}
+          cultivars={cultivars}
+          groupByCultivar={groupByCultivar}
+          pavRows={pavRows}
+        />
       )}
 
-      <ClusterContextCard
-        clusters={clusters}
-        selectedClusterId={selectedCluster?.id ?? null}
-        onClusterSelect={setCluster}
-        representative={rep ?? null}
-        afSummary={afSummary}
-        coords={ogCoords}
-        groupByCultivar={groupByCultivar}
-        groupLabels={groupLabels}
-        bundleAvailableIds={bundleAvailableIds}
+      <OgIntersectionsSection
+        ogId={ogId}
+        intersectionReleaseId={DEFAULT_INTERSECTION_RELEASE_ID}
       />
 
-      <OgDetailAlleleFreqTab
-        ogId={ogId}
-        selectedCluster={selectedCluster}
-        clusters={clusters}
-        onClusterSelect={setCluster}
-        afSummary={afSummary}
-        groupLabels={groupLabels}
-        groupColorMap={groupColorMap}
-        tierMetrics={tierMetrics}
-        traitId={traitId}
-        bundleAvailableIds={bundleAvailableIds}
-      />
+      <Card>
+        <CardContent className="py-3">
+          <button
+            onClick={() => setAnchorExpanded((v) => !v)}
+            className="flex items-center justify-between w-full text-left"
+          >
+            <h3 className="text-xs uppercase tracking-wide text-gray-500">
+              Anchor-locus variants
+            </h3>
+            <span className="text-[11px] text-green-700">
+              {anchorExpanded ? 'Hide' : 'Show'}
+            </span>
+          </button>
+          {anchorExpanded && (
+            <div className="mt-3 space-y-3">
+              <ClusterContextCard
+                clusters={clusters}
+                selectedClusterId={selectedCluster?.id ?? null}
+                onClusterSelect={setCluster}
+                representative={rep ?? null}
+                afSummary={afSummary}
+                coords={ogCoords}
+                groupByCultivar={groupByCultivar}
+                groupLabels={groupLabels}
+                bundleAvailableIds={bundleAvailableIds}
+              />
+              <OgDetailAlleleFreqTab
+                ogId={ogId}
+                selectedCluster={selectedCluster}
+                clusters={clusters}
+                onClusterSelect={setCluster}
+                afSummary={afSummary}
+                groupLabels={groupLabels}
+                groupColorMap={groupColorMap}
+                tierMetrics={tierMetrics}
+                traitId={traitId}
+                bundleAvailableIds={bundleAvailableIds}
+              />
+            </div>
+          )}
+        </CardContent>
+      </Card>
 
       <CandidateBlocksInAnalysesPanel entityType="og" entityId={ogId} />
-
       <ObservedInAnalysesPanel entityType="og" entityId={ogId} />
     </div>
   );
-}
-
-function formatP(p: number): string {
-  if (p < 1e-4) return p.toExponential(1);
-  return p.toFixed(3);
 }

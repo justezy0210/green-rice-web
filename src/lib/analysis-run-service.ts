@@ -89,5 +89,17 @@ function hydrateCandidate(data: Record<string, unknown>): Candidate {
     badges: (data.badges as string[]) ?? [],
     storageBundlePath: (data.storageBundlePath as string | null) ?? null,
     createdAt: String(data.createdAt ?? ''),
+    pValue: toNumOrNull(data.pValue),
+    qValue: toNumOrNull(data.qValue),
+    meanDiff: toNumOrNull(data.meanDiff),
+    log2FoldChange: toNumOrNull(data.log2FoldChange),
+    meansByGroup: (data.meansByGroup as Record<string, number> | null) ?? null,
+    presenceByGroup: (data.presenceByGroup as Record<string, number> | null) ?? null,
   };
+}
+
+function toNumOrNull(v: unknown): number | null {
+  if (v === null || v === undefined) return null;
+  const n = Number(v);
+  return Number.isFinite(n) ? n : null;
 }

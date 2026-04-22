@@ -97,6 +97,16 @@ export interface Candidate {
   badges: string[];
   storageBundlePath: string | null;
   createdAt: string;
+  /**
+   * Optional statistical fields populated by the server-side promote
+   * (scripts/promote-analysis-run.py). Older docs may omit these.
+   */
+  pValue?: number | null;
+  qValue?: number | null;
+  meanDiff?: number | null;
+  log2FoldChange?: number | null;
+  meansByGroup?: Record<string, number> | null;
+  presenceByGroup?: Record<string, number> | null;
 }
 
 export interface EntityAnalysisLink {
