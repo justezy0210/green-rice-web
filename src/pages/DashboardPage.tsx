@@ -130,13 +130,6 @@ export function DashboardPage() {
         </div>
       </section>
 
-      <EntityCardsGrid />
-
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        <StartAnalysisCard />
-        <DataReadinessCard />
-      </div>
-
       <div className="grid grid-cols-1 lg:grid-cols-6 gap-6 items-stretch">
         <div className="lg:col-span-4">
           <PhenotypeDistributionChart records={records} />
@@ -144,6 +137,13 @@ export function DashboardPage() {
         <div className="lg:col-span-2">
           <TraitQualityOverview records={records} />
         </div>
+      </div>
+
+      <EntityCardsGrid />
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <StartAnalysisCard />
+        <DataReadinessCard />
       </div>
     </div>
   );
