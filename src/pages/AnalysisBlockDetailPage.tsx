@@ -8,6 +8,7 @@ import { BlockTypeBadge } from '@/components/analysis/BlockTypeBadge';
 import { BlockNarrative } from '@/components/analysis/BlockNarrative';
 import { PhenotypeContrastPanel } from '@/components/analysis/PhenotypeContrastPanel';
 import { BlockCandidateTable } from '@/components/analysis/BlockCandidateTable';
+import { BlockExportPanel } from '@/components/analysis/BlockExportPanel';
 import { TraitRibbon } from '@/components/analysis/TraitRibbon';
 import { useAnalysisRun } from '@/hooks/useAnalysisRun';
 import { useBlock, useBlockCandidates } from '@/hooks/useBlock';
@@ -180,6 +181,8 @@ export function AnalysisBlockDetailPage() {
                 <BlockCandidateTable runId={validRunId} candidates={candidates} />
               </CardContent>
             </Card>
+
+            <BlockExportPanel block={block} candidates={candidates} />
           </>
         )}
       </div>
