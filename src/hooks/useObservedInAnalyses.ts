@@ -1,17 +1,22 @@
 import { useEffect, useState } from 'react';
 import { fetchEntityAnalysisIndex } from '@/lib/entity-analysis-index-service';
-import type { EntityAnalysisLink, EntityType } from '@/types/candidate';
+import type {
+  EntityAnalysisLink,
+  EntityBlockLink,
+  EntityType,
+} from '@/types/candidate';
 
 interface UseObservedInAnalysesState {
   links: EntityAnalysisLink[];
+  blocks: EntityBlockLink[];
   loading: boolean;
   error: Error | null;
 }
 
 /**
- * Reads `entity_analysis_index/{entityType}_{entityId}` so entity pages can
- * render an "Observed in analyses" backlink panel. Returns an empty list
- * until the Phase 2B precompute has populated the index.
+ * Reads `entity_analysis_index/{entityType}_{entityId}` and returns both
+ * the legacy topCandidates list and the Phase A topBlocks list. Consumers
+ * pick whichever applies.
  */
 export function useObservedInAnalyses(
   entityType: EntityType | null | undefined,
@@ -19,6 +24,7 @@ export function useObservedInAnalyses(
 ): UseObservedInAnalysesState {
   const [resolved, setResolved] = useState<{
     links: EntityAnalysisLink[];
+    blocks: EntityBlockLink[];
     error: Error | null;
     key: string;
   } | null>(null);
@@ -31,12 +37,18 @@ export function useObservedInAnalyses(
     fetchEntityAnalysisIndex(entityType, entityId)
       .then((idx) => {
         if (cancelled) return;
-        setResolved({ links: idx?.topCandidates ?? [], error: null, key });
+        setResolved({
+          links: idx?.topCandidates ?? [],
+          blocks: idx?.topBlocks ?? [],
+          error: null,
+          key,
+        });
       })
       .catch((err: unknown) => {
         if (cancelled) return;
         setResolved({
           links: [],
+          blocks: [],
           error: err instanceof Error ? err : new Error(String(err)),
           key,
         });
@@ -47,10 +59,15 @@ export function useObservedInAnalyses(
   }, [entityType, entityId, key]);
 
   if (!entityType || !entityId) {
-    return { links: [], loading: false, error: null };
+    return { links: [], blocks: [], loading: false, error: null };
   }
   if (!resolved || resolved.key !== key) {
-    return { links: [], loading: true, error: null };
+    return { links: [], blocks: [], loading: true, error: null };
   }
-  return { links: resolved.links, loading: false, error: resolved.error };
+  return {
+    links: resolved.links,
+    blocks: resolved.blocks,
+    loading: false,
+    error: resolved.error,
+  };
 }

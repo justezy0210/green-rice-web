@@ -14,7 +14,7 @@ import { OgDetailPage } from '@/pages/OgDetailPage';
 import { RegionPage } from '@/pages/RegionPage';
 import { AnalysisHomePage } from '@/pages/AnalysisHomePage';
 import { AnalysisRunPage } from '@/pages/AnalysisRunPage';
-import { AnalysisStepIntersectionsPage } from '@/pages/AnalysisStepPages';
+import { AnalysisStepIntersectionsPage } from '@/pages/AnalysisStepIntersectionsPage';
 import { AnalysisStepPhenotypePage } from '@/pages/AnalysisStepPhenotypePage';
 import { AnalysisStepOrthogroupsPage } from '@/pages/AnalysisStepOrthogroupsPage';
 import { AnalysisStepVariantsPage } from '@/pages/AnalysisStepVariantsPage';

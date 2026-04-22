@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useParams, Link, Navigate } from 'react-router-dom';
 import { Card, CardContent } from '@/components/ui/card';
 import { AnalysisShell } from '@/components/analysis/AnalysisShell';
+import { JumpToBlockChip } from '@/components/analysis/JumpToBlockChip';
 import { useAnalysisRun } from '@/hooks/useAnalysisRun';
 import { useCandidates } from '@/hooks/useCandidates';
 import { isValidRunId } from '@/lib/analysis-run-id';
@@ -99,10 +100,11 @@ function CandidateTable({
       <colgroup>
         <col className="w-12" />
         <col className="w-28" />
-        <col className="w-20" />
+        <col className="w-24" />
         <col />
+        <col className="w-32" />
         <col />
-        <col />
+        <col className="w-28" />
         <col className="w-20" />
       </colgroup>
       <thead>
@@ -110,9 +112,10 @@ function CandidateTable({
           <th className="text-left pl-3 pr-2 py-1.5">Rank</th>
           <th className="text-left px-3 py-1.5">OG</th>
           <th className="text-left px-3 py-1.5">Type</th>
-          <th className="text-left px-3 py-1.5">Group specificity</th>
           <th className="text-left px-3 py-1.5">OG pattern</th>
+          <th className="text-left px-3 py-1.5">Best SV</th>
           <th className="text-left px-3 py-1.5">Function</th>
+          <th className="text-left px-3 py-1.5">Block</th>
           <th className="text-right pl-3 pr-4 py-1.5">Score</th>
         </tr>
       </thead>
@@ -137,16 +140,29 @@ function CandidateTable({
               </span>
             </td>
             <td className="px-3 py-1.5 text-[11px] text-gray-600 truncate">
-              {c.groupSpecificitySummary ?? '—'}
+              {c.orthogroupPatternSummary ?? '—'}
             </td>
             <td className="px-3 py-1.5 text-[11px] text-gray-600 truncate">
-              {c.orthogroupPatternSummary ?? '—'}
+              {c.bestSv ? (
+                <span>
+                  <span className="font-mono text-[10px]">{c.bestSv.eventId}</span>{' '}
+                  <span className="text-gray-400">{c.bestSv.svType}</span>
+                  {c.bestSv.impactClass && (
+                    <span className="text-gray-400"> · {c.bestSv.impactClass}</span>
+                  )}
+                </span>
+              ) : (
+                <span className="text-gray-400">—</span>
+              )}
             </td>
             <td className="px-3 py-1.5 text-[11px] text-gray-600 truncate">
               {c.functionSummary ?? <span className="text-gray-400">no annotation</span>}
             </td>
+            <td className="px-3 py-1.5">
+              <JumpToBlockChip runId={runId} blockId={c.blockId} />
+            </td>
             <td className="pl-3 pr-4 py-1.5 text-right tabular-nums font-medium text-gray-900">
-              {c.totalScore.toFixed(3)}
+              {(c.combinedScore ?? c.totalScore).toFixed(3)}
             </td>
           </tr>
         ))}

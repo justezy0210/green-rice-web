@@ -1,8 +1,10 @@
-import { useParams, Navigate } from 'react-router-dom';
+import { useParams, Navigate, Link } from 'react-router-dom';
 import { Card, CardContent } from '@/components/ui/card';
 import { AnalysisShell } from '@/components/analysis/AnalysisShell';
 import { useAnalysisRun } from '@/hooks/useAnalysisRun';
+import { useBlocks } from '@/hooks/useBlock';
 import { isValidRunId } from '@/lib/analysis-run-id';
+import type { CandidateBlock } from '@/types/candidate-block';
 
 export function AnalysisRunPage() {
   const { runId } = useParams<{ runId: string }>();
@@ -23,6 +25,7 @@ function AnalysisRunOverview({
   run: ReturnType<typeof useAnalysisRun>['run'];
   error: ReturnType<typeof useAnalysisRun>['error'];
 }) {
+  const { blocks, loading: blocksLoading } = useBlocks(runId);
 
   if (error || !run) {
     return (
@@ -31,6 +34,8 @@ function AnalysisRunOverview({
       </div>
     );
   }
+
+  const priorityBlocks = [...blocks].sort(priorityBlockSort).slice(0, 5);
 
   return (
     <AnalysisShell runId={runId} stepAvailability={run.stepAvailability}>
@@ -52,15 +57,76 @@ function AnalysisRunOverview({
               <strong className="text-gray-900 tabular-nums">
                 {run.candidateCount}
               </strong>{' '}
-              candidates · status <code className="text-[11px] bg-gray-100 px-1 py-0.5 rounded">{run.status}</code>
+              candidates ·{' '}
+              <strong className="text-gray-900 tabular-nums">
+                {run.blockCount ?? blocks.length}
+              </strong>{' '}
+              review blocks · status{' '}
+              <code className="text-[11px] bg-gray-100 px-1 py-0.5 rounded">{run.status}</code>
             </p>
             <p className="text-[11px] text-gray-500">
-              Pick a step on the left, or jump to{' '}
-              <span className="text-green-700">Candidates</span> via the stepper.
+              Use the stepper on the left. Block detail surfaces all four
+              evidences (SV, OG, intersection, function) on one card.
             </p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="py-4">
+            <h2 className="text-xs uppercase tracking-wide text-gray-500 mb-2">
+              Priority review blocks
+            </h2>
+            {blocksLoading ? (
+              <p className="text-[12px] text-gray-400">Loading blocks…</p>
+            ) : priorityBlocks.length === 0 ? (
+              <p className="text-[12px] text-gray-500">
+                No review blocks materialised for this run.
+              </p>
+            ) : (
+              <ul className="divide-y divide-gray-100 text-[12px]">
+                {priorityBlocks.map((b) => (
+                  <PriorityBlockRow key={b.blockId} runId={runId} block={b} />
+                ))}
+              </ul>
+            )}
           </CardContent>
         </Card>
       </div>
     </AnalysisShell>
+  );
+}
+
+function priorityBlockSort(a: CandidateBlock, b: CandidateBlock): number {
+  if (a.curated !== b.curated) return a.curated ? -1 : 1;
+  return (b.candidateOgCount ?? 0) - (a.candidateOgCount ?? 0);
+}
+
+function PriorityBlockRow({ runId, block }: { runId: string; block: CandidateBlock }) {
+  const region = `${block.region.chr}:${(block.region.start / 1_000_000).toFixed(1)}–${(block.region.end / 1_000_000).toFixed(1)} Mb`;
+  return (
+    <li>
+      <Link
+        to={`/analysis/${runId}/block/${encodeURIComponent(block.blockId)}`}
+        className="flex items-center justify-between gap-3 py-2 px-1 rounded hover:bg-green-50"
+      >
+        <span className="min-w-0">
+          <span className="text-sm text-gray-900">{region}</span>
+          <span className="ml-2 text-[10px] font-mono text-gray-400">
+            {block.blockId}
+          </span>
+        </span>
+        <span className="flex items-center gap-2 text-[11px] text-gray-500 shrink-0">
+          {block.curated && (
+            <span className="text-amber-700 bg-amber-50 border border-amber-200 rounded px-1 py-[1px] text-[10px]">
+              curated
+            </span>
+          )}
+          <span className="tabular-nums">
+            {block.candidateOgCount} OG · {block.intersectionCount} inter
+          </span>
+          <span className="text-green-700">Open →</span>
+        </span>
+      </Link>
+    </li>
   );
 }

@@ -8,6 +8,7 @@ import { ClusterContextCard } from '@/components/og-detail/ClusterContextCard';
 import { OgAnchorTierBadge } from '@/components/explore/OgAnchorTierBadge';
 import { ScopeStrip } from '@/components/common/ScopeStrip';
 import { ObservedInAnalysesPanel } from '@/components/entity/ObservedInAnalysesPanel';
+import { CandidateBlocksInAnalysesPanel } from '@/components/entity/CandidateBlocksInAnalysesPanel';
 import { useOrthogroupDiff } from '@/hooks/useOrthogroupDiff';
 import { useOrthogroupDiffEntries } from '@/hooks/useOrthogroupDiffEntries';
 import { useOgDrilldown } from '@/hooks/useOgDrilldown';
@@ -285,6 +286,8 @@ export function OgDetailPage() {
         traitId={traitId}
         bundleAvailableIds={bundleAvailableIds}
       />
+
+      <CandidateBlocksInAnalysesPanel entityType="og" entityId={ogId} />
 
       <ObservedInAnalysesPanel entityType="og" entityId={ogId} />
     </div>
