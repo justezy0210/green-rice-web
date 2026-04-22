@@ -1,6 +1,12 @@
 import { useMemo, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import {
+  Card,
+  CardAction,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
 import { ScopeStrip } from '@/components/common/ScopeStrip';
 import { ObservedInAnalysesPanel } from '@/components/entity/ObservedInAnalysesPanel';
 import { OverlappingBlocksPanel } from '@/components/entity/OverlappingBlocksPanel';
@@ -167,15 +173,13 @@ export function RegionPage() {
                   : ''}
             </span>
           </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="mb-2 flex items-center gap-2">
+          <CardAction className="flex items-center gap-2">
             <input
               type="search"
               value={functionQuery}
               onChange={(e) => setFunctionQuery(e.target.value)}
-              placeholder="Filter by function (product · Pfam · InterPro · GO · COG · eggNOG)"
-              className="flex-1 text-[12px] border border-gray-200 rounded px-2 py-1 bg-white focus:border-green-500 focus:ring-1 focus:ring-green-200 outline-none"
+              placeholder="Filter by function (product · Pfam · InterPro · GO)"
+              className="w-72 text-[12px] border border-gray-200 rounded px-2 py-1 bg-white focus:border-green-500 focus:ring-1 focus:ring-green-200 outline-none"
             />
             {functionQuery && (
               <button
@@ -185,7 +189,9 @@ export function RegionPage() {
                 Clear
               </button>
             )}
-          </div>
+          </CardAction>
+        </CardHeader>
+        <CardContent>
           {overlappingGenes.length === 0 ? (
             <p className="text-sm text-gray-500">
               {partitionLoading
