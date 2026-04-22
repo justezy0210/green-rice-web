@@ -1,0 +1,495 @@
+{
+  "version": 4,
+  "sampleSet": "11-cultivar MVP panel",
+  "source": "docs/generated/phenotype-groups.md",
+  "traits": {
+    "bacterial_leaf_blight": {
+      "label": "Bacterial Leaf Blight",
+      "method": "fixed-class",
+      "usable": true,
+      "groupLabels": [
+        "susceptible",
+        "resistant"
+      ],
+      "note": "Fixed-class grouping; not biological ground truth.",
+      "assignments": {
+        "baegilmi": {
+          "groupLabel": "susceptible",
+          "borderline": false
+        },
+        "chamdongjin": {
+          "groupLabel": "resistant",
+          "borderline": false
+        },
+        "chindeul": {
+          "groupLabel": "resistant",
+          "borderline": false
+        },
+        "hyeonpum": {
+          "groupLabel": "resistant",
+          "borderline": false
+        },
+        "jopyeong": {
+          "groupLabel": "resistant",
+          "borderline": false
+        },
+        "jungmo1024": {
+          "groupLabel": "susceptible",
+          "borderline": false
+        },
+        "namchan": {
+          "groupLabel": "resistant",
+          "borderline": false
+        },
+        "namil": {
+          "groupLabel": "susceptible",
+          "borderline": false
+        },
+        "pyeongwon": {
+          "groupLabel": "susceptible",
+          "borderline": false
+        },
+        "saeilmi": {
+          "groupLabel": "resistant",
+          "borderline": false
+        },
+        "samgwang": {
+          "groupLabel": "resistant",
+          "borderline": false
+        }
+      }
+    },
+    "culm_length": {
+      "label": "Culm Length",
+      "method": "gmm",
+      "usable": true,
+      "groupLabels": [
+        "short",
+        "tall"
+      ],
+      "note": "Silhouette 0.497; candidate-discovery only.",
+      "assignments": {
+        "baegilmi": {
+          "groupLabel": "tall",
+          "borderline": false
+        },
+        "chamdongjin": {
+          "groupLabel": "tall",
+          "borderline": false
+        },
+        "chindeul": {
+          "groupLabel": "tall",
+          "borderline": false
+        },
+        "hyeonpum": {
+          "groupLabel": "tall",
+          "borderline": false
+        },
+        "jopyeong": {
+          "groupLabel": "short",
+          "borderline": false
+        },
+        "jungmo1024": {
+          "groupLabel": "short",
+          "borderline": false
+        },
+        "namchan": {
+          "groupLabel": "tall",
+          "borderline": false
+        },
+        "namil": {
+          "groupLabel": "tall",
+          "borderline": false
+        },
+        "pyeongwon": {
+          "groupLabel": "short",
+          "borderline": false
+        },
+        "saeilmi": {
+          "groupLabel": "tall",
+          "borderline": false
+        },
+        "samgwang": {
+          "groupLabel": "tall",
+          "borderline": false
+        }
+      }
+    },
+    "grain_weight": {
+      "label": "1000-Grain Weight",
+      "method": "gmm",
+      "usable": true,
+      "groupLabels": [
+        "light",
+        "heavy"
+      ],
+      "note": "Heavy group has n=2; candidate-discovery only.",
+      "assignments": {
+        "baegilmi": {
+          "groupLabel": "light",
+          "borderline": false
+        },
+        "chamdongjin": {
+          "groupLabel": "heavy",
+          "borderline": false
+        },
+        "chindeul": {
+          "groupLabel": "light",
+          "borderline": false
+        },
+        "hyeonpum": {
+          "groupLabel": "light",
+          "borderline": false
+        },
+        "jopyeong": {
+          "groupLabel": "light",
+          "borderline": false
+        },
+        "jungmo1024": {
+          "groupLabel": "light",
+          "borderline": false
+        },
+        "namchan": {
+          "groupLabel": "light",
+          "borderline": false
+        },
+        "namil": {
+          "groupLabel": "heavy",
+          "borderline": false
+        },
+        "pyeongwon": {
+          "groupLabel": "light",
+          "borderline": false
+        },
+        "saeilmi": {
+          "groupLabel": "light",
+          "borderline": false
+        },
+        "samgwang": {
+          "groupLabel": "light",
+          "borderline": false
+        }
+      }
+    },
+    "heading_date": {
+      "label": "Days to Heading",
+      "method": "gmm",
+      "usable": true,
+      "groupLabels": [
+        "early",
+        "late"
+      ],
+      "note": "Silhouette 0.732; best-balanced grouping in the MVP panel.",
+      "assignments": {
+        "baegilmi": {
+          "groupLabel": "early",
+          "borderline": false
+        },
+        "chamdongjin": {
+          "groupLabel": "late",
+          "borderline": false
+        },
+        "chindeul": {
+          "groupLabel": "late",
+          "borderline": false
+        },
+        "hyeonpum": {
+          "groupLabel": "late",
+          "borderline": false
+        },
+        "jopyeong": {
+          "groupLabel": "early",
+          "borderline": false
+        },
+        "jungmo1024": {
+          "groupLabel": "early",
+          "borderline": false
+        },
+        "namchan": {
+          "groupLabel": "late",
+          "borderline": false
+        },
+        "namil": {
+          "groupLabel": "early",
+          "borderline": false
+        },
+        "pyeongwon": {
+          "groupLabel": "early",
+          "borderline": false
+        },
+        "saeilmi": {
+          "groupLabel": "late",
+          "borderline": false
+        },
+        "samgwang": {
+          "groupLabel": "late",
+          "borderline": false
+        }
+      }
+    },
+    "panicle_length": {
+      "label": "Panicle Length",
+      "method": "gmm",
+      "usable": true,
+      "groupLabels": [
+        "short",
+        "long"
+      ],
+      "note": "10:1 split; treat as a discovery hint only.",
+      "assignments": {
+        "baegilmi": {
+          "groupLabel": "short",
+          "borderline": false
+        },
+        "chamdongjin": {
+          "groupLabel": "short",
+          "borderline": false
+        },
+        "chindeul": {
+          "groupLabel": "short",
+          "borderline": false
+        },
+        "hyeonpum": {
+          "groupLabel": "short",
+          "borderline": false
+        },
+        "jopyeong": {
+          "groupLabel": "short",
+          "borderline": false
+        },
+        "jungmo1024": {
+          "groupLabel": "short",
+          "borderline": false
+        },
+        "namchan": {
+          "groupLabel": "short",
+          "borderline": false
+        },
+        "namil": {
+          "groupLabel": "long",
+          "borderline": false
+        },
+        "pyeongwon": {
+          "groupLabel": "short",
+          "borderline": false
+        },
+        "saeilmi": {
+          "groupLabel": "short",
+          "borderline": false
+        },
+        "samgwang": {
+          "groupLabel": "short",
+          "borderline": false
+        }
+      }
+    },
+    "panicle_number": {
+      "label": "Panicle Number",
+      "method": "gmm",
+      "usable": true,
+      "groupLabels": [
+        "low",
+        "high"
+      ],
+      "note": "Two borderline cultivars are excluded from downstream tests.",
+      "assignments": {
+        "baegilmi": {
+          "groupLabel": "low",
+          "borderline": false
+        },
+        "chamdongjin": {
+          "groupLabel": "low",
+          "borderline": false
+        },
+        "chindeul": {
+          "groupLabel": "low",
+          "borderline": false
+        },
+        "hyeonpum": {
+          "groupLabel": "low",
+          "borderline": false
+        },
+        "jopyeong": {
+          "groupLabel": "low",
+          "borderline": true
+        },
+        "jungmo1024": {
+          "groupLabel": "high",
+          "borderline": false
+        },
+        "namchan": {
+          "groupLabel": "low",
+          "borderline": true
+        },
+        "namil": {
+          "groupLabel": "low",
+          "borderline": false
+        },
+        "pyeongwon": {
+          "groupLabel": "low",
+          "borderline": false
+        },
+        "saeilmi": {
+          "groupLabel": "low",
+          "borderline": false
+        },
+        "samgwang": {
+          "groupLabel": "high",
+          "borderline": false
+        }
+      }
+    },
+    "pre_harvest_sprouting": {
+      "label": "Pre-harvest Sprouting",
+      "method": "gmm",
+      "usable": true,
+      "groupLabels": [
+        "low",
+        "high"
+      ],
+      "note": "Only 7 cultivars are observed for this trait.",
+      "assignments": {
+        "baegilmi": {
+          "groupLabel": "low",
+          "borderline": false
+        },
+        "chamdongjin": {
+          "groupLabel": "high",
+          "borderline": false
+        },
+        "chindeul": {
+          "groupLabel": "low",
+          "borderline": false
+        },
+        "hyeonpum": {
+          "groupLabel": "low",
+          "borderline": false
+        },
+        "jungmo1024": {
+          "groupLabel": "high",
+          "borderline": false
+        },
+        "namchan": {
+          "groupLabel": "low",
+          "borderline": false
+        },
+        "saeilmi": {
+          "groupLabel": "high",
+          "borderline": false
+        }
+      }
+    },
+    "ripening_rate": {
+      "label": "Ripening Rate",
+      "method": "gmm",
+      "usable": true,
+      "groupLabels": [
+        "low",
+        "high"
+      ],
+      "note": "Low group has n=2; candidate-discovery only.",
+      "assignments": {
+        "baegilmi": {
+          "groupLabel": "high",
+          "borderline": false
+        },
+        "chamdongjin": {
+          "groupLabel": "high",
+          "borderline": false
+        },
+        "chindeul": {
+          "groupLabel": "high",
+          "borderline": false
+        },
+        "hyeonpum": {
+          "groupLabel": "high",
+          "borderline": false
+        },
+        "jopyeong": {
+          "groupLabel": "high",
+          "borderline": false
+        },
+        "jungmo1024": {
+          "groupLabel": "low",
+          "borderline": false
+        },
+        "namchan": {
+          "groupLabel": "high",
+          "borderline": false
+        },
+        "namil": {
+          "groupLabel": "low",
+          "borderline": false
+        },
+        "pyeongwon": {
+          "groupLabel": "high",
+          "borderline": false
+        },
+        "saeilmi": {
+          "groupLabel": "high",
+          "borderline": false
+        },
+        "samgwang": {
+          "groupLabel": "high",
+          "borderline": false
+        }
+      }
+    },
+    "spikelets_per_panicle": {
+      "label": "Spikelets / Panicle",
+      "method": "gmm",
+      "usable": true,
+      "groupLabels": [
+        "low",
+        "high"
+      ],
+      "note": "Silhouette 0.735; balanced enough for exploratory prioritisation.",
+      "assignments": {
+        "baegilmi": {
+          "groupLabel": "low",
+          "borderline": false
+        },
+        "chamdongjin": {
+          "groupLabel": "high",
+          "borderline": false
+        },
+        "chindeul": {
+          "groupLabel": "high",
+          "borderline": false
+        },
+        "hyeonpum": {
+          "groupLabel": "high",
+          "borderline": false
+        },
+        "jopyeong": {
+          "groupLabel": "low",
+          "borderline": false
+        },
+        "jungmo1024": {
+          "groupLabel": "low",
+          "borderline": false
+        },
+        "namchan": {
+          "groupLabel": "high",
+          "borderline": false
+        },
+        "namil": {
+          "groupLabel": "high",
+          "borderline": false
+        },
+        "pyeongwon": {
+          "groupLabel": "low",
+          "borderline": false
+        },
+        "saeilmi": {
+          "groupLabel": "high",
+          "borderline": false
+        },
+        "samgwang": {
+          "groupLabel": "high",
+          "borderline": false
+        }
+      }
+    }
+  }
+}
