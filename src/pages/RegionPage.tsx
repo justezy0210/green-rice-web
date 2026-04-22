@@ -5,15 +5,21 @@ import { ScopeStrip } from '@/components/common/ScopeStrip';
 import { ObservedInAnalysesPanel } from '@/components/entity/ObservedInAnalysesPanel';
 import { OverlappingBlocksPanel } from '@/components/entity/OverlappingBlocksPanel';
 import { OverlappingGenesCard } from '@/components/region/OverlappingGenesCard';
+import { TraitRibbon } from '@/components/analysis/TraitRibbon';
 import { useGeneModelsPartition } from '@/hooks/useGeneModel';
 import { useOgRegionManifest } from '@/hooks/useOgRegion';
 import { useCultivars } from '@/hooks/useCultivars';
+import { useOverlappingBlocks } from '@/hooks/useOverlappingBlocks';
 import {
   computeOverlappingClusters,
   computeOverlappingGenes,
   cultivarPrefix,
   parseRange,
 } from '@/lib/region-helpers';
+import {
+  buildTraitCellsFromBlocks,
+  representativeBlockPerTrait,
+} from '@/lib/trait-ribbon-data';
 
 const FLANK_BP = 5000;
 /**
@@ -80,6 +86,20 @@ export function RegionPage() {
     if (visibleGenes.length <= GENE_DISPLAY_LIMIT) return visibleGenes;
     return visibleGenes.slice(0, GENE_DISPLAY_LIMIT);
   }, [visibleGenes, showAllGenes]);
+
+  const { blocks: overlappingBlocks } = useOverlappingBlocks({
+    chr: chr ?? null,
+    start: rangeValid ? start : null,
+    end: rangeValid ? end : null,
+  });
+  const traitCells = useMemo(
+    () => buildTraitCellsFromBlocks(overlappingBlocks),
+    [overlappingBlocks],
+  );
+  const traitRepresentatives = useMemo(
+    () => representativeBlockPerTrait(overlappingBlocks),
+    [overlappingBlocks],
+  );
 
   const overlappingClusters = useMemo(
     () =>
@@ -152,6 +172,26 @@ export function RegionPage() {
         deferred — use each OG cluster's anchor-locus variants tab for
         per-cluster VCF context.
       </ScopeStrip>
+
+      {Object.keys(traitCells).length > 0 && (
+        <Card>
+          <CardContent className="py-3">
+            <h3 className="text-xs uppercase tracking-wide text-gray-500 mb-2">
+              Trait coverage in this region
+            </h3>
+            <TraitRibbon
+              activeTraitId={null}
+              perTrait={traitCells}
+              linkFor={(traitId) => {
+                const rep = traitRepresentatives[traitId];
+                if (!rep) return null;
+                return `/analysis/${rep.runId}/block/${encodeURIComponent(rep.blockId)}`;
+              }}
+              title="Analysis runs with a block overlapping this window"
+            />
+          </CardContent>
+        </Card>
+      )}
 
       {partitionLoading && (
         <p className="text-[11px] text-gray-400">

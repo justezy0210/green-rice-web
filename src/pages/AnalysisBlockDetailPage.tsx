@@ -1,3 +1,4 @@
+import { useMemo } from 'react';
 import { useParams, Link, Navigate } from 'react-router-dom';
 import { Card, CardContent } from '@/components/ui/card';
 import { AnalysisShell } from '@/components/analysis/AnalysisShell';
@@ -7,9 +8,15 @@ import { BlockTypeBadge } from '@/components/analysis/BlockTypeBadge';
 import { BlockNarrative } from '@/components/analysis/BlockNarrative';
 import { PhenotypeContrastPanel } from '@/components/analysis/PhenotypeContrastPanel';
 import { BlockCandidateTable } from '@/components/analysis/BlockCandidateTable';
+import { TraitRibbon } from '@/components/analysis/TraitRibbon';
 import { useAnalysisRun } from '@/hooks/useAnalysisRun';
 import { useBlock, useBlockCandidates } from '@/hooks/useBlock';
+import { useOverlappingBlocks } from '@/hooks/useOverlappingBlocks';
 import { isValidRunId } from '@/lib/analysis-run-id';
+import {
+  buildTraitCellsFromBlocks,
+  representativeBlockPerTrait,
+} from '@/lib/trait-ribbon-data';
 
 export function AnalysisBlockDetailPage() {
   const { runId, blockId } = useParams<{ runId: string; blockId: string }>();
@@ -17,6 +24,20 @@ export function AnalysisBlockDetailPage() {
   const { run, error: runError } = useAnalysisRun(validRunId);
   const { block, loading, error: blockError } = useBlock(validRunId, blockId ?? null);
   const { candidates } = useBlockCandidates(validRunId, blockId ?? null);
+  const { blocks: overlapping } = useOverlappingBlocks({
+    chr: block?.region.chr ?? null,
+    start: block?.region.start ?? null,
+    end: block?.region.end ?? null,
+  });
+
+  const traitCells = useMemo(
+    () => buildTraitCellsFromBlocks(overlapping),
+    [overlapping],
+  );
+  const traitRepresentatives = useMemo(
+    () => representativeBlockPerTrait(overlapping),
+    [overlapping],
+  );
 
   if (!validRunId) return <Navigate to="/analysis" replace />;
   if (runError || !run) {
@@ -101,6 +122,32 @@ export function AnalysisBlockDetailPage() {
             </Card>
 
             <BlockCaveatStrip />
+
+            {Object.keys(traitCells).length > 1 && (
+              <Card>
+                <CardContent className="py-3">
+                  <h3 className="text-xs uppercase tracking-wide text-gray-500 mb-2">
+                    Cross-trait block coverage
+                  </h3>
+                  <TraitRibbon
+                    activeTraitId={block.traitId}
+                    perTrait={traitCells}
+                    linkFor={(traitId) => {
+                      const rep = traitRepresentatives[traitId];
+                      if (!rep) return null;
+                      return `/analysis/${rep.runId}/block/${encodeURIComponent(rep.blockId)}`;
+                    }}
+                    title="Blocks in this region"
+                  />
+                  <p className="mt-2 text-[11px] text-gray-500">
+                    Click a trait chip to jump to its block at the same region.
+                    Counts reflect blocks whose window overlaps {block.region.chr}
+                    :{block.region.start.toLocaleString()}-
+                    {block.region.end.toLocaleString()}.
+                  </p>
+                </CardContent>
+              </Card>
+            )}
 
             {block.curated && block.summaryMarkdown && (
               <Card>
