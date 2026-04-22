@@ -3,6 +3,7 @@ import { Link, useParams } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ScopeStrip } from '@/components/common/ScopeStrip';
 import { ObservedInAnalysesPanel } from '@/components/entity/ObservedInAnalysesPanel';
+import { OverlappingBlocksPanel } from '@/components/entity/OverlappingBlocksPanel';
 import { useGeneModelsPartition } from '@/hooks/useGeneModel';
 import { useOgRegionManifest } from '@/hooks/useOgRegion';
 import { useCultivars } from '@/hooks/useCultivars';
@@ -239,10 +240,13 @@ export function RegionPage() {
       </Card>
 
       {cultivar && chr && parsed && (
-        <ObservedInAnalysesPanel
-          entityType="region"
-          entityId={`${cultivar}:${chr}:${start}-${end}`}
-        />
+        <>
+          <OverlappingBlocksPanel chr={chr} start={start} end={end} />
+          <ObservedInAnalysesPanel
+            entityType="region"
+            entityId={`${cultivar}:${chr}:${start}-${end}`}
+          />
+        </>
       )}
     </div>
   );

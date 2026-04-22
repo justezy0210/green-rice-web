@@ -94,6 +94,20 @@ export function AnalysisShell({ runId, stepAvailability, children }: Props) {
             );
           })}
         </nav>
+        <div className="pt-2 border-t border-gray-100">
+          <Link
+            to={`/analysis/${runId}/blocks`}
+            className={cn(
+              'flex items-center justify-between px-2 py-1.5 rounded text-[13px] transition-colors',
+              pathname === `/analysis/${runId}/blocks`
+                ? 'bg-amber-50 text-amber-800 font-medium'
+                : 'text-amber-700 hover:bg-amber-50',
+            )}
+          >
+            <span>Review blocks</span>
+            <span className="text-[9px] font-mono uppercase tracking-wide">block</span>
+          </Link>
+        </div>
       </aside>
       <section className="min-w-0">{children}</section>
     </div>
