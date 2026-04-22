@@ -5,11 +5,13 @@ import { ScopeStrip } from '@/components/common/ScopeStrip';
 import { ObservedInAnalysesPanel } from '@/components/entity/ObservedInAnalysesPanel';
 import { OverlappingBlocksPanel } from '@/components/entity/OverlappingBlocksPanel';
 import { OverlappingGenesCard } from '@/components/region/OverlappingGenesCard';
+import { RegionTrackViz } from '@/components/region/RegionTrackViz';
 import { TraitRibbon } from '@/components/analysis/TraitRibbon';
 import { useGeneModelsPartition } from '@/hooks/useGeneModel';
 import { useGeneIndexPartition } from '@/hooks/useGeneIndex';
 import { useCultivars } from '@/hooks/useCultivars';
 import { useOverlappingBlocks } from '@/hooks/useOverlappingBlocks';
+import { useSvEventsForRegion } from '@/hooks/useSvEventsForRegion';
 import {
   computeOverlappingGenes,
   cultivarPrefix,
@@ -91,6 +93,13 @@ export function RegionPage() {
     return set.size;
   }, [overlappingGenes]);
 
+  const { events: svEvents, loading: svLoading } = useSvEventsForRegion({
+    svReleaseId: 'sv_v1',
+    chr: chr ?? null,
+    start: rangeValid ? start : null,
+    end: rangeValid ? end : null,
+  });
+
   if (!cultivar || !chr || !parsed) {
     return (
       <div className="py-12 text-center text-gray-500">
@@ -171,6 +180,17 @@ export function RegionPage() {
         <p className="text-[11px] text-gray-400">
           Loading gene partition (~20–40 MB, one-time)…
         </p>
+      )}
+
+      {overlappingGenes.length > 0 && (
+        <RegionTrackViz
+          chr={chr}
+          start={start}
+          end={end}
+          genes={overlappingGenes}
+          svEvents={svEvents}
+          svLoading={svLoading}
+        />
       )}
 
       <OverlappingGenesCard
