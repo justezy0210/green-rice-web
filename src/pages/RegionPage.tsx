@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ScopeStrip } from '@/components/common/ScopeStrip';
@@ -7,25 +7,13 @@ import { OverlappingBlocksPanel } from '@/components/entity/OverlappingBlocksPan
 import { useGeneModelsPartition } from '@/hooks/useGeneModel';
 import { useOgRegionManifest } from '@/hooks/useOgRegion';
 import { useCultivars } from '@/hooks/useCultivars';
+import {
+  cultivarPrefix,
+  geneMatchesFunction,
+  parseRange,
+  rangeOverlaps,
+} from '@/lib/region-helpers';
 import type { GeneModelEntry } from '@/types/gene-model';
-
-function parseRange(range: string | undefined): [number, number] | null {
-  if (!range) return null;
-  const m = range.match(/^(\d+)-(\d+)$/);
-  if (!m) return null;
-  const s = parseInt(m[1], 10);
-  const e = parseInt(m[2], 10);
-  if (!Number.isFinite(s) || !Number.isFinite(e) || s > e) return null;
-  return [s, e];
-}
-
-function cultivarPrefix(cultivar: string): string {
-  return cultivar.replace(/[^A-Za-z0-9]/g, '').slice(0, 2).toUpperCase();
-}
-
-function overlaps(aS: number, aE: number, bS: number, bE: number): boolean {
-  return aS <= bE && aE >= bS;
-}
 
 const FLANK_BP = 5000;
 
@@ -50,18 +38,26 @@ export function RegionPage() {
     return c?.name ?? cultivar;
   }, [cultivar, cultivars]);
 
+  const [functionQuery, setFunctionQuery] = useState('');
+
   const overlappingGenes = useMemo(() => {
     if (!partition || !parsed || !cultivar || !chr) return [];
     const hits: (GeneModelEntry & { id: string })[] = [];
     for (const [id, g] of Object.entries(partition.genes)) {
       if (g.cultivar !== cultivar) continue;
       if (g.chr !== chr) continue;
-      if (!overlaps(g.start, g.end, start, end)) continue;
+      if (!rangeOverlaps(g.start, g.end, start, end)) continue;
       hits.push({ id, ...g });
     }
     hits.sort((a, b) => a.start - b.start);
     return hits;
   }, [partition, parsed, cultivar, chr, start, end]);
+
+  const visibleGenes = useMemo(() => {
+    const q = functionQuery.trim();
+    if (!q) return overlappingGenes;
+    return overlappingGenes.filter((g) => geneMatchesFunction(g, q));
+  }, [overlappingGenes, functionQuery]);
 
   const overlappingClusters = useMemo(() => {
     if (!manifest || !parsed || !cultivar || !chr) return [];
@@ -78,7 +74,7 @@ export function RegionPage() {
       for (const c of og.clusters) {
         if (c.cultivar !== cultivar) continue;
         if (c.chr !== chr) continue;
-        if (!overlaps(c.start, c.end, start, end)) continue;
+        if (!rangeOverlaps(c.start, c.end, start, end)) continue;
         out.push({
           ogId,
           clusterId: c.clusterId,
@@ -164,19 +160,49 @@ export function RegionPage() {
             Overlapping genes
             <span className="ml-2 text-xs font-normal text-gray-500">
               sorted by start
+              {functionQuery.trim()
+                ? ` · ${visibleGenes.length}/${overlappingGenes.length} match`
+                : overlappingGenes.length > 0
+                  ? ` · ${overlappingGenes.length} total`
+                  : ''}
             </span>
           </CardTitle>
         </CardHeader>
         <CardContent>
+          <div className="mb-2 flex items-center gap-2">
+            <input
+              type="search"
+              value={functionQuery}
+              onChange={(e) => setFunctionQuery(e.target.value)}
+              placeholder="Filter by function (product · Pfam · InterPro · GO · COG · eggNOG)"
+              className="flex-1 text-[12px] border border-gray-200 rounded px-2 py-1 bg-white focus:border-green-500 focus:ring-1 focus:ring-green-200 outline-none"
+            />
+            {functionQuery && (
+              <button
+                onClick={() => setFunctionQuery('')}
+                className="text-[11px] text-gray-500 hover:text-gray-800 px-2 py-1 border border-gray-200 rounded"
+              >
+                Clear
+              </button>
+            )}
+          </div>
           {overlappingGenes.length === 0 ? (
             <p className="text-sm text-gray-500">
               {partitionLoading
                 ? 'Scanning…'
                 : 'No annotated genes in this region for this cultivar.'}
             </p>
+          ) : visibleGenes.length === 0 ? (
+            <p className="text-sm text-gray-500">
+              No genes match{' '}
+              <code className="text-[11px] bg-gray-100 px-1 py-0.5 rounded">
+                {functionQuery}
+              </code>{' '}
+              in this region.
+            </p>
           ) : (
             <ul className="divide-y divide-gray-100 text-sm">
-              {overlappingGenes.map((g) => (
+              {visibleGenes.map((g) => (
                 <li key={g.id}>
                   <Link
                     to={`/genes/${encodeURIComponent(g.id)}`}
