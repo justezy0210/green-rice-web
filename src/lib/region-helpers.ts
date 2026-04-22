@@ -24,23 +24,23 @@ export function rangeOverlaps(
 }
 
 /**
- * Case-insensitive substring match across every functional-annotation
- * field on a gene model entry. Used by the Region page's filter box.
+ * One-shot pre-computed lowercase string covering every field the
+ * Region page's filter box searches: gene id, product description,
+ * Pfam, InterPro, GO, COG, eggNOG. Generated once per gene when
+ * `overlappingGenes` is built so the per-keystroke filter is a single
+ * `String.prototype.includes` call instead of repeated `toLowerCase`
+ * + array spreading per keystroke × per gene.
  */
-export function geneMatchesFunction(
-  g: GeneModelEntry & { id: string },
-  query: string,
-): boolean {
-  const q = query.trim().toLowerCase();
-  if (!q) return true;
+export function geneSearchText(g: GeneModelEntry & { id: string }): string {
+  const parts: string[] = [g.id];
   const a = g.annotation;
-  if (!a) return g.id.toLowerCase().includes(q);
-  const haystack: string[] = [g.id];
-  if (a.product) haystack.push(a.product);
-  if (a.cog) haystack.push(a.cog);
-  if (a.eggnog) haystack.push(a.eggnog);
-  if (a.pfam) haystack.push(...a.pfam);
-  if (a.interpro) haystack.push(...a.interpro);
-  if (a.go) haystack.push(...a.go);
-  return haystack.some((s) => s.toLowerCase().includes(q));
+  if (a) {
+    if (a.product) parts.push(a.product);
+    if (a.cog) parts.push(a.cog);
+    if (a.eggnog) parts.push(a.eggnog);
+    if (a.pfam) parts.push(...a.pfam);
+    if (a.interpro) parts.push(...a.interpro);
+    if (a.go) parts.push(...a.go);
+  }
+  return parts.join(' ').toLowerCase();
 }

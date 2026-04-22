@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useDeferredValue, useMemo, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import {
   Card,
@@ -15,11 +15,14 @@ import { useOgRegionManifest } from '@/hooks/useOgRegion';
 import { useCultivars } from '@/hooks/useCultivars';
 import {
   cultivarPrefix,
-  geneMatchesFunction,
+  geneSearchText,
   parseRange,
   rangeOverlaps,
 } from '@/lib/region-helpers';
 import type { GeneModelEntry } from '@/types/gene-model';
+
+/** Row shape used by the page: gene model entry + id + pre-lowered search haystack. */
+type RegionGene = GeneModelEntry & { id: string; searchText: string };
 
 const FLANK_BP = 5000;
 
@@ -30,8 +33,11 @@ export function RegionPage() {
     range: string;
   }>();
 
-  const parsed = parseRange(range);
+  // Stabilise parsed across renders so downstream useMemos memoize on the
+  // real input change, not on `parseRange()` returning a fresh array every render.
+  const parsed = useMemo(() => parseRange(range), [range]);
   const [start, end] = parsed ?? [0, 0];
+  const rangeValid = parsed !== null;
 
   const prefix = cultivar ? cultivarPrefix(cultivar) : null;
   const { partition, loading: partitionLoading } = useGeneModelsPartition(prefix);
@@ -45,28 +51,39 @@ export function RegionPage() {
   }, [cultivar, cultivars]);
 
   const [functionQuery, setFunctionQuery] = useState('');
+  // Keep the input field snappy while deferring the expensive filter /
+  // list render behind React 19's concurrent scheduler.
+  const deferredQuery = useDeferredValue(functionQuery);
 
-  const overlappingGenes = useMemo(() => {
-    if (!partition || !parsed || !cultivar || !chr) return [];
-    const hits: (GeneModelEntry & { id: string })[] = [];
-    for (const [id, g] of Object.entries(partition.genes)) {
+  const overlappingGenes = useMemo<RegionGene[]>(() => {
+    if (!partition || !rangeValid || !cultivar || !chr) return [];
+    const hits: RegionGene[] = [];
+    for (const id in partition.genes) {
+      const g = partition.genes[id];
       if (g.cultivar !== cultivar) continue;
       if (g.chr !== chr) continue;
       if (!rangeOverlaps(g.start, g.end, start, end)) continue;
-      hits.push({ id, ...g });
+      // Pre-compute the lowercased search haystack once; the filter
+      // below is then a single String.prototype.includes call.
+      const row: RegionGene = {
+        id,
+        ...g,
+        searchText: geneSearchText({ id, ...g }),
+      };
+      hits.push(row);
     }
     hits.sort((a, b) => a.start - b.start);
     return hits;
-  }, [partition, parsed, cultivar, chr, start, end]);
+  }, [partition, rangeValid, cultivar, chr, start, end]);
 
   const visibleGenes = useMemo(() => {
-    const q = functionQuery.trim();
+    const q = deferredQuery.trim().toLowerCase();
     if (!q) return overlappingGenes;
-    return overlappingGenes.filter((g) => geneMatchesFunction(g, q));
-  }, [overlappingGenes, functionQuery]);
+    return overlappingGenes.filter((g) => g.searchText.includes(q));
+  }, [overlappingGenes, deferredQuery]);
 
   const overlappingClusters = useMemo(() => {
-    if (!manifest || !parsed || !cultivar || !chr) return [];
+    if (!manifest || !rangeValid || !cultivar || !chr) return [];
     const out: {
       ogId: string;
       clusterId: string;
@@ -93,7 +110,7 @@ export function RegionPage() {
     }
     out.sort((a, b) => a.start - b.start);
     return out;
-  }, [manifest, parsed, cultivar, chr, start, end]);
+  }, [manifest, rangeValid, cultivar, chr, start, end]);
 
   if (!cultivar || !chr || !parsed) {
     return (
@@ -166,7 +183,7 @@ export function RegionPage() {
             Overlapping genes
             <span className="ml-2 text-xs font-normal text-gray-500">
               sorted by start
-              {functionQuery.trim()
+              {deferredQuery.trim()
                 ? ` · ${visibleGenes.length}/${overlappingGenes.length} match`
                 : overlappingGenes.length > 0
                   ? ` · ${overlappingGenes.length} total`
@@ -202,7 +219,7 @@ export function RegionPage() {
             <p className="text-sm text-gray-500">
               No genes match{' '}
               <code className="text-[11px] bg-gray-100 px-1 py-0.5 rounded">
-                {functionQuery}
+                {deferredQuery}
               </code>{' '}
               in this region.
             </p>
