@@ -10,6 +10,7 @@ import { PhenotypeContrastPanel } from '@/components/analysis/PhenotypeContrastP
 import { BlockCandidateTable } from '@/components/analysis/BlockCandidateTable';
 import { BlockExportPanel } from '@/components/analysis/BlockExportPanel';
 import { TraitRibbon } from '@/components/analysis/TraitRibbon';
+import { CrossTraitBlockCompare } from '@/components/analysis/CrossTraitBlockCompare';
 import { useAnalysisRun } from '@/hooks/useAnalysisRun';
 import { useBlock, useBlockCandidates } from '@/hooks/useBlock';
 import { useOverlappingBlocks } from '@/hooks/useOverlappingBlocks';
@@ -126,26 +127,32 @@ export function AnalysisBlockDetailPage() {
 
             {Object.keys(traitCells).length > 1 && (
               <Card>
-                <CardContent className="py-3">
-                  <h3 className="text-xs uppercase tracking-wide text-gray-500 mb-2">
-                    Cross-trait block coverage
-                  </h3>
-                  <TraitRibbon
+                <CardContent className="py-3 space-y-3">
+                  <div>
+                    <h3 className="text-xs uppercase tracking-wide text-gray-500 mb-2">
+                      Cross-trait coverage
+                    </h3>
+                    <TraitRibbon
+                      activeTraitId={block.traitId}
+                      perTrait={traitCells}
+                      linkFor={(traitId) => {
+                        const rep = traitRepresentatives[traitId];
+                        if (!rep) return null;
+                        return `/analysis/${rep.runId}/block/${encodeURIComponent(rep.blockId)}`;
+                      }}
+                      title="Blocks in this region"
+                    />
+                    <p className="mt-2 text-[11px] text-gray-500">
+                      Counts reflect blocks whose window overlaps{' '}
+                      {block.region.chr}:{block.region.start.toLocaleString()}-
+                      {block.region.end.toLocaleString()}. A shared block
+                      observation does not imply a shared causal mechanism.
+                    </p>
+                  </div>
+                  <CrossTraitBlockCompare
+                    blocks={overlapping}
                     activeTraitId={block.traitId}
-                    perTrait={traitCells}
-                    linkFor={(traitId) => {
-                      const rep = traitRepresentatives[traitId];
-                      if (!rep) return null;
-                      return `/analysis/${rep.runId}/block/${encodeURIComponent(rep.blockId)}`;
-                    }}
-                    title="Blocks in this region"
                   />
-                  <p className="mt-2 text-[11px] text-gray-500">
-                    Click a trait chip to jump to its block at the same region.
-                    Counts reflect blocks whose window overlaps {block.region.chr}
-                    :{block.region.start.toLocaleString()}-
-                    {block.region.end.toLocaleString()}.
-                  </p>
                 </CardContent>
               </Card>
             )}
