@@ -3,6 +3,7 @@ import { Link, useParams } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ScopeStrip } from '@/components/common/ScopeStrip';
 import { ObservedInAnalysesPanel } from '@/components/entity/ObservedInAnalysesPanel';
+import { CandidateBlocksInAnalysesPanel } from '@/components/entity/CandidateBlocksInAnalysesPanel';
 import { GeneModelSvg } from '@/components/gene/GeneModelSvg';
 import {
   GeneAnnotationCard,
@@ -250,6 +251,8 @@ export function GeneDetailPage() {
           </CardContent>
         </Card>
       )}
+
+      <CandidateBlocksInAnalysesPanel entityType="gene" entityId={geneId} />
 
       <ObservedInAnalysesPanel entityType="gene" entityId={geneId} />
     </div>

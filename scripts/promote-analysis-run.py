@@ -620,8 +620,9 @@ def main() -> int:
     intersections_by_og: dict[str, list[dict[str, Any]]] = defaultdict(list)
     total_rows_intersections = 0
 
-    # Per-OG block backlinks for entity_analysis_index updates
+    # Per-OG and per-gene block backlinks for entity_analysis_index updates
     og_block_links: dict[str, list[dict[str, Any]]] = defaultdict(list)
+    gene_block_links: dict[str, list[dict[str, Any]]] = defaultdict(list)
 
     run_summaries: list[dict[str, Any]] = []
 
@@ -763,7 +764,7 @@ def main() -> int:
 
             p.doc["blockId"] = chosen_block_id
             b_doc = block_docs_by_id[chosen_block_id]
-            og_block_links[p.doc["primaryOgId"]].append({
+            backlink = {
                 "runId": run_id,
                 "blockId": chosen_block_id,
                 "traitId": trait_id,
@@ -771,7 +772,14 @@ def main() -> int:
                 "start": b_doc["region"]["start"],
                 "end": b_doc["region"]["end"],
                 "curated": b_doc["curated"],
-            })
+            }
+            og_block_links[p.doc["primaryOgId"]].append(backlink)
+            # Gene-level backlink: key on bestSv.geneId (cultivar gene
+            # where the SV lands). Drives the Gene detail
+            # `Candidate blocks in analyses` panel.
+            lead_gene = p.doc.get("leadGeneId")
+            if lead_gene:
+                gene_block_links[lead_gene].append(backlink)
 
         # Determine topBlockIds (curated first, then by candidateOgCount desc)
         def _block_sort_key(b: dict[str, Any]) -> tuple[int, int]:
@@ -904,17 +912,21 @@ def main() -> int:
     else:
         db.collection("intersection_releases").document(args.intersection_release_id).set(release_doc)
 
-    # ── entity_analysis_index/og_{ogId} topBlocks merge ───────────────────
+    # ── entity_analysis_index/{og,gene}_{id} topBlocks merge ──────────────
+    entity_updates: list[tuple[str, list[dict[str, Any]]]] = [
+        *((f"og_{k}", v) for k, v in og_block_links.items()),
+        *((f"gene_{k}", v) for k, v in gene_block_links.items()),
+    ]
     if args.dry_run:
         (args.out_dir / "entity_analysis_index").mkdir(parents=True, exist_ok=True)
-        for og_id, links in og_block_links.items():
-            (args.out_dir / "entity_analysis_index" / f"og_{og_id}.topBlocks.json").write_text(
+        for key, links in entity_updates:
+            (args.out_dir / "entity_analysis_index" / f"{key}.topBlocks.json").write_text(
                 json.dumps(links[:10], indent=2), encoding="utf-8"
             )
     else:
         batch = db.batch(); ops = 0
-        for og_id, links in og_block_links.items():
-            ref = db.collection("entity_analysis_index").document(f"og_{og_id}")
+        for key, links in entity_updates:
+            ref = db.collection("entity_analysis_index").document(key)
             batch.set(ref, {"topBlocks": links[:10], "latestUpdatedAt": now_iso}, merge=True)
             ops += 1
             if ops >= 450:
@@ -925,7 +937,8 @@ def main() -> int:
     print(
         f"\nDone. runs={len(run_summaries)} cands_total={sum(r['candidateCount'] for r in run_summaries)} "
         f"blocks_total={sum(r['blockCount'] for r in run_summaries)} "
-        f"intersections_total={total_rows_intersections} ogs_with_blocks={len(og_block_links)} "
+        f"intersections_total={total_rows_intersections} "
+        f"ogs_with_blocks={len(og_block_links)} genes_with_blocks={len(gene_block_links)} "
         f"dry_run={args.dry_run}"
     )
     return 0
