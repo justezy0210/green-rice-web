@@ -84,21 +84,41 @@ export function OverlappingGenesCard({
           <>
             <ul className="divide-y divide-gray-100 text-sm">
               {displayedGenes.map((g) => (
-                <li key={g.id}>
-                  <Link
-                    to={`/genes/${encodeURIComponent(g.id)}`}
-                    className="block py-1.5 px-1 rounded hover:bg-green-50 flex items-baseline justify-between gap-3"
-                  >
-                    <span className="font-mono text-gray-900">{g.id}</span>
-                    <span className="text-[11px] text-gray-500 whitespace-nowrap font-mono">
-                      {g.chr}:{g.start.toLocaleString()}-{g.end.toLocaleString()} ({g.strand})
-                      {g.annotation?.product && (
-                        <span className="ml-2 text-gray-600">
-                          · {g.annotation.product}
-                        </span>
-                      )}
-                    </span>
-                  </Link>
+                <li
+                  key={g.id}
+                  className="py-1.5 px-1 rounded hover:bg-green-50 flex items-baseline justify-between gap-3"
+                >
+                  <span className="flex items-baseline gap-2 min-w-0">
+                    <Link
+                      to={`/genes/${encodeURIComponent(g.id)}`}
+                      className="font-mono text-gray-900 hover:text-green-700 hover:underline"
+                    >
+                      {g.id}
+                    </Link>
+                    {g.ogId ? (
+                      <Link
+                        to={`/og/${encodeURIComponent(g.ogId)}`}
+                        className="text-[10px] font-mono text-indigo-700 bg-indigo-50 border border-indigo-200 px-1 py-[1px] rounded hover:bg-indigo-100"
+                      >
+                        {g.ogId}
+                      </Link>
+                    ) : (
+                      <span
+                        className="text-[10px] font-mono text-gray-300"
+                        title="No OrthoFinder assignment"
+                      >
+                        no OG
+                      </span>
+                    )}
+                  </span>
+                  <span className="text-[11px] text-gray-500 whitespace-nowrap font-mono">
+                    {g.chr}:{g.start.toLocaleString()}-{g.end.toLocaleString()} ({g.strand})
+                    {g.annotation?.product && (
+                      <span className="ml-2 text-gray-600">
+                        · {g.annotation.product}
+                      </span>
+                    )}
+                  </span>
                 </li>
               ))}
             </ul>

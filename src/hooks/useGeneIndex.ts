@@ -169,6 +169,40 @@ export function useGeneLookup(geneId: string | null): {
 }
 
 /**
+ * Iterate every gene→OG entry in a single prefix partition. Used by
+ * the Region page to annotate the Overlapping-genes rows with their
+ * OG id without issuing per-gene lookups.
+ */
+export function useGeneIndexPartition(prefix: string | null): {
+  partition: GeneIndexPartition | null;
+  loading: boolean;
+} {
+  const version = useActiveOrthofinderVersion();
+  const key = prefix && version ? `v${version}|${prefix}` : '';
+  const [state, setState] = useState<{
+    key: string;
+    partition: GeneIndexPartition | null;
+  }>({ key: '', partition: null });
+
+  useEffect(() => {
+    if (!key || !version || !prefix) return;
+    let cancelled = false;
+    fetchPartition(version, prefix).then((p) => {
+      if (!cancelled) setState({ key, partition: p });
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [key, version, prefix]);
+
+  const isCurrent = state.key === key;
+  return {
+    partition: isCurrent ? state.partition : null,
+    loading: Boolean(key) && !isCurrent,
+  };
+}
+
+/**
  * Live partial-match search.
  *   - 1 char: fetches every partition whose prefix starts with that char
  *   - 2+ chars: fetches just the exact 2-char prefix partition

@@ -7,11 +7,10 @@ import { OverlappingBlocksPanel } from '@/components/entity/OverlappingBlocksPan
 import { OverlappingGenesCard } from '@/components/region/OverlappingGenesCard';
 import { TraitRibbon } from '@/components/analysis/TraitRibbon';
 import { useGeneModelsPartition } from '@/hooks/useGeneModel';
-import { useOgRegionManifest } from '@/hooks/useOgRegion';
+import { useGeneIndexPartition } from '@/hooks/useGeneIndex';
 import { useCultivars } from '@/hooks/useCultivars';
 import { useOverlappingBlocks } from '@/hooks/useOverlappingBlocks';
 import {
-  computeOverlappingClusters,
   computeOverlappingGenes,
   cultivarPrefix,
   parseRange,
@@ -47,7 +46,7 @@ export function RegionPage() {
 
   const prefix = cultivar ? cultivarPrefix(cultivar) : null;
   const { partition, loading: partitionLoading } = useGeneModelsPartition(prefix);
-  const { manifest } = useOgRegionManifest();
+  const { partition: indexPartition } = useGeneIndexPartition(prefix);
   const { cultivars } = useCultivars();
 
   const cultivarName = useMemo(() => {
@@ -66,13 +65,14 @@ export function RegionPage() {
     () =>
       computeOverlappingGenes({
         partition,
+        indexPartition,
         cultivar: cultivar ?? null,
         chr: chr ?? null,
         start,
         end,
         rangeValid,
       }),
-    [partition, rangeValid, cultivar, chr, start, end],
+    [partition, indexPartition, rangeValid, cultivar, chr, start, end],
   );
 
   const visibleGenes = useMemo(() => {
@@ -101,18 +101,11 @@ export function RegionPage() {
     [overlappingBlocks],
   );
 
-  const overlappingClusters = useMemo(
-    () =>
-      computeOverlappingClusters({
-        manifest,
-        cultivar: cultivar ?? null,
-        chr: chr ?? null,
-        start,
-        end,
-        rangeValid,
-      }),
-    [manifest, rangeValid, cultivar, chr, start, end],
-  );
+  const ogCount = useMemo(() => {
+    const set = new Set<string>();
+    for (const g of overlappingGenes) if (g.ogId) set.add(g.ogId);
+    return set.size;
+  }, [overlappingGenes]);
 
   if (!cultivar || !chr || !parsed) {
     return (
@@ -157,20 +150,17 @@ export function RegionPage() {
         </CardHeader>
         <CardContent className="text-sm text-gray-600 flex flex-wrap gap-x-6 gap-y-1">
           <Stat label="Overlapping genes" value={`${overlappingGenes.length}`} />
-          <Stat
-            label="Overlapping OG clusters"
-            value={`${overlappingClusters.length}`}
-          />
+          <Stat label="Distinct OGs" value={`${ogCount}`} />
           <Stat label="Span" value={`${span.toLocaleString()} bp`} />
         </CardContent>
       </Card>
 
       <ScopeStrip>
         Region view is coordinate-first. Gene coords come from the
-        cultivar's funannotate GFF3, OG clusters from the anchor-cultivar
-        coords in the graph manifest. Variants on an arbitrary region are
-        deferred — use each OG cluster's anchor-locus variants tab for
-        per-cluster VCF context.
+        cultivar's funannotate GFF3; OG assignment per gene comes from
+        OrthoFinder. Variants on an arbitrary region are deferred — use
+        each OG detail's anchor-locus variants tab for per-cluster VCF
+        context. Analysis-scoped review blocks appear below.
       </ScopeStrip>
 
       {Object.keys(traitCells).length > 0 && (
@@ -211,46 +201,6 @@ export function RegionPage() {
         toggleShowAll={() => setShowAllGenes((v) => !v)}
         displayLimit={GENE_DISPLAY_LIMIT}
       />
-
-      <Card>
-        <CardHeader className="pb-2">
-          <CardTitle className="text-base">
-            Overlapping OG clusters
-            <span className="ml-2 text-xs font-normal text-gray-500">
-              anchor = {cultivarName}
-            </span>
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          {overlappingClusters.length === 0 ? (
-            <p className="text-sm text-gray-500">
-              No OG clusters anchored in this region.
-            </p>
-          ) : (
-            <ul className="divide-y divide-gray-100 text-sm">
-              {overlappingClusters.map((c) => (
-                <li key={`${c.ogId}-${c.clusterId}`}>
-                  <Link
-                    to={`/og/${c.ogId}?cluster=${c.clusterId}`}
-                    className="block py-1.5 px-1 rounded hover:bg-green-50 flex items-baseline justify-between gap-3"
-                  >
-                    <span className="font-mono text-gray-900">
-                      {c.ogId}
-                      <span className="ml-2 text-gray-400 text-[11px]">
-                        cluster {c.clusterId}
-                      </span>
-                    </span>
-                    <span className="text-[11px] text-gray-500 whitespace-nowrap font-mono">
-                      {c.chr}:{c.start.toLocaleString()}-{c.end.toLocaleString()} · {c.geneCount}{' '}
-                      gene{c.geneCount === 1 ? '' : 's'}
-                    </span>
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          )}
-        </CardContent>
-      </Card>
 
       {cultivar && chr && parsed && (
         <>

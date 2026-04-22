@@ -2,20 +2,12 @@ import type {
   GeneModelEntry,
   GeneModelPartition,
 } from '@/types/gene-model';
-import type { OgRegionManifest } from '@/types/og-region';
+import type { GeneIndexPartition } from '@/types/gene-index';
 
 export interface RegionGene extends GeneModelEntry {
   id: string;
+  ogId: string | null;
   searchText: string;
-}
-
-export interface OverlappingClusterRow {
-  ogId: string;
-  clusterId: string;
-  chr: string;
-  start: number;
-  end: number;
-  geneCount: number;
 }
 
 export function parseRange(range: string | undefined): [number, number] | null {
@@ -49,8 +41,12 @@ export function rangeOverlaps(
  * `String.prototype.includes` call instead of repeated `toLowerCase`
  * + array spreading per keystroke × per gene.
  */
-export function geneSearchText(g: GeneModelEntry & { id: string }): string {
+export function geneSearchText(
+  g: GeneModelEntry & { id: string },
+  ogId: string | null,
+): string {
   const parts: string[] = [g.id];
+  if (ogId) parts.push(ogId);
   const a = g.annotation;
   if (a) {
     if (a.product) parts.push(a.product);
@@ -66,13 +62,14 @@ export function geneSearchText(g: GeneModelEntry & { id: string }): string {
 /** Scan the loaded partition for genes that hit the (cultivar, chr, start-end) window. */
 export function computeOverlappingGenes(args: {
   partition: GeneModelPartition | null;
+  indexPartition: GeneIndexPartition | null;
   cultivar: string | null;
   chr: string | null;
   start: number;
   end: number;
   rangeValid: boolean;
 }): RegionGene[] {
-  const { partition, cultivar, chr, start, end, rangeValid } = args;
+  const { partition, indexPartition, cultivar, chr, start, end, rangeValid } = args;
   if (!partition || !rangeValid || !cultivar || !chr) return [];
   const hits: RegionGene[] = [];
   for (const id in partition.genes) {
@@ -80,40 +77,17 @@ export function computeOverlappingGenes(args: {
     if (g.cultivar !== cultivar) continue;
     if (g.chr !== chr) continue;
     if (!rangeOverlaps(g.start, g.end, start, end)) continue;
-    hits.push({ id, ...g, searchText: geneSearchText({ id, ...g }) });
+    // gene_index keys are transcript-level; try the primary transcript
+    // id first, then the bare gene id for the rare cases where the
+    // model already carries a stripped id.
+    const transcriptId = g.transcript?.id ?? id;
+    const ogId =
+      indexPartition?.entries[transcriptId]?.og ??
+      indexPartition?.entries[id]?.og ??
+      null;
+    hits.push({ id, ogId, ...g, searchText: geneSearchText({ id, ...g }, ogId) });
   }
   hits.sort((a, b) => a.start - b.start);
   return hits;
 }
 
-/** Scan the og_region manifest for cluster entries anchored to the same window. */
-export function computeOverlappingClusters(args: {
-  manifest: OgRegionManifest | null;
-  cultivar: string | null;
-  chr: string | null;
-  start: number;
-  end: number;
-  rangeValid: boolean;
-}): OverlappingClusterRow[] {
-  const { manifest, cultivar, chr, start, end, rangeValid } = args;
-  if (!manifest || !rangeValid || !cultivar || !chr) return [];
-  const out: OverlappingClusterRow[] = [];
-  for (const [ogId, og] of Object.entries(manifest.ogs)) {
-    if (!og.clusters) continue;
-    for (const c of og.clusters) {
-      if (c.cultivar !== cultivar) continue;
-      if (c.chr !== chr) continue;
-      if (!rangeOverlaps(c.start, c.end, start, end)) continue;
-      out.push({
-        ogId,
-        clusterId: c.clusterId,
-        chr: c.chr,
-        start: c.start,
-        end: c.end,
-        geneCount: c.geneCount,
-      });
-    }
-  }
-  out.sort((a, b) => a.start - b.start);
-  return out;
-}
