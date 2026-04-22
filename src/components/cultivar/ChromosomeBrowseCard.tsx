@@ -26,12 +26,12 @@ export function ChromosomeBrowseCard({ cultivarId, genomeSummary }: Props) {
     return ka[0] - kb[0] || a[0].localeCompare(b[0]);
   });
   // Rice has 12 canonical chromosomes; unplaced contigs and scaffolds
-  // (chrUn, chr13+, etc.) are not useful for gene / OG browsing, so we
-  // cap the card at chr1-chr12 and surface the hidden count as a note.
-  const entries = allEntries.filter(([name]) => {
-    const n = chrSortKey(name)[0];
-    return n >= 1 && n <= 12;
-  });
+  // (contig_*, scaffold_*, chrUn, chr13+, etc.) are not useful for gene /
+  // OG browsing, so we cap the card at chr1-chr12 (matching only the
+  // `chr` prefix — "contig_12" must NOT pass) and surface the hidden
+  // count as a note.
+  const CHR_PATTERN = /^chr(0?[1-9]|1[0-2])$/i;
+  const entries = allEntries.filter(([name]) => CHR_PATTERN.test(name));
   const hiddenCount = allEntries.length - entries.length;
   if (entries.length === 0) return null;
 
