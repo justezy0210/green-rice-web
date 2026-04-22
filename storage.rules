@@ -111,6 +111,13 @@ service firebase.storage {
       allow write: if false;
     }
 
+    // OG × SV intersect release bundles (Phase A). By-OG gzipped bundles
+    // keyed on the intersectionReleaseId. Public read; admin-only write.
+    match /og_sv_intersections/{path=**} {
+      allow read: if true;
+      allow write: if false;
+    }
+
     // Discovery result downloads (public read; written by scripts/generate-download-bundles.py).
     // Files live under downloads/traits/{trait}/v{of}_g{g}/ and downloads/cross-trait/v{of}_g{g}/.
     // Bundle manifest at downloads/_manifest.json drives the /download UI.

@@ -47,6 +47,19 @@ service cloud.firestore {
       allow write: if false;
     }
 
+    // Intersection-release headers (Phase A). Per-OG bundles live under
+    // og_sv_intersections/{intReleaseId}/** in Storage.
+    match /intersection_releases/{intReleaseId} {
+      allow read: if true;
+      allow write: if false;
+    }
+
+    // Candidate-block subcollection on each analysis run.
+    match /analysis_runs/{runId}/blocks/{blockId} {
+      allow read: if true;
+      allow write: if false;
+    }
+
     // Orthofinder state: admin-only read (exposes processing status + file paths).
     match /_orthofinder_meta/state {
       allow read: if request.auth != null && request.auth.token.admin == true;
