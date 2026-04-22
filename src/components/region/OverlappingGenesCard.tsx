@@ -1,3 +1,4 @@
+import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import {
   Card,
@@ -6,33 +7,41 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
+import { OrthogroupDiffPagination } from '@/components/explore/OrthogroupDiffPagination';
 import type { RegionGene } from '@/lib/region-helpers';
 
 interface Props {
   overlappingGenes: RegionGene[];
   visibleGenes: RegionGene[];
-  displayedGenes: RegionGene[];
   deferredQuery: string;
   functionQuery: string;
   setFunctionQuery: (v: string) => void;
   partitionLoading: boolean;
-  showAllGenes: boolean;
-  toggleShowAll: () => void;
-  displayLimit: number;
 }
+
+const PAGE_SIZE = 20;
 
 export function OverlappingGenesCard({
   overlappingGenes,
   visibleGenes,
-  displayedGenes,
   deferredQuery,
   functionQuery,
   setFunctionQuery,
   partitionLoading,
-  showAllGenes,
-  toggleShowAll,
-  displayLimit,
 }: Props) {
+  const [page, setPage] = useState(0);
+
+  // Clamp the requested page into the valid range — if the filter
+  // shortens the list to fewer pages than the current value, snap to
+  // the last available page instead of rendering an empty slice.
+  const totalPages = Math.max(1, Math.ceil(visibleGenes.length / PAGE_SIZE));
+  const safePage = Math.min(page, totalPages - 1);
+
+  const pageRows = useMemo(
+    () => visibleGenes.slice(safePage * PAGE_SIZE, (safePage + 1) * PAGE_SIZE),
+    [visibleGenes, safePage],
+  );
+
   return (
     <Card>
       <CardHeader className="pb-2">
@@ -83,7 +92,7 @@ export function OverlappingGenesCard({
         ) : (
           <>
             <ul className="divide-y divide-gray-100 text-sm">
-              {displayedGenes.map((g) => (
+              {pageRows.map((g) => (
                 <li
                   key={g.id}
                   className="py-1.5 px-1 rounded hover:bg-green-50 flex items-baseline justify-between gap-3"
@@ -122,39 +131,14 @@ export function OverlappingGenesCard({
                 </li>
               ))}
             </ul>
-            {visibleGenes.length > displayLimit && (
-              <div className="mt-2 flex items-center justify-between gap-3 text-[11px] text-gray-500">
-                {showAllGenes ? (
-                  <span>
-                    Showing all{' '}
-                    <strong className="text-gray-800 tabular-nums">
-                      {visibleGenes.length}
-                    </strong>{' '}
-                    rows (may be slow).
-                  </span>
-                ) : (
-                  <span>
-                    Showing top{' '}
-                    <strong className="text-gray-800 tabular-nums">
-                      {displayLimit}
-                    </strong>{' '}
-                    of{' '}
-                    <strong className="text-gray-800 tabular-nums">
-                      {visibleGenes.length}
-                    </strong>
-                    . Narrow with the filter above, or
-                  </span>
-                )}
-                <button
-                  onClick={toggleShowAll}
-                  className="text-green-700 hover:underline"
-                >
-                  {showAllGenes
-                    ? `show top ${displayLimit}`
-                    : `show all ${visibleGenes.length}`}
-                </button>
-              </div>
-            )}
+            <div className="mt-3">
+              <OrthogroupDiffPagination
+                page={safePage}
+                pageSize={PAGE_SIZE}
+                totalItems={visibleGenes.length}
+                onPageChange={setPage}
+              />
+            </div>
           </>
         )}
       </CardContent>

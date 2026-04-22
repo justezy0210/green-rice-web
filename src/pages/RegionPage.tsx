@@ -21,15 +21,6 @@ import {
 } from '@/lib/trait-ribbon-data';
 
 const FLANK_BP = 5000;
-/**
- * Keeps the Overlapping-genes list renderable on dense regions
- * (/region/baegilmi/chr01/0-44043118 → 6103 hits). DOM reconciliation
- * of 6k Link nodes is the last remaining search-time cost after the
- * dep-array and geneSearchText fixes. Users narrow the list with
- * the filter; a "Show all" toggle is available when they really
- * need the full view.
- */
-const GENE_DISPLAY_LIMIT = 200;
 
 export function RegionPage() {
   const { cultivar, chr, range } = useParams<{
@@ -59,7 +50,6 @@ export function RegionPage() {
   // Keep the input field snappy while deferring the expensive filter /
   // list render behind React 19's concurrent scheduler.
   const deferredQuery = useDeferredValue(functionQuery);
-  const [showAllGenes, setShowAllGenes] = useState(false);
 
   const overlappingGenes = useMemo(
     () =>
@@ -80,12 +70,6 @@ export function RegionPage() {
     if (!q) return overlappingGenes;
     return overlappingGenes.filter((g) => g.searchText.includes(q));
   }, [overlappingGenes, deferredQuery]);
-
-  const displayedGenes = useMemo(() => {
-    if (showAllGenes) return visibleGenes;
-    if (visibleGenes.length <= GENE_DISPLAY_LIMIT) return visibleGenes;
-    return visibleGenes.slice(0, GENE_DISPLAY_LIMIT);
-  }, [visibleGenes, showAllGenes]);
 
   const { blocks: overlappingBlocks } = useOverlappingBlocks({
     chr: chr ?? null,
@@ -192,14 +176,10 @@ export function RegionPage() {
       <OverlappingGenesCard
         overlappingGenes={overlappingGenes}
         visibleGenes={visibleGenes}
-        displayedGenes={displayedGenes}
         deferredQuery={deferredQuery}
         functionQuery={functionQuery}
         setFunctionQuery={setFunctionQuery}
         partitionLoading={partitionLoading}
-        showAllGenes={showAllGenes}
-        toggleShowAll={() => setShowAllGenes((v) => !v)}
-        displayLimit={GENE_DISPLAY_LIMIT}
       />
 
       {cultivar && chr && parsed && (
