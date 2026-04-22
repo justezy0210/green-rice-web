@@ -95,6 +95,11 @@ export interface CandidateBlock {
   blockSetVersion: number;
   intersectionReleaseId: string;
 
+  // Convenience aggregates emitted by the promote script
+  topOgIds: string[];
+  topSvs: Array<{ eventId: string; count: number }>;
+  candidateTypeCounts: Record<string, number>;
+
   createdAt: string;
 }
 

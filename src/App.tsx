@@ -19,6 +19,7 @@ import { AnalysisStepPhenotypePage } from '@/pages/AnalysisStepPhenotypePage';
 import { AnalysisStepOrthogroupsPage } from '@/pages/AnalysisStepOrthogroupsPage';
 import { AnalysisStepVariantsPage } from '@/pages/AnalysisStepVariantsPage';
 import { AnalysisStepCandidatesPage } from '@/pages/AnalysisStepCandidatesPage';
+import { AnalysisBlockDetailPage } from '@/pages/AnalysisBlockDetailPage';
 import { CandidateDetailPage } from '@/pages/CandidateDetailPage';
 import { ProtectedRoute } from '@/components/auth/ProtectedRoute';
 
@@ -38,6 +39,7 @@ export default function App() {
             <Route path="/analysis/:runId/intersections" element={<AnalysisStepIntersectionsPage />} />
             <Route path="/analysis/:runId/candidates" element={<AnalysisStepCandidatesPage />} />
             <Route path="/analysis/:runId/candidate/:candidateId" element={<CandidateDetailPage />} />
+            <Route path="/analysis/:runId/block/:blockId" element={<AnalysisBlockDetailPage />} />
 
             {/* Legacy /explore retained temporarily for OG drilldown links; root redirects to /analysis. */}
             <Route path="/explore" element={<Navigate to="/analysis" replace />} />
