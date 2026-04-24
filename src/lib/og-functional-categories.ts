@@ -62,8 +62,6 @@ const CATEGORY_DEFS: Record<CategoryId, FunctionalCategory> = {
   no_annotation: { id: 'no_annotation', label: 'No IRGSP annotation', color: 'rgba(229, 231, 235, 0.9)' },
 };
 
-export const ALL_CATEGORIES: FunctionalCategory[] = Object.values(CATEGORY_DEFS);
-
 export function getCategoryById(id: string): FunctionalCategory | null {
   return CATEGORY_DEFS[id as CategoryId] ?? null;
 }
@@ -76,7 +74,7 @@ export function isCategoryId(v: string | null | undefined): v is CategoryId {
 // Precomputed (LLM) classification
 // ─────────────────────────────────────────────────────────────
 
-export function categorizeEntryPrecomputed(
+function categorizeEntryPrecomputed(
   entry: OrthogroupDiffEntry,
   categories: OgCategoriesData,
 ): FunctionalCategory {
@@ -91,18 +89,6 @@ export function categorizeEntryPrecomputed(
     (d) => d && d !== 'NA',
   );
   return descs.length === 0 ? CATEGORY_DEFS.no_annotation : CATEGORY_DEFS.other;
-}
-
-export function getSecondaryCategory(
-  entry: OrthogroupDiffEntry,
-  categories: OgCategoriesData,
-): FunctionalCategory | null {
-  const cat = categories.categories[entry.orthogroup];
-  if (cat?.s) {
-    const id = cat.s as CategoryId;
-    return CATEGORY_DEFS[id] ?? null;
-  }
-  return null;
 }
 
 // ─────────────────────────────────────────────────────────────
@@ -169,10 +155,3 @@ export function countEntriesByCategory(
   return Array.from(buckets.values()).sort((a, b) => b.count - a.count);
 }
 
-export function filterByCategory(
-  entries: OrthogroupDiffEntry[],
-  categoryId: CategoryId,
-  precomputed?: OgCategoriesData | null,
-): OrthogroupDiffEntry[] {
-  return entries.filter((e) => categorizeEntry(e, precomputed).id === categoryId);
-}

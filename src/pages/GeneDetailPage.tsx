@@ -2,8 +2,7 @@ import { useMemo } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ScopeStrip } from '@/components/common/ScopeStrip';
-import { ObservedInAnalysesPanel } from '@/components/entity/ObservedInAnalysesPanel';
-import { CandidateBlocksInAnalysesPanel } from '@/components/entity/CandidateBlocksInAnalysesPanel';
+import { ConservationSummary } from '@/components/entity/ConservationSummary';
 import { GeneModelSvg } from '@/components/gene/GeneModelSvg';
 import {
   GeneAnnotationCard,
@@ -14,6 +13,12 @@ import { useGeneModel } from '@/hooks/useGeneModel';
 import { useOgGeneCoords } from '@/hooks/useOgGeneCoords';
 import { useOgDrilldown } from '@/hooks/useOgDrilldown';
 import { useCultivars } from '@/hooks/useCultivars';
+import { useOgConservation } from '@/hooks/useOgConservation';
+import { useTraitHits } from '@/hooks/useTraitHits';
+import { useSvEventsForRegion } from '@/hooks/useSvEventsForRegion';
+import { useSvCultivarCoords } from '@/hooks/useSvCultivarCoords';
+import { SV_RELEASE_ID } from '@/lib/releases';
+import type { GeneSvOverlay } from '@/components/gene/GeneModelSvg';
 
 export function GeneDetailPage() {
   const { geneId: rawGeneId } = useParams<{ geneId: string }>();
@@ -23,6 +28,12 @@ export function GeneDetailPage() {
   const { data: ogCoords } = useOgGeneCoords(lookup.entry?.og ?? null);
   const { members } = useOgDrilldown(lookup.entry?.og ?? null, lookup.version);
   const { cultivars } = useCultivars();
+  const {
+    bundle: conservationBundle,
+    loading: conservationLoading,
+    error: conservationError,
+  } = useOgConservation(lookup.version ?? null);
+  const { hitsForOg } = useTraitHits();
 
   const cultivarNameMap = useMemo(() => {
     const m: Record<string, string> = {};
@@ -36,17 +47,29 @@ export function GeneDetailPage() {
     return list.find((g) => g.id === geneId) ?? null;
   }, [ogCoords, lookup.entry, geneId]);
 
-  const copyMatrix = useMemo(() => {
-    if (!members || cultivars.length === 0) return [];
-    return cultivars
-      .map((c) => ({
-        id: c.id,
-        name: c.name,
-        count: members[c.id]?.length ?? 0,
-        geneIds: members[c.id] ?? [],
-      }))
-      .sort((a, b) => a.name.localeCompare(b.name));
-  }, [members, cultivars]);
+  // Per-cultivar sample-frame SV overlay; side-table required.
+  const cultivarId = model.entry?.cultivar ?? null;
+  const geneChr = model.entry?.chr ?? null;
+  const { events: chrSvEvents } = useSvEventsForRegion({
+    svReleaseId: SV_RELEASE_ID, chr: geneChr, start: null, end: null,
+    cultivar: cultivarId, scope: 'cultivar',
+  });
+  const { byEvent: cultivarCoords, available: coordsAvailable, error: coordsError } =
+    useSvCultivarCoords({ svReleaseId: SV_RELEASE_ID, cultivar: cultivarId, chr: geneChr });
+  const svOverlay = useMemo<GeneSvOverlay[]>(() => {
+    if (!model.entry || !coordsAvailable) return [];
+    const gene = model.entry;
+    const out: GeneSvOverlay[] = [];
+    for (const ev of chrSvEvents) {
+      const c = cultivarCoords.get(ev.eventId);
+      if (!c) continue;
+      // Span intersection: a DEL/COMPLEX upstream of gene still counts if it extends in.
+      if (c.pos + Math.max(1, c.refLen) < gene.start || c.pos > gene.end) continue;
+      out.push({ eventId: ev.eventId, pos: c.pos, refLen: c.refLen, altLen: ev.altLen, svType: ev.svType });
+    }
+    return out;
+  }, [model.entry, chrSvEvents, cultivarCoords, coordsAvailable]);
+
 
   if (!geneId) {
     return <div className="py-20 text-center text-gray-500">No gene specified.</div>;
@@ -153,16 +176,27 @@ export function GeneDetailPage() {
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
-            <GeneModelSvg gene={model.entry} />
+            <GeneModelSvg gene={model.entry} svEvents={svOverlay} />
             <div className="flex flex-wrap gap-3 text-[11px] text-gray-500">
               <LegendSwatch color="rgba(22, 163, 74, 0.9)" label="CDS" />
               <LegendSwatch color="rgba(156, 163, 175, 0.55)" label="UTR" />
               <LegendSwatch color="#d1d5db" label="intron" thin />
-              <span className="ml-auto">
-                Only the longest-CDS representative transcript is shown.
-                Alternative isoforms deferred.
-              </span>
+              {coordsAvailable && <>
+                <LegendSwatch color="#0f766e" label="INS (sample carries extra)" />
+                <LegendSwatch color="#b91c1c" label="DEL (breakpoint)" />
+                <LegendSwatch color="#7c3aed" label="COMPLEX (rearranged)" />
+              </>}
+              <span className="ml-auto">Only the longest-CDS representative transcript. Isoforms deferred.</span>
             </div>
+            {coordsError && (
+              <p className="text-[11px] text-red-600 leading-snug">Could not load per-cultivar SV coordinates: {coordsError.message}</p>
+            )}
+            {!coordsError && !coordsAvailable && chrSvEvents.length > 0 && (
+              <p className="text-[11px] text-gray-500 leading-snug">
+                Per-cultivar SV coordinates not generated for this release yet —
+                overlay hidden to avoid misplacing events on the wrong exon.
+              </p>
+            )}
           </CardContent>
         </Card>
       )}
@@ -192,69 +226,22 @@ export function GeneDetailPage() {
         page for the locus-level graph view.
       </ScopeStrip>
 
-      {copyMatrix.length > 0 && (
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-base">
-              Orthogroup copy count across panel
-              <span className="ml-2 text-xs font-normal text-gray-500">
-                {og}
-              </span>
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="flex flex-wrap gap-1.5">
-              {copyMatrix.map((c) => {
-                const isThis = c.id === cultivar;
-                const tone =
-                  c.count === 0
-                    ? 'border-gray-200 bg-gray-50 text-gray-500'
-                    : c.count === 1
-                      ? 'border-green-200 bg-green-50 text-green-700'
-                      : 'border-violet-200 bg-violet-50 text-violet-700';
-                const baseCls = `text-[11px] inline-flex items-center gap-1 px-2 py-0.5 rounded border ${tone} ${isThis ? 'ring-1 ring-green-400' : ''}`;
-                const body = (
-                  <>
-                    <span className="font-mono text-[10px]">{c.name}</span>
-                    <span className="opacity-60">·</span>
-                    <span className="tabular-nums">{c.count}</span>
-                  </>
-                );
-                if (c.count === 0) {
-                  return (
-                    <span
-                      key={c.id}
-                      className={baseCls}
-                      title="no annotated OG member in this cultivar"
-                    >
-                      {body}
-                    </span>
-                  );
-                }
-                const target = c.geneIds[0];
-                const tip =
-                  c.count > 1
-                    ? `${c.count} copies in ${c.name} — opens first: ${target}`
-                    : `opens ${target}`;
-                return (
-                  <Link
-                    key={c.id}
-                    to={`/genes/${encodeURIComponent(target)}`}
-                    className={`${baseCls} hover:ring-1 hover:ring-green-400 transition`}
-                    title={isThis ? "this gene's cultivar" : tip}
-                  >
-                    {body}
-                  </Link>
-                );
-              })}
-            </div>
-          </CardContent>
-        </Card>
+      {og && (
+        <ConservationSummary
+          ogId={og}
+          bundle={conservationBundle}
+          loading={conservationLoading}
+          error={conservationError}
+          cultivars={cultivars.map((c) => ({ id: c.id, name: c.name }))}
+          highlightCultivarId={cultivar ?? undefined}
+          linkForCultivar={(cid) => {
+            const gid = members?.[cid]?.[0];
+            return gid ? `/genes/${encodeURIComponent(gid)}` : null;
+          }}
+          traitHits={[...hitsForOg(og)].sort((a, b) => a.p - b.p)}
+        />
       )}
 
-      <CandidateBlocksInAnalysesPanel entityType="gene" entityId={geneId} />
-
-      <ObservedInAnalysesPanel entityType="gene" entityId={geneId} />
     </div>
   );
 }

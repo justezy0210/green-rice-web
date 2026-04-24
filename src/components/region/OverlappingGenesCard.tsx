@@ -17,6 +17,10 @@ interface Props {
   functionQuery: string;
   setFunctionQuery: (v: string) => void;
   partitionLoading: boolean;
+  /** Gene currently pinned for highlight in the track viz above. */
+  highlightedGeneId: string | null;
+  /** Toggle the highlight — same id twice clears it. */
+  onToggleHighlight: (id: string) => void;
 }
 
 const PAGE_SIZE = 20;
@@ -28,6 +32,8 @@ export function OverlappingGenesCard({
   functionQuery,
   setFunctionQuery,
   partitionLoading,
+  highlightedGeneId,
+  onToggleHighlight,
 }: Props) {
   const [page, setPage] = useState(0);
 
@@ -92,44 +98,59 @@ export function OverlappingGenesCard({
         ) : (
           <>
             <ul className="divide-y divide-gray-100 text-sm">
-              {pageRows.map((g) => (
-                <li
-                  key={g.id}
-                  className="py-1.5 px-1 rounded hover:bg-green-50 flex items-baseline justify-between gap-3"
-                >
-                  <span className="flex items-baseline gap-2 min-w-0">
-                    <Link
-                      to={`/genes/${encodeURIComponent(g.id)}`}
-                      className="font-mono text-gray-900 hover:text-green-700 hover:underline"
-                    >
-                      {g.id}
-                    </Link>
-                    {g.ogId ? (
+              {pageRows.map((g) => {
+                const isHighlighted = g.id === highlightedGeneId;
+                return (
+                  <li
+                    key={g.id}
+                    onClick={() => onToggleHighlight(g.id)}
+                    className={`py-1.5 px-1 rounded flex items-baseline justify-between gap-3 cursor-pointer ${
+                      isHighlighted
+                        ? 'bg-amber-50 ring-1 ring-amber-300'
+                        : 'hover:bg-green-50'
+                    }`}
+                    title={
+                      isHighlighted
+                        ? 'Click to clear highlight'
+                        : 'Click to highlight this gene in the track above'
+                    }
+                  >
+                    <span className="flex items-baseline gap-2 min-w-0">
                       <Link
-                        to={`/og/${encodeURIComponent(g.ogId)}`}
-                        className="text-[10px] font-mono text-indigo-700 bg-indigo-50 border border-indigo-200 px-1 py-[1px] rounded hover:bg-indigo-100"
+                        to={`/genes/${encodeURIComponent(g.id)}`}
+                        onClick={(e) => e.stopPropagation()}
+                        className="font-mono text-gray-900 hover:text-green-700 hover:underline"
                       >
-                        {g.ogId}
+                        {g.id}
                       </Link>
-                    ) : (
-                      <span
-                        className="text-[10px] font-mono text-gray-300"
-                        title="No OrthoFinder assignment"
-                      >
-                        no OG
-                      </span>
-                    )}
-                  </span>
-                  <span className="text-[11px] text-gray-500 whitespace-nowrap font-mono">
-                    {g.chr}:{g.start.toLocaleString()}-{g.end.toLocaleString()} ({g.strand})
-                    {g.annotation?.product && (
-                      <span className="ml-2 text-gray-600">
-                        · {g.annotation.product}
-                      </span>
-                    )}
-                  </span>
-                </li>
-              ))}
+                      {g.ogId ? (
+                        <Link
+                          to={`/og/${encodeURIComponent(g.ogId)}`}
+                          onClick={(e) => e.stopPropagation()}
+                          className="text-[10px] font-mono text-indigo-700 bg-indigo-50 border border-indigo-200 px-1 py-[1px] rounded hover:bg-indigo-100"
+                        >
+                          {g.ogId}
+                        </Link>
+                      ) : (
+                        <span
+                          className="text-[10px] font-mono text-gray-300"
+                          title="No OrthoFinder assignment"
+                        >
+                          no OG
+                        </span>
+                      )}
+                    </span>
+                    <span className="text-[11px] text-gray-500 whitespace-nowrap font-mono">
+                      {g.chr}:{g.start.toLocaleString()}-{g.end.toLocaleString()} ({g.strand})
+                      {g.annotation?.product && (
+                        <span className="ml-2 text-gray-600">
+                          · {g.annotation.product}
+                        </span>
+                      )}
+                    </span>
+                  </li>
+                );
+              })}
             </ul>
             <div className="mt-3">
               <OrthogroupDiffPagination

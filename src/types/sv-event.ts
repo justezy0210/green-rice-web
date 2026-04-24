@@ -13,7 +13,14 @@ export interface SvEvent {
   svType: SvType;
   parentSnarl: string | null;
   originalId: string;
-  /** cultivarId → VCF GT string ("0/0", "0/1", "1/1", "./." …). */
+  /**
+   * cultivarId → allele code as emitted by `vg deconstruct` on a
+   * top-level snarl: a single ALT-allele index ("0" for REF, "1",
+   * "2", … for ALT1/ALT2, "." for missing). Not a diploid VCF GT
+   * string — the pangenome matrix stores haploid samples, so slashes
+   * never appear here. Downstream consumers that infer presence
+   * should treat any non-"0" non-"." value as ALT-carrying.
+   */
   gts: Record<string, string>;
 }
 
@@ -59,4 +66,27 @@ export interface SvManifest {
   chrCounts: Record<string, number>;
   traitsWithGroupFreq: string[];
   builtAt: string;
+}
+
+/**
+ * Sample-frame coordinate entry for a canonical SV event, used for
+ * per-cultivar overlays that cannot tolerate reference-frame drift
+ * (Gene detail SV overlay). `eventId` joins back to canonical
+ * `SvEvent.eventId`; `pos` and `refLen` are expressed in the named
+ * cultivar's own assembly coordinates.
+ */
+export interface SvCultivarCoord {
+  eventId: string;
+  chr: string;
+  pos: number;
+  refLen: number;
+}
+
+export interface SvCultivarCoordBundle {
+  schemaVersion: number;
+  svReleaseId: string;
+  cultivar: string;
+  chr: string;
+  count: number;
+  entries: SvCultivarCoord[];
 }

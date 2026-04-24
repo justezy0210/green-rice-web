@@ -1,4 +1,4 @@
-import { collection, doc, onSnapshot, type Unsubscribe } from 'firebase/firestore';
+import { doc, onSnapshot, type Unsubscribe } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import type {
   GroupingDocument,
@@ -18,14 +18,3 @@ export function subscribeGrouping(
   });
 }
 
-export function subscribeAllGroupings(
-  callback: (docs: Record<string, GroupingDocument>) => void,
-): Unsubscribe {
-  return onSnapshot(collection(db, 'groupings'), (snap) => {
-    const result: Record<string, GroupingDocument> = {};
-    snap.forEach((d) => {
-      result[d.id] = d.data() as GroupingDocument;
-    });
-    callback(result);
-  });
-}

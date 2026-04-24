@@ -1,6 +1,6 @@
 import type { FileUploadStatus, GenomeSummary } from '@/types/genome';
 
-export function emptyFileStatus(): FileUploadStatus {
+function emptyFileStatus(): FileUploadStatus {
   return {
     uploaded: false,
     fileName: '',

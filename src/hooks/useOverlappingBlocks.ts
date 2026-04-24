@@ -32,11 +32,12 @@ export function useOverlappingBlocks(args: {
       })
       .catch((err: unknown) => {
         if (cancelled) return;
-        setState({
-          blocks: [],
-          error: err instanceof Error ? err : new Error(String(err)),
-          key,
-        });
+        const error = err instanceof Error ? err : new Error(String(err));
+        // Surface to the console so Firestore rule / index failures are
+        // debuggable from DevTools; the Panel below also renders the
+        // message in-UI so the issue is not silent.
+        console.error('[useOverlappingBlocks] query failed', error);
+        setState({ blocks: [], error, key });
       });
     return () => {
       cancelled = true;

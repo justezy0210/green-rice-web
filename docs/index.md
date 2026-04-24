@@ -11,6 +11,7 @@
 - [type-definitions.md](design-docs/type-definitions.md) — Phenotype/genotype/common type definitions
 - [firebase-architecture.md](design-docs/firebase-architecture.md) — Firebase integration, Auth, Firestore model
 - [component-design.md](design-docs/component-design.md) — Per-page component design
+- [analysis-block-ui.md](design-docs/analysis-block-ui.md) — Block-first analysis UI for locus-level interpretation
 
 ## Execution Plans
 - [README.md](exec-plans/README.md) — Plan workflow and template
@@ -23,6 +24,10 @@
 
 ## Generated
 - [db-schema.md](generated/db-schema.md) — Firestore schema (from TypeScript types)
+- [phenotype-groups.md](generated/phenotype-groups.md) — Current 11-cultivar grouping snapshot
+- [analysis-synthesis-2026-04-22.md](generated/analysis-synthesis-2026-04-22.md) — One-document synthesis of the raw run, block follow-up, and curated loci
+- [raw-analysis-2026-04-22.md](generated/raw-analysis-2026-04-22.md) — Raw 5-step run on server inputs
+- [followup-block-summary-2026-04-22.md](generated/followup-block-summary-2026-04-22.md) — Block-level interpretation of the raw run
 
 ## References
 - [golden-principles.md](references/golden-principles.md) — Code quality principles & conventions

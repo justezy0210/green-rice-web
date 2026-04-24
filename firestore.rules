@@ -60,6 +60,15 @@ service cloud.firestore {
       allow write: if false;
     }
 
+    // Collection-group read across every `blocks` subcollection so the
+    // Region page's coordinate-overlap lookup can query `blocks` without
+    // fixing a runId. Specific-path match above already covers reads of
+    // a single block document; this one is what unblocks CG queries.
+    match /{path=**}/blocks/{blockId} {
+      allow read: if true;
+      allow write: if false;
+    }
+
     // Orthofinder state: admin-only read (exposes processing status + file paths).
     match /_orthofinder_meta/state {
       allow read: if request.auth != null && request.auth.token.admin == true;

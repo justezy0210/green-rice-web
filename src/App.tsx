@@ -11,6 +11,7 @@ import { CultivarsListPage } from '@/pages/CultivarsListPage';
 import { GeneSearchPage } from '@/pages/GeneSearchPage';
 import { GeneDetailPage } from '@/pages/GeneDetailPage';
 import { OgDetailPage } from '@/pages/OgDetailPage';
+import { OrthogroupIndexPage } from '@/pages/OrthogroupIndexPage';
 import { RegionPage } from '@/pages/RegionPage';
 import { AnalysisHomePage } from '@/pages/AnalysisHomePage';
 import { AnalysisRunPage } from '@/pages/AnalysisRunPage';
@@ -48,6 +49,7 @@ export default function App() {
             <Route path="/explore/og/:ogId" element={<OgDetailPage />} />
             <Route path="/explore/*" element={<ExplorePage />} />
 
+            <Route path="/og" element={<OrthogroupIndexPage />} />
             <Route path="/og/:ogId" element={<OgDetailPage />} />
             <Route path="/download" element={<DownloadPage />} />
             <Route path="/login" element={<LoginPage />} />

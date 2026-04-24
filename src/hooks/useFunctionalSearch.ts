@@ -39,13 +39,13 @@ async function fetchIndex(version: number): Promise<FunctionalIndex | null> {
   return p;
 }
 
-export interface FunctionalSearchHit {
+interface FunctionalSearchHit {
   row: FunctionalRow;
   /** Which field matched (for UI display hint). */
   via: 'pfam' | 'interpro' | 'go' | 'product';
 }
 
-export interface FunctionalSearchResult {
+interface FunctionalSearchResult {
   mode: SearchMode;
   loading: boolean;
   indexAvailable: boolean;

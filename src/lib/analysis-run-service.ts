@@ -24,11 +24,6 @@ export function subscribeAnalysisRun(
   );
 }
 
-export async function fetchAnalysisRun(runId: RunId): Promise<AnalysisRun | null> {
-  const snap = await getDoc(doc(db, 'analysis_runs', runId));
-  return snap.exists() ? (snap.data() as AnalysisRun) : null;
-}
-
 export async function listAnalysisRuns(max = 50): Promise<AnalysisRun[]> {
   const q = query(
     collection(db, 'analysis_runs'),

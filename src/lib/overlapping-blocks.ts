@@ -38,6 +38,24 @@ export async function findOverlappingBlocks(args: {
 }
 
 /**
+ * Every candidate block on a whole chromosome, across runs, without
+ * the window-overlap check. Used by the chromosome-overview thumbnail
+ * so navigating to a different window doesn't make curated bars
+ * outside that window disappear.
+ */
+export async function findChrBlocks(chr: string): Promise<CandidateBlock[]> {
+  const q = query(collectionGroup(db, 'blocks'), where('region.chr', '==', chr));
+  const snap = await getDocs(q);
+  const out: CandidateBlock[] = [];
+  for (const doc of snap.docs) {
+    const data = doc.data() as CandidateBlock;
+    if (data.region) out.push(data);
+  }
+  out.sort((a, b) => a.region.start - b.region.start);
+  return out;
+}
+
+/**
  * List every block assigned to a specific run — convenience helper
  * for the run overview / block list surfaces.
  */

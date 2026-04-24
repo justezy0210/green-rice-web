@@ -1,18 +1,23 @@
 import { useDeferredValue, useMemo, useState } from 'react';
-import { Link, useParams } from 'react-router-dom';
+import { Link, useParams, useSearchParams } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ScopeStrip } from '@/components/common/ScopeStrip';
-import { ObservedInAnalysesPanel } from '@/components/entity/ObservedInAnalysesPanel';
 import { OverlappingBlocksPanel } from '@/components/entity/OverlappingBlocksPanel';
 import { OverlappingGenesCard } from '@/components/region/OverlappingGenesCard';
+import { RegionOverviewMap } from '@/components/region/RegionOverviewMap';
 import { RegionTrackViz } from '@/components/region/RegionTrackViz';
 import { TraitRibbon } from '@/components/analysis/TraitRibbon';
 import { useGeneModelsPartition } from '@/hooks/useGeneModel';
 import { useGeneIndexPartition } from '@/hooks/useGeneIndex';
 import { useCultivars } from '@/hooks/useCultivars';
+import { useChrBlocks } from '@/hooks/useChrBlocks';
 import { useOverlappingBlocks } from '@/hooks/useOverlappingBlocks';
 import { useSvEventsForRegion } from '@/hooks/useSvEventsForRegion';
+import { useSvManifest } from '@/hooks/useSvMatrix';
+import { useGenomeSummary } from '@/hooks/useGenomeSummary';
+import { SV_RELEASE_ID } from '@/lib/releases';
 import {
+  computeChrGenes,
   computeOverlappingGenes,
   cultivarPrefix,
   parseRange,
@@ -21,8 +26,6 @@ import {
   buildTraitCellsFromBlocks,
   representativeBlockPerTrait,
 } from '@/lib/trait-ribbon-data';
-
-const FLANK_BP = 5000;
 
 export function RegionPage() {
   const { cultivar, chr, range } = useParams<{
@@ -53,6 +56,32 @@ export function RegionPage() {
   // list render behind React 19's concurrent scheduler.
   const deferredQuery = useDeferredValue(functionQuery);
 
+  const [highlightedGeneId, setHighlightedGeneId] = useState<string | null>(null);
+
+  // `?og=<ogId>` narrows the track viz so genes of an "arrived-from"
+  // orthogroup pop (indigo marker), preserving the narrative from the
+  // originating block/OG page. Clearing the chip simply drops the param.
+  // `?svScope=all` expands the SV lane to the full pangenome view;
+  // default is cultivar-scoped to match the URL contract.
+  const [searchParams, setSearchParams] = useSearchParams();
+  const focusedOgId = searchParams.get('og');
+  const svScope: 'cultivar' | 'all' =
+    searchParams.get('svScope') === 'all' ? 'all' : 'cultivar';
+  const clearFocusedOg = () => {
+    const next = new URLSearchParams(searchParams);
+    next.delete('og');
+    setSearchParams(next, { replace: true });
+  };
+  const toggleSvScope = () => {
+    const next = new URLSearchParams(searchParams);
+    if (svScope === 'cultivar') {
+      next.set('svScope', 'all');
+    } else {
+      next.delete('svScope');
+    }
+    setSearchParams(next, { replace: true });
+  };
+
   const overlappingGenes = useMemo(
     () =>
       computeOverlappingGenes({
@@ -67,6 +96,14 @@ export function RegionPage() {
     [partition, indexPartition, rangeValid, cultivar, chr, start, end],
   );
 
+  const chrGenes = useMemo(
+    () => computeChrGenes({ partition, indexPartition, cultivar: cultivar ?? null, chr: chr ?? null }),
+    [partition, indexPartition, cultivar, chr],
+  );
+
+  const { summary: genomeSummary } = useGenomeSummary(cultivar ?? undefined);
+  const chrLength = chr ? genomeSummary?.assembly?.chromosomeLengths?.[chr] : undefined;
+
   const visibleGenes = useMemo(() => {
     const q = deferredQuery.trim().toLowerCase();
     if (!q) return overlappingGenes;
@@ -78,6 +115,10 @@ export function RegionPage() {
     start: rangeValid ? start : null,
     end: rangeValid ? end : null,
   });
+  // Overview needs every curated block on the chr, independent of
+  // the current window — otherwise navigating inside the chromosome
+  // makes far-away curated bars blink out.
+  const { blocks: chrBlocks } = useChrBlocks(chr ?? null);
   const traitCells = useMemo(
     () => buildTraitCellsFromBlocks(overlappingBlocks),
     [overlappingBlocks],
@@ -94,11 +135,19 @@ export function RegionPage() {
   }, [overlappingGenes]);
 
   const { events: svEvents, loading: svLoading } = useSvEventsForRegion({
-    svReleaseId: 'sv_v1',
+    svReleaseId: SV_RELEASE_ID,
     chr: chr ?? null,
     start: rangeValid ? start : null,
     end: rangeValid ? end : null,
+    cultivar: cultivar ?? null,
+    scope: svScope,
   });
+  // Sample count for the "all N cultivars" scope label. Reads the
+  // active SV release manifest so the number tracks the pipeline
+  // state, not a UI literal. Falls back to null while loading so the
+  // header can say "all cultivars" without committing to a count.
+  const { manifest: svManifest } = useSvManifest(SV_RELEASE_ID);
+  const svSampleCount = svManifest?.sampleCount ?? null;
 
   if (!cultivar || !chr || !parsed) {
     return (
@@ -182,14 +231,35 @@ export function RegionPage() {
         </p>
       )}
 
+      {chrGenes.length > 0 && (
+        <RegionOverviewMap
+          cultivar={cultivar}
+          chr={chr}
+          start={start}
+          end={end}
+          chrLength={chrLength}
+          genes={chrGenes}
+          blocks={chrBlocks}
+        />
+      )}
+
       {overlappingGenes.length > 0 && (
         <RegionTrackViz
+          cultivar={cultivar}
+          cultivarName={cultivarName}
           chr={chr}
           start={start}
           end={end}
           genes={overlappingGenes}
           svEvents={svEvents}
           svLoading={svLoading}
+          highlightedGeneId={highlightedGeneId}
+          focusedOgId={focusedOgId}
+          onClearFocusedOg={clearFocusedOg}
+          svScope={svScope}
+          onToggleSvScope={toggleSvScope}
+          svSampleCount={svSampleCount}
+          overlappingBlocks={overlappingBlocks}
         />
       )}
 
@@ -200,16 +270,14 @@ export function RegionPage() {
         functionQuery={functionQuery}
         setFunctionQuery={setFunctionQuery}
         partitionLoading={partitionLoading}
+        highlightedGeneId={highlightedGeneId}
+        onToggleHighlight={(id) =>
+          setHighlightedGeneId((prev) => (prev === id ? null : id))
+        }
       />
 
       {cultivar && chr && parsed && (
-        <>
-          <OverlappingBlocksPanel chr={chr} start={start} end={end} />
-          <ObservedInAnalysesPanel
-            entityType="region"
-            entityId={`${cultivar}:${chr}:${start}-${end}`}
-          />
-        </>
+        <OverlappingBlocksPanel chr={chr} start={start} end={end} />
       )}
     </div>
   );
@@ -227,5 +295,3 @@ function Stat({ label, value }: { label: string; value: string }) {
     </div>
   );
 }
-
-export { FLANK_BP };

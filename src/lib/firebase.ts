@@ -29,4 +29,4 @@ try {
   console.warn('Firebase not configured. Running without Firebase.');
 }
 
-export { app, auth, db, storage, functions };
+export { auth, db, storage, functions };

@@ -18,9 +18,8 @@ const CARDS: Card[] = [
   {
     key: 'orthogroups',
     title: 'Orthogroups',
-    summary: 'Copy-count matrix per cultivar, core / soft-core / shell / private, member gene list.',
-    href: null,
-    comingSoon: true,
+    summary: 'Conservation tiers (universal / common / rare PAV / private) + trait-discriminating OGs across the panel.',
+    href: '/og',
   },
   {
     key: 'cultivars',
@@ -38,11 +37,8 @@ const CARDS: Card[] = [
 
 export function EntityCardsGrid() {
   return (
-    <section>
-      <h2 className="text-xs uppercase tracking-wide text-gray-500 mb-2">
-        Entry points
-      </h2>
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+    <section className="h-full flex flex-col">
+      <div className="flex-1 flex flex-col gap-2 min-h-0">
         {CARDS.map((c) => {
           const body = (
             <>
@@ -62,12 +58,13 @@ export function EntityCardsGrid() {
               <p className="text-xs text-gray-500 mt-1 leading-snug">{c.summary}</p>
             </>
           );
+          const cardCls = 'flex-1 flex flex-col justify-center rounded-lg border px-4 py-3 transition-colors';
           if (c.href) {
             return (
               <Link
                 key={c.key}
                 to={c.href}
-                className="block rounded-lg border border-gray-200 hover:border-green-300 hover:bg-green-50 bg-white px-4 py-3 transition-colors"
+                className={`${cardCls} border-gray-200 hover:border-green-300 hover:bg-green-50 bg-white`}
               >
                 {body}
               </Link>
@@ -76,7 +73,7 @@ export function EntityCardsGrid() {
           return (
             <div
               key={c.key}
-              className="rounded-lg border border-gray-200 bg-gray-50 px-4 py-3 cursor-not-allowed opacity-70"
+              className={`${cardCls} border-gray-200 bg-gray-50 cursor-not-allowed opacity-70`}
               aria-disabled="true"
               title="Coming in Stage 2"
             >

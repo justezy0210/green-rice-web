@@ -14,7 +14,7 @@ interface Props {
  * deprecated region_* exact-key reverse index.
  */
 export function OverlappingBlocksPanel({ chr, start, end }: Props) {
-  const { blocks, loading } = useOverlappingBlocks({ chr, start, end });
+  const { blocks, loading, error } = useOverlappingBlocks({ chr, start, end });
   return (
     <Card>
       <CardContent className="py-4">
@@ -28,6 +28,10 @@ export function OverlappingBlocksPanel({ chr, start, end }: Props) {
         </div>
         {loading ? (
           <p className="text-[12px] text-gray-400">Scanning blocks…</p>
+        ) : error ? (
+          <p className="text-[12px] text-red-600">
+            Could not load overlapping blocks: {error.message}
+          </p>
         ) : blocks.length === 0 ? (
           <p className="text-[12px] text-gray-500">
             No candidate review blocks overlap this window.

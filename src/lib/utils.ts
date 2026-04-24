@@ -64,7 +64,3 @@ export function computeDatasetSummary(records: PhenotypeRecord[]): PhenotypeData
   };
 }
 
-export function formatValue(value: number | null, unit: string): string {
-  if (value === null || isNaN(value)) return '-';
-  return `${value.toFixed(1)} ${unit}`;
-}

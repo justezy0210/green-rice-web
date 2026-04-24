@@ -1,7 +1,8 @@
 import { useState, useEffect, useCallback } from 'react';
 import { dataService } from '@/lib/data-service';
 import type { PhenotypeRecord, PhenotypeDatasetSummary } from '@/types/phenotype';
-import type { LoadingState } from '@/types/common';
+
+type LoadingState = 'loading' | 'success' | 'error';
 
 interface UsePhenotypeDataResult {
   records: PhenotypeRecord[];

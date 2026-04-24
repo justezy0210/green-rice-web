@@ -35,8 +35,6 @@ export interface OrthogroupDiffThresholds {
   meanDiff: number;                // minimum absolute mean difference
 }
 
-export const DIFF_SCHEMA_VERSION = 1;
-
 /**
  * Firestore-side metadata. Full entries live in the Storage payload at `storagePath`.
  * Older documents written before the Storage split may still carry a `top[]` field —

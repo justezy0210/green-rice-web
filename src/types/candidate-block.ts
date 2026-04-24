@@ -103,15 +103,3 @@ export interface CandidateBlock {
   createdAt: string;
 }
 
-export interface BlockSummary {
-  blockId: string;
-  runId: RunId;
-  traitId: TraitId;
-  region: BlockRegion;
-  blockType: BlockType;
-  curated: boolean;
-  candidateOgCount: number;
-  svCount: number;
-  representativeAnnotations: string[];
-  blockSpecificityGap: number | null;
-}

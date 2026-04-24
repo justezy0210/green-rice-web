@@ -1,6 +1,6 @@
 # [PLAN] Candidate Block Rollout — Phase A (promote + UI slice)
 
-Status: DRAFT · 2026-04-22
+Status: COMPLETED · 2026-04-22
 Design doc: [`docs/design-docs/analysis-block-ui.md`](../../design-docs/analysis-block-ui.md)
 Verify reference: `/tmp/codex-narrative-ui-out.txt` (general-review, 2026-04-22)
 
@@ -247,7 +247,20 @@ End-to-end narrative 도달 가능한 최소 단위.
 - [ ] `npm run check:all` 통과
 - [ ] `/verify general-review` 재수행 (MVP1 완료 후)
 
-## Result (completed 이동 시 작성)
+## Result
 
-- Status: —
-- Notes: —
+- Status: **COMPLETED 2026-04-22** — MVP1/2/3 모두 실입 완료. 목표 narrative 2문장이 block detail에서 노출됨.
+- Promote pipeline: `scripts/promote-analysis-run.py` 가 `analysis_runs/{runId}/blocks/*` + `blockStats` + curated 3 docs + `candidates.blockId` 후처리 + `entity_analysis_index/og_*`, `gene_*` 에 `topBlocks[]` 를 기록하도록 확장. Legacy `scripts/build-analysis-run.py` 삭제.
+- Block detail (`/analysis/:runId/block/:blockId`): ScopeStrip · ConvergentEvidenceCard · CandidatesTable · IntersectionsTable · TraitRibbon · CrossTraitBlockCompare · BlockExportPanel (candidates.tsv + intersections.tsv + summary.md 다운로드).
+- Analysis block list (`/analysis/:runId/blocks`): curated 우선, auto 1 Mb bin 페이지네이션. `Jump to block` primitive 는 candidate · OG · gene · region 진입점 전부에 삽입.
+- Region page: coordinate-overlap `OverlappingBlocksPanel` 로 exact-string `region_*` 인덱스 대체. Firestore CG 인덱스 `blocks.region.chr` exemption 적용.
+- Gene detail: `CandidateBlocksInAnalysesPanel` 로 candidate.leadGeneId 기반 block backlink 표면화 (370 genes with blocks).
+- OG detail: `Candidate blocks in analyses` 카드 + block chip 추가.
+- Region track viz (MVP3 item 14 P1 + 후속 UX):
+  - Resolution-adaptive rendering — ≤200 genes·≤2 Mb = per-gene bars, 그 외 120-bin sqrt histogram; SV도 같은 패턴으로 ≤150 events·≤1 Mb 기준 분리 적응.
+  - aria-live status row가 hover gene/bin/전체 통계를 순위화해 단일 줄로 읽어줌.
+  - Bin click → URL rewrite zoom, `← Back` 버튼, Overlapping-genes 행 클릭 → amber highlight (summary는 bin 폭으로 확장).
+  - `?og=<ogId>` focus overlay — detail은 indigo gene bar, summary는 persistent indigo 컬럼 outline + 최소 3px 캡. chip에 `N here` / `none in window`.
+- Verification: `npm run check:all` 통과, Codex `/verify general-review` 2026-04-22 수행 후 권고 반영.
+- Out of scope (후속 플랜 필요): overview mini-map brush + block annotation lane (Region track P2), |ΔAF| trait-aware 색 인코딩 (P3b), 16-cultivar arrival handling.
+- Notes: design-doc `analysis-block-ui.md` 는 여전히 draft. 후속 플랜에서 'accepted' 마킹과 실제 라우팅/컴포넌트 차이 기록 필요.

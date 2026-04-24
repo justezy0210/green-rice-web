@@ -9,9 +9,9 @@ import {
   useSvTraitGroupFreq,
 } from '@/hooks/useSvMatrix';
 import { isValidRunId, decodeRunId } from '@/lib/analysis-run-id';
+import { SV_RELEASE_ID } from '@/lib/releases';
 import type { SvEvent, SvType } from '@/types/sv-event';
 
-const DEFAULT_SV_RELEASE_ID = 'sv_v1';
 const TYPE_OPTIONS: SvType[] = ['INS', 'DEL', 'COMPLEX'];
 const PAGE_SIZE = 50;
 
@@ -31,7 +31,7 @@ export function AnalysisStepVariantsPage() {
   const traitId = parts?.traitId ?? null;
   const { run, error } = useAnalysisRun(validRunId);
 
-  const svReleaseId = run?.svReleaseId ?? DEFAULT_SV_RELEASE_ID;
+  const svReleaseId = run?.svReleaseId ?? SV_RELEASE_ID;
   const { manifest, loading: manifestLoading } = useSvManifest(svReleaseId);
   const chrList = manifest ? Object.keys(manifest.chrCounts).sort() : null;
   const { eventsByChr, loading: eventsLoading, loadedChrs, totalChrs } = useAllSvEvents(

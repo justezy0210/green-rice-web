@@ -47,19 +47,3 @@ export interface PhenotypeFieldSummary {
   mean: number;
   stdDev: number;
 }
-
-// Flat record for table display
-export interface PhenotypeFlat {
-  cultivar: string;
-  early: number | null;
-  normal: number | null;
-  late: number | null;
-  culmLength: number | null;
-  panicleLength: number | null;
-  panicleNumber: number | null;
-  spikeletsPerPanicle: number | null;
-  ripeningRate: number | null;
-  grainWeight1000: number | null;
-  preHarvestSprouting: number | null;
-  bacterialLeafBlight: number | null;
-}

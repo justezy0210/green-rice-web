@@ -49,7 +49,7 @@ export function TraitRibbon({ activeTraitId, perTrait, linkFor, title }: Props) 
         const d = perTrait[t.id];
         const isActive = t.id === activeTraitId;
         const href = linkFor ? linkFor(t.id) : null;
-        const cellClass = toneClass(d?.minP ?? null, isActive);
+        const cellClass = toneClass(d, isActive);
         const tooltip = d
           ? `${t.label}: ${d.count} candidate${d.count === 1 ? '' : 's'}${
               d.minP !== null ? ` · min p=${formatP(d.minP)}` : ''
@@ -86,20 +86,25 @@ export function TraitRibbon({ activeTraitId, perTrait, linkFor, title }: Props) 
   );
 }
 
-function toneClass(minP: number | null, active: boolean): string {
+function toneClass(d: TraitCellData | undefined, active: boolean): string {
   if (active) {
     return 'border-green-400 bg-green-100 text-green-800';
   }
-  if (minP === null) {
+  if (!d || d.count === 0) {
     return 'border-gray-100 bg-gray-50 text-gray-400';
   }
-  if (minP < 1e-3) {
-    return 'border-red-200 bg-red-50 text-red-700';
+  // Active-signal tiers: stronger p-values override the block-count
+  // default so trait ribbons on p-value-bearing surfaces stay graded.
+  if (d.minP !== null && d.minP < 1e-3) {
+    return 'border-red-300 bg-red-50 text-red-700';
   }
-  if (minP < 1e-2) {
-    return 'border-amber-200 bg-amber-50 text-amber-700';
+  if (d.minP !== null && d.minP < 1e-2) {
+    return 'border-amber-300 bg-amber-100 text-amber-800';
   }
-  return 'border-gray-200 bg-gray-50 text-gray-600';
+  // count > 0 with no p-value (block-derived surface like Region page)
+  // — amber tint so "this trait has candidates here" pops vs the muted
+  // no-signal slots.
+  return 'border-amber-200 bg-amber-50 text-amber-700';
 }
 
 function formatP(p: number): string {

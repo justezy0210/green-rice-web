@@ -62,7 +62,7 @@ function tsvRow(cells: unknown[]): string {
   return cells.map(tsvEscape).join('\t');
 }
 
-export function buildCandidatesTsv(candidates: Candidate[]): string {
+function buildCandidatesTsv(candidates: Candidate[]): string {
   const lines: string[] = [CANDIDATE_COLUMNS.join('\t')];
   for (const c of candidates) {
     lines.push(
@@ -95,7 +95,7 @@ export function buildCandidatesTsv(candidates: Candidate[]): string {
   return lines.join('\n') + '\n';
 }
 
-export function buildIntersectionsTsv(rows: IntersectionRow[]): string {
+function buildIntersectionsTsv(rows: IntersectionRow[]): string {
   const lines: string[] = [INTERSECTION_COLUMNS.join('\t')];
   for (const r of rows) {
     lines.push(
@@ -125,7 +125,7 @@ function formatMb(bp: number): string {
  * summary (curated review regions do), prefer that text verbatim;
  * otherwise synthesise a short header from the block fields.
  */
-export function buildBlockSummaryMd(
+function buildBlockSummaryMd(
   block: CandidateBlock,
   candidateCount: number,
   intersectionCount: number,

@@ -12,13 +12,12 @@ function formatP(p: number): string {
   return p.toFixed(3);
 }
 
-function runIdFor(trait: string): string {
-  return `${trait}_g4_of6_sv1_gm11_sc1`;
-}
-
 /**
  * 9-trait p-value chip strip for OG detail hero. Active trait is
- * highlighted; clicking a chip jumps to that trait's candidate detail.
+ * highlighted; clicking a chip swaps `?trait=` on the current OG
+ * page so the trait-scoped cards (active-run, lead-SV) populate
+ * without losing OG context. Clicking the active chip clears the
+ * trait selection.
  */
 export function OgTraitHitChips({ ogId, activeTraitId }: Props) {
   const { hitsForOg, loading } = useTraitHits();
@@ -39,12 +38,14 @@ export function OgTraitHitChips({ ogId, activeTraitId }: Props) {
       <span className="text-[11px] text-gray-500 mr-0.5">trait hits:</span>
       {hits.map((h) => {
         const isActive = h.t === activeTraitId;
-        const runId = runIdFor(h.t);
+        const nextHref = isActive
+          ? `/og/${encodeURIComponent(ogId)}`
+          : `/og/${encodeURIComponent(ogId)}?trait=${h.t}`;
         return (
           <Link
             key={h.t}
-            to={`/analysis/${runId}/candidate/${ogId}`}
-            title={`${traitLabels.get(h.t) ?? h.t} · p=${formatP(h.p)}${h.lfc !== undefined ? ` · log2FC ${h.lfc.toFixed(2)}` : ''}`}
+            to={nextHref}
+            title={`${traitLabels.get(h.t) ?? h.t} · p=${formatP(h.p)}${h.lfc !== undefined ? ` · log2FC ${h.lfc.toFixed(2)}` : ''}${isActive ? ' · click to clear' : ''}`}
             className={`text-[10px] font-mono px-1.5 py-0.5 rounded border tabular-nums ${
               isActive
                 ? 'border-green-400 bg-green-100 text-green-800'

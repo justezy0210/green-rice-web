@@ -29,7 +29,6 @@ export interface GeneModelGeometry {
 
 const UTR_HEIGHT = 8;
 const CDS_HEIGHT = 16;
-const TRACK_PADDING = 4;
 const DEFAULT_HEIGHT = 40;
 
 export function computeGeneModelGeometry(
@@ -115,5 +114,3 @@ export const EXON_COLORS: Record<ExonBox['type'], string> = {
   CDS: 'rgba(22, 163, 74, 0.9)',      // green-600
   UTR3: 'rgba(156, 163, 175, 0.55)',
 };
-
-export const TRACK_PADDING_PX = TRACK_PADDING;

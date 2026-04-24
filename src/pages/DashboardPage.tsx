@@ -2,10 +2,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { usePhenotypeData } from '@/hooks/usePhenotypeData';
 import { PhenotypeDistributionChart } from '@/components/dashboard/PhenotypeDistributionChart';
-import { TraitQualityOverview } from '@/components/dashboard/TraitQualityOverview';
 import { EntityCardsGrid } from '@/components/dashboard/EntityCardsGrid';
-import { StartAnalysisCard } from '@/components/dashboard/StartAnalysisCard';
-import { DataReadinessCard } from '@/components/dashboard/DataReadinessCard';
 import {
   PANEL_LABEL,
   REFERENCE_SHORT_NAME,
@@ -135,16 +132,10 @@ export function DashboardPage() {
           <PhenotypeDistributionChart records={records} />
         </div>
         <div className="lg:col-span-2">
-          <TraitQualityOverview records={records} />
+          <EntityCardsGrid />
         </div>
       </div>
 
-      <EntityCardsGrid />
-
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        <StartAnalysisCard />
-        <DataReadinessCard />
-      </div>
     </div>
   );
 }
