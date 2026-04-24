@@ -111,6 +111,14 @@ service firebase.storage {
       allow write: if false;
     }
 
+    // Per-gene SV overlap evidence index for the gene search badge.
+    // Built by scripts/build-gene-sv-index.py. Keyed on (orthofinder,
+    // gene-model, svRelease) version tuple. Public read; admin write.
+    match /gene_sv_index/{path=**} {
+      allow read: if true;
+      allow write: if false;
+    }
+
     // OG × SV intersect release bundles (Phase A). By-OG gzipped bundles
     // keyed on the intersectionReleaseId. Public read; admin-only write.
     match /og_sv_intersections/{path=**} {

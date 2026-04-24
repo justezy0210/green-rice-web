@@ -138,3 +138,15 @@ export function traitHitsIndexPath(
 ): string {
   return `trait_hits/v${orthofinderVersion}_g${groupingVersion}/index.json`;
 }
+
+/** Per-gene SV overlap evidence index (built by scripts/build-gene-sv-index.py).
+ * Keyed on (orthofinder version, svRelease) — gene_models currently version
+ * lockstep with orthofinder, so a separate gm tag is redundant today. If the
+ * two diverge, extend the key without changing call sites by adding a new
+ * parameter + path segment. */
+export function geneSvIndexPath(
+  orthofinderVersion: number,
+  svReleaseId: string,
+): string {
+  return `gene_sv_index/v${orthofinderVersion}_r${svReleaseId}/index.json`;
+}
