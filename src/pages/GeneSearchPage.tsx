@@ -20,7 +20,10 @@ export function GeneSearchPage() {
   const funcSearch = useFunctionalSearch(input, 1000);
 
   const activeSource =
-    funcSearch.mode === 'gene-id' || funcSearch.mode === 'idle'
+    funcSearch.mode === 'gene-id' ||
+    funcSearch.mode === 'idle' ||
+    idSearch.loading ||
+    idSearch.results.length > 0
       ? 'id'
       : 'functional';
   const activeResults =
@@ -129,7 +132,7 @@ export function GeneSearchPage() {
             <span className="ml-auto">
               mode:{' '}
               <code className="bg-gray-100 px-1 rounded">
-                {mode}
+                {activeSource === 'id' ? 'gene-id' : mode}
               </code>
             </span>
           )}
@@ -241,31 +244,39 @@ function ResultList({
       </div>
       <ul className="divide-y divide-gray-100 border border-gray-200 rounded-lg bg-white">
         {items.map((it, i) => (
-          <li key={`${it.geneId}-${i}`}>
-            <Link
-              to={`/genes/${encodeURIComponent(it.geneId)}`}
-              className={`block px-4 py-2 text-sm ${i === highlightIdx ? 'bg-green-100' : 'hover:bg-green-50'}`}
-              onMouseEnter={() => setHighlightIdx(i)}
-            >
-              <div className="flex items-baseline justify-between gap-3">
-                <span className="font-mono text-gray-900">{it.geneId}</span>
-                <span className="text-[11px] text-gray-500 whitespace-nowrap flex items-center gap-2">
-                  {it.cultivar}
-                  {it.og && (
-                    <>
-                      <span>·</span>
-                      <span className="font-mono text-gray-600">{it.og}</span>
-                      <TraitHitBadges hits={hitsForOg(it.og)} ogId={it.og} />
-                    </>
-                  )}
-                </span>
+          <li
+            key={`${it.geneId}-${i}`}
+            className={`px-4 py-2 text-sm ${i === highlightIdx ? 'bg-green-100' : 'hover:bg-green-50'}`}
+            onMouseEnter={() => setHighlightIdx(i)}
+          >
+            <div className="flex items-baseline justify-between gap-3">
+              <Link
+                to={`/genes/${encodeURIComponent(it.geneId)}`}
+                className="font-mono text-gray-900 hover:underline"
+              >
+                {it.geneId}
+              </Link>
+              <span className="text-[11px] text-gray-500 whitespace-nowrap flex items-center gap-2">
+                {it.cultivar}
+                {it.og && (
+                  <>
+                    <span>·</span>
+                    <Link
+                      to={`/og/${it.og}`}
+                      className="font-mono text-gray-600 hover:underline"
+                    >
+                      {it.og}
+                    </Link>
+                    <TraitHitBadges hits={hitsForOg(it.og)} ogId={it.og} />
+                  </>
+                )}
+              </span>
+            </div>
+            {it.product && (
+              <div className="text-[11px] text-gray-600 mt-0.5 truncate">
+                {it.product}
               </div>
-              {it.product && (
-                <div className="text-[11px] text-gray-600 mt-0.5 truncate">
-                  {it.product}
-                </div>
-              )}
-            </Link>
+            )}
           </li>
         ))}
       </ul>
