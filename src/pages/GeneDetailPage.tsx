@@ -48,8 +48,11 @@ export function GeneDetailPage() {
   }, [ogCoords, lookup.entry, geneId]);
 
   // Per-cultivar sample-frame SV overlay; side-table required.
-  const cultivarId = model.entry?.cultivar ?? null;
-  const geneChr = model.entry?.chr ?? null;
+  // Chr is sourced from OG gene-coords first (lightweight) so SV fetches can
+  // run in parallel with the heavy gene-model partition load instead of being
+  // serialised behind it.
+  const cultivarId = lookup.entry?.cultivar ?? model.entry?.cultivar ?? null;
+  const geneChr = coord?.chr ?? model.entry?.chr ?? null;
   const { events: chrSvEvents } = useSvEventsForRegion({
     svReleaseId: SV_RELEASE_ID, chr: geneChr, start: null, end: null,
     cultivar: cultivarId, scope: 'cultivar',

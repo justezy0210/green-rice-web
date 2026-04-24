@@ -1,6 +1,4 @@
-import { FirebaseError } from 'firebase/app';
-import { ref as storageRef, getDownloadURL } from 'firebase/storage';
-import { storage } from '@/lib/firebase';
+import { publicDownloadUrl } from '@/lib/download-urls';
 import type {
   SvChrBundle,
   SvCultivarCoordBundle,
@@ -14,11 +12,20 @@ const chrCache = new Map<string, SvChrBundle>();
 const freqCache = new Map<string, SvTraitGroupFreqBundle>();
 const cultivarCoordCache = new Map<string, SvCultivarCoordBundle>();
 
+class StorageFetchError extends Error {
+  readonly status: number;
+  readonly path: string;
+  constructor(status: number, path: string) {
+    super(`sv storage fetch failed (${status}): ${path}`);
+    this.status = status;
+    this.path = path;
+  }
+}
+
 async function fetchJson<T>(path: string): Promise<T> {
-  const url = await getDownloadURL(storageRef(storage, path));
-  const res = await fetch(url);
+  const res = await fetch(publicDownloadUrl(path));
   if (!res.ok) {
-    throw new Error(`sv storage fetch failed (${res.status}): ${path}`);
+    throw new StorageFetchError(res.status, path);
   }
   return (await res.json()) as T;
 }
@@ -71,8 +78,7 @@ export async function fetchSvCultivarCoords(
     // silently return an empty bundle. Every other error (auth,
     // network, corrupt JSON, CORS, etc.) must propagate so the UI
     // can surface a visible error instead of hiding overlays.
-    const isNotFound =
-      err instanceof FirebaseError && err.code === 'storage/object-not-found';
+    const isNotFound = err instanceof StorageFetchError && err.status === 404;
     if (!isNotFound) {
       console.error('[fetchSvCultivarCoords] unexpected failure', {
         svReleaseId, cultivar, chr, err,
