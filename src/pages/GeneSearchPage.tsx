@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { ScopeStrip } from '@/components/common/ScopeStrip';
 import { GeneSearchResultList } from '@/components/gene/GeneSearchResultList';
+import { Input } from '@/components/ui/input';
 import { useGeneIndexManifest, useGeneSearch } from '@/hooks/useGeneIndex';
 import { useFunctionalSearch } from '@/hooks/useFunctionalSearch';
 import { useGeneSvIndex } from '@/hooks/useGeneSvIndex';
@@ -96,7 +97,7 @@ export function GeneSearchPage() {
       </ScopeStrip>
 
       <div>
-        <input
+        <Input
           type="text"
           value={input}
           onChange={(e) => {
@@ -106,7 +107,6 @@ export function GeneSearchPage() {
           }}
           onKeyDown={onKeyDown}
           placeholder='Gene ID, "PF00069", "GO:0090630", or keyword…'
-          className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-green-500 focus:ring-2 focus:ring-green-200 outline-none"
           autoFocus
         />
       </div>

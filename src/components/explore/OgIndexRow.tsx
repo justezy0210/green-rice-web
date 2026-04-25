@@ -1,5 +1,7 @@
 import { Link } from 'react-router-dom';
-import { tierLabel, tierTone, type ConservationTier } from '@/lib/og-conservation';
+import { TableCell, TableRow } from '@/components/ui/table';
+import { TierBadge } from '@/components/badges/TierBadge';
+import type { ConservationTier } from '@/lib/og-conservation';
 import type { OgIndexRow as OgIndexRowData } from '@/lib/og-index-service';
 
 const TRAIT_ABBR: Record<string, string> = {
@@ -18,11 +20,8 @@ interface Props {
 export function OgIndexRow({ row, panelTotal, href, onClick }: Props) {
   const tier = row.tier as ConservationTier;
   return (
-    <tr
-      onClick={onClick}
-      className="border-b border-gray-100 hover:bg-green-50 cursor-pointer"
-    >
-      <td className="pl-3 pr-2 py-1.5">
+    <TableRow onClick={onClick} className="cursor-pointer">
+      <TableCell className="pl-3">
         <Link
           to={href}
           onClick={(e) => e.stopPropagation()}
@@ -30,22 +29,20 @@ export function OgIndexRow({ row, panelTotal, href, onClick }: Props) {
         >
           {row.ogId}
         </Link>
-      </td>
-      <td className="px-2 py-1.5">
-        <span className={`text-[10px] uppercase tracking-wide border rounded px-1.5 py-[1px] ${tierTone(tier)}`}>
-          {tierLabel(tier)}
-        </span>
-      </td>
-      <td className="px-2 py-1.5 text-right tabular-nums text-[12px] text-gray-700">
+      </TableCell>
+      <TableCell>
+        <TierBadge tier={tier} />
+      </TableCell>
+      <TableCell className="text-right tabular-nums text-[12px] text-gray-700">
         {row.presentCount}/{panelTotal}
-      </td>
-      <td className="px-2 py-1.5 text-right tabular-nums text-[12px] text-gray-700">
+      </TableCell>
+      <TableCell className="text-right tabular-nums text-[12px] text-gray-700">
         {row.irgspCopyCount === 0 ? <span className="text-gray-400">×</span> : `×${row.irgspCopyCount}`}
-      </td>
-      <td className="px-2 py-1.5 text-right tabular-nums text-[12px] text-gray-700">
+      </TableCell>
+      <TableCell className="text-right tabular-nums text-[12px] text-gray-700">
         {row.memberCount}
-      </td>
-      <td className="px-2 py-1.5">
+      </TableCell>
+      <TableCell>
         {row.traits && row.traits.length > 0 ? (
           <span className="inline-flex flex-wrap gap-1">
             {row.traits.slice(0, 5).map((t) => (
@@ -69,7 +66,7 @@ export function OgIndexRow({ row, panelTotal, href, onClick }: Props) {
         ) : (
           <span className="text-[10px] text-gray-400">—</span>
         )}
-      </td>
-    </tr>
+      </TableCell>
+    </TableRow>
   );
 }

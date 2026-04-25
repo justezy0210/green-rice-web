@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom';
 import { TraitHitBadges } from '@/components/gene/TraitHitBadges';
-import { SvOverlapBadge } from '@/components/gene/SvOverlapBadge';
+import { SvOverlapBadge } from '@/components/badges/SvOverlapBadge';
+import { Button } from '@/components/ui/button';
 import type { TraitHit } from '@/hooks/useTraitHits';
 import type { GeneSvEntry } from '@/types/gene-sv-index';
 
@@ -101,20 +102,12 @@ export function GeneSearchResultList({
       </ul>
       {hasMore && (
         <div className="flex gap-2 pt-1">
-          <button
-            type="button"
-            onClick={onShowMore}
-            className="text-[11px] px-3 py-1 rounded border border-gray-300 bg-white hover:bg-gray-50 text-gray-700"
-          >
+          <Button variant="outline" size="xs" onClick={onShowMore}>
             Show 50 more
-          </button>
-          <button
-            type="button"
-            onClick={onShowAll}
-            className="text-[11px] px-3 py-1 rounded border border-gray-300 bg-white hover:bg-gray-50 text-gray-700"
-          >
+          </Button>
+          <Button variant="outline" size="xs" onClick={onShowAll}>
             Show all {total.toLocaleString()}
-          </button>
+          </Button>
         </div>
       )}
     </div>

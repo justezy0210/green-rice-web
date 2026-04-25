@@ -1,6 +1,15 @@
 import { useMemo, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Card, CardContent } from '@/components/ui/card';
+import {
+  Table,
+  TableBody,
+  TableHead,
+  TableHeader,
+  TableRow,
+  TableCell,
+} from '@/components/ui/table';
+import { Input } from '@/components/ui/input';
 import { OrthogroupDiffPagination } from '@/components/explore/OrthogroupDiffPagination';
 import { OgCategoryStrip } from '@/components/explore/OgCategoryStrip';
 import { OgIndexRow } from '@/components/explore/OgIndexRow';
@@ -165,7 +174,7 @@ export function OrthogroupIndexPage() {
             overlay
           />
         ))}
-        <input
+        <Input
           type="search"
           value={query}
           onChange={(e) => {
@@ -173,7 +182,7 @@ export function OrthogroupIndexPage() {
             setPage(0);
           }}
           placeholder="Search OG id (e.g. OG0000871) or trait"
-          className="ml-auto w-72 text-[12px] border border-gray-200 rounded px-2 py-1 bg-white focus:border-green-500 focus:ring-1 focus:ring-green-200 outline-none"
+          className="ml-auto w-72"
         />
       </div>
 
@@ -189,7 +198,7 @@ export function OrthogroupIndexPage() {
           </p>
           <Card>
             <CardContent className="py-2">
-              <table className="w-full text-sm table-fixed">
+              <Table density="dense" className="table-fixed">
                 <colgroup>
                   <col className="w-36" />
                   <col className="w-28" />
@@ -198,17 +207,17 @@ export function OrthogroupIndexPage() {
                   <col className="w-20" />
                   <col />
                 </colgroup>
-                <thead>
-                  <tr className="text-[10px] uppercase tracking-wide text-gray-500 border-b border-gray-200">
-                    <th className="text-left pl-3 pr-2 py-1.5">OG</th>
-                    <th className="text-left px-2 py-1.5">Tier</th>
-                    <th className="text-right px-2 py-1.5">Panel</th>
-                    <th className="text-right px-2 py-1.5">IRGSP</th>
-                    <th className="text-right px-2 py-1.5">Members</th>
-                    <th className="text-left px-2 py-1.5">Traits</th>
-                  </tr>
-                </thead>
-                <tbody>
+                <TableHeader>
+                  <TableRow className="text-[10px] uppercase tracking-wide text-gray-500">
+                    <TableHead className="pl-3">OG</TableHead>
+                    <TableHead>Tier</TableHead>
+                    <TableHead className="text-right">Panel</TableHead>
+                    <TableHead className="text-right">IRGSP</TableHead>
+                    <TableHead className="text-right">Members</TableHead>
+                    <TableHead>Traits</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
                   {pageRows.map((o) => (
                     <OgIndexRow
                       key={o.ogId}
@@ -219,14 +228,14 @@ export function OrthogroupIndexPage() {
                     />
                   ))}
                   {pageRows.length === 0 && (
-                    <tr>
-                      <td colSpan={6} className="text-center py-6 text-[12px] text-gray-500">
+                    <TableRow>
+                      <TableCell colSpan={6} className="text-center py-6 text-[12px] text-gray-500">
                         No OGs match the current filter.
-                      </td>
-                    </tr>
+                      </TableCell>
+                    </TableRow>
                   )}
-                </tbody>
-              </table>
+                </TableBody>
+              </Table>
             </CardContent>
           </Card>
           <div className="px-1">

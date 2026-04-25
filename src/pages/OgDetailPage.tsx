@@ -236,6 +236,7 @@ export function OgDetailPage() {
 
       <Card>
         <CardContent className="py-3">
+          {/* raw: full-width section header acting as a disclosure toggle — Button primitive doesn't fit a flex-row title+caret layout. */}
           <button
             onClick={() => setAnchorExpanded((v) => !v)}
             className="flex items-center justify-between w-full text-left"

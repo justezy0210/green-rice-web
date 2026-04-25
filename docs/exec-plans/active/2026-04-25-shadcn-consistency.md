@@ -151,6 +151,48 @@ For each, log keyboard tab order + visible focus + no hydration warnings in cons
 - [ ] No new ARIA / hydration / nested-anchor warnings in console
 - [ ] Phase deliverables block (raw count delta, exceptions, touched files) appended to plan
 
+## Phase 3 — entity browse (2026-04-25)
+
+### Surfaces touched
+- `src/components/badges/SvOverlapBadge.tsx` (moved from `gene/`) — refactored to use `Badge variant="warning"` (strong) and `Badge variant="outline"` (weak). Old `gene/SvOverlapBadge.tsx` deleted.
+- `src/components/gene/TraitHitBadges.tsx` — refactored to compose `TraitHitBadge` per hit instead of inlining the chip render
+- `src/components/gene/GeneSearchResultList.tsx` — `Show 50 more` / `Show all` → `Button variant="outline" size="xs"`; updated SvOverlapBadge import
+- `src/pages/GeneSearchPage.tsx` — search input → `Input`
+- `src/pages/OrthogroupIndexPage.tsx` — search → `Input`; result table → `Table density="dense"` with shadcn `TableHeader / TableBody / TableRow / TableHead / TableCell`. Validates the dense Table variant on a real `colgroup`-ed surface
+- `src/components/explore/OgIndexRow.tsx` — emits `TableRow / TableCell` instead of raw `<tr>`/`<td>`; tier pill → `TierBadge`
+- `src/pages/OgDetailPage.tsx` — Anchor-locus disclosure toggle kept raw with `// raw:` (full-width title+caret layout doesn't fit Button)
+- `src/components/og-detail/OgDetailAlleleFreqTab.tsx` — two action buttons → `Button variant="outline"`
+- `src/components/og-detail/ClusterContextCard.tsx` — `View IRGSP reference` toggle → `Button` (variant flips on selected); wide row-selector kept raw with `// raw:` annotation
+- `src/components/og-detail/OgCultivarCopyMap.tsx` — full table migration to dense `Table`; `PavStateBadge` → `Badge variant="outline"`
+- `src/components/og-detail/OgIntersectionsSection.tsx` — full table migration to dense `Table`; `Show all/only N` → `Button variant="link" size="xs"`
+
+### Raw count delta
+| | Phase 2 end | Phase 3 end | delta |
+|---|---|---|---|
+| `<button>` | 40 | 34 | **−6** |
+| `<table>` | 13 | 10 | **−3** |
+| `<input>` | 12 | 10 | **−2** |
+| `// raw:` annotations | 3 | 5 | +2 |
+| amber/red/green pill class strings | 32 | 34 | +2 |
+
+The pill-class count is fuzzy: it counts grepped color class strings (`border-amber-200 bg-amber-50` etc), so converting a raw `<span>` to a `<Badge>` that keeps the same color classes via `className` does NOT decrease the count. The semantic layer ratio (Badge / wrapper component vs. raw inline `<span>`) is the metric that matters; harder to count programmatically — flag for a manual audit at Phase 6.
+
+### Allowed-raw exceptions (new this phase)
+- `OgDetailPage.tsx:239` — full-width section disclosure toggle (`Anchor-locus variants` h3 + Hide/Show caret in one row). `// raw:` annotated.
+- `ClusterContextCard.tsx:219` — wide row-selector with flex-wrap rich content + selected-ring state. `// raw:` annotated.
+
+### QA matrix run (manual smoke target)
+| Route | Key check | Pass |
+|---|---|---|
+| `/og` | category strip filter, preset toggle (raw chips), search Input, paginated Table renders, click row → /og/:id | TBD |
+| `/og/:id?trait=…` | TierBadge in header, ClusterContextCard `View IRGSP reference` toggle, OgCultivarCopyMap dense table, OgIntersectionsSection dense table + Show all toggle | TBD |
+| `/genes?q=baegil` | Input focus ring, result list with Trait/SV badges, `Show 50 more` Button | TBD |
+| `/genes?q=PF00069` | Functional path renders the same result list with badges | TBD |
+
+### Verification
+- `npm run check:all` ✓
+- `npm run build` ✓
+
 ## Phase 2 — auth/admin/header (2026-04-25)
 
 ### Surfaces touched

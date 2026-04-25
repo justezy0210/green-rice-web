@@ -1,4 +1,5 @@
 import { useMemo } from 'react';
+import { Button } from '@/components/ui/button';
 import { IRGSP_DISPLAY_NAME } from '@/lib/irgsp-constants';
 import {
   buildReferenceCluster,
@@ -152,17 +153,15 @@ function IrgspHeader({
           {representative.transcripts.length > 1 ? 's' : ''}
         </span>
         {clickable && (
-          <button
+          <Button
             type="button"
+            variant={selected ? 'secondary' : 'outline'}
+            size="xs"
             onClick={() => onClusterSelect!(refCluster!)}
-            className={`ml-auto text-[10px] px-2 py-0.5 rounded border ${
-              selected
-                ? 'border-gray-600 bg-gray-800 text-gray-200'
-                : 'border-gray-300 bg-white hover:bg-gray-100 text-gray-700'
-            }`}
+            className={`ml-auto text-[10px] ${selected ? 'border-gray-600 bg-gray-800 text-gray-200' : ''}`}
           >
             {selected ? 'Selected' : 'View IRGSP reference'}
-          </button>
+          </Button>
         )}
       </div>
       <ul className="mt-1.5 space-y-0.5">
@@ -216,6 +215,7 @@ function ClusterRow({
 }) {
   return (
     <li>
+      {/* raw: wide row-selector with flex-wrap content + selected ring state — Button primitive doesn't fit row-as-button layout. */}
       <button
         type="button"
         onClick={() => onSelect?.(cluster)}

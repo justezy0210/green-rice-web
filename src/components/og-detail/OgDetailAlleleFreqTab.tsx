@@ -3,6 +3,7 @@ import { useOgRegion, useOgRegionManifest } from '@/hooks/useOgRegion';
 import { OgDrawerAlleleFreqSection } from '@/components/explore/OgDrawerAlleleFreqSection';
 import { OgAnchorTierBadge } from '@/components/explore/OgAnchorTierBadge';
 import { ScopeStrip } from '@/components/common/ScopeStrip';
+import { Button } from '@/components/ui/button';
 import { ClusterPicker } from './ClusterPicker';
 import {
   findManifestCluster,
@@ -102,13 +103,14 @@ function OgDetailAlleleFreqTabBody({
           </div>
         )}
         <div className="border border-gray-200 rounded-lg p-6 text-center text-xs text-gray-500">
-          <button
+          <Button
             type="button"
+            variant="outline"
+            size="sm"
             onClick={() => setShowGatedAf(true)}
-            className="inline-block px-3 py-1 rounded border border-gray-300 bg-white hover:bg-gray-50 text-gray-700"
           >
             Show anyway (locus-local only)
-          </button>
+          </Button>
         </div>
       </div>
     );
@@ -253,13 +255,15 @@ function OgDetailAlleleFreqTabBody({
       hint={statusTone?.caveat ?? undefined}
       action={
         afSummary ? (
-          <button
+          <Button
             type="button"
+            variant="outline"
+            size="xs"
+            className="mt-3"
             onClick={() => setShowOgLevel(true)}
-            className="mt-3 text-xs px-2 py-1 rounded border border-gray-300 bg-white hover:bg-gray-50 text-gray-700"
           >
             Use OG-level reference AF
-          </button>
+          </Button>
         ) : null
       }
     />

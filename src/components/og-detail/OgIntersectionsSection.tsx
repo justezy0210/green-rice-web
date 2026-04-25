@@ -1,6 +1,15 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Card, CardContent } from '@/components/ui/card';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
+import { Button } from '@/components/ui/button';
 import { useOgIntersectionBundle } from '@/hooks/useBlock';
 import type { IntersectionRow, ImpactClass } from '@/types/intersection';
 
@@ -67,7 +76,7 @@ export function OgIntersectionsSection({ ogId, intersectionReleaseId }: Props) {
             {bundle?.runs.length === 1 ? '' : 's'}
           </span>
         </div>
-        <table className="w-full text-sm table-fixed">
+        <Table density="dense" className="table-fixed">
           <colgroup>
             <col className="w-28" />
             <col className="w-20" />
@@ -76,31 +85,31 @@ export function OgIntersectionsSection({ ogId, intersectionReleaseId }: Props) {
             <col />
             <col className="w-16" />
           </colgroup>
-          <thead>
-            <tr className="text-[10px] uppercase tracking-wide text-gray-500 border-b border-gray-200">
-              <th className="text-left pl-3 pr-2 py-1">SV</th>
-              <th className="text-left px-3 py-1">Type</th>
-              <th className="text-left px-3 py-1">Impact</th>
-              <th className="text-left px-3 py-1">Cultivar</th>
-              <th className="text-left px-3 py-1">Gene</th>
-              <th className="text-right pl-3 pr-4 py-1">|ΔAF|</th>
-            </tr>
-          </thead>
-          <tbody>
+          <TableHeader>
+            <TableRow className="text-[10px] uppercase tracking-wide text-gray-500">
+              <TableHead className="pl-3">SV</TableHead>
+              <TableHead className="px-3">Type</TableHead>
+              <TableHead className="px-3">Impact</TableHead>
+              <TableHead className="px-3">Cultivar</TableHead>
+              <TableHead className="px-3">Gene</TableHead>
+              <TableHead className="pl-3 pr-4 text-right">|ΔAF|</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
             {visible.map((r, idx) => (
-              <tr
+              <TableRow
                 key={`${r.runId}:${r.eventId}:${idx}`}
-                className="border-b border-gray-100 hover:bg-green-50"
+                className="hover:bg-green-50"
               >
-                <td className="pl-3 pr-2 py-1 font-mono text-[11px] text-gray-800">
+                <TableCell className="pl-3 font-mono text-[11px] text-gray-800">
                   {r.eventId}
-                </td>
-                <td className="px-3 py-1 text-[11px] text-gray-600">{r.svType}</td>
-                <td className="px-3 py-1 text-[11px]">
+                </TableCell>
+                <TableCell className="px-3 text-[11px] text-gray-600">{r.svType}</TableCell>
+                <TableCell className="px-3 text-[11px]">
                   <ImpactBadge impactClass={r.impactClass} />
-                </td>
-                <td className="px-3 py-1 text-[11px] text-gray-600">{r.cultivar}</td>
-                <td className="px-3 py-1 text-[11px]">
+                </TableCell>
+                <TableCell className="px-3 text-[11px] text-gray-600">{r.cultivar}</TableCell>
+                <TableCell className="px-3 text-[11px]">
                   {r.geneId ? (
                     <Link
                       to={`/genes/${encodeURIComponent(r.geneId)}`}
@@ -111,21 +120,23 @@ export function OgIntersectionsSection({ ogId, intersectionReleaseId }: Props) {
                   ) : (
                     <span className="text-gray-400">—</span>
                   )}
-                </td>
-                <td className="pl-3 pr-4 py-1 text-right tabular-nums text-gray-800">
+                </TableCell>
+                <TableCell className="pl-3 pr-4 text-right tabular-nums text-gray-800">
                   {typeof r.absDeltaAf === 'number' ? r.absDeltaAf.toFixed(2) : '—'}
-                </td>
-              </tr>
+                </TableCell>
+              </TableRow>
             ))}
-          </tbody>
-        </table>
+          </TableBody>
+        </Table>
         {rows.length > COLLAPSED_LIMIT && (
-          <button
+          <Button
+            variant="link"
+            size="xs"
+            className="mt-2 text-[11px] text-green-700 px-0"
             onClick={() => setExpanded((v) => !v)}
-            className="mt-2 text-[11px] text-green-700 hover:underline"
           >
             {expanded ? `Show only ${COLLAPSED_LIMIT}` : `Show all ${rows.length}`}
-          </button>
+          </Button>
         )}
       </CardContent>
     </Card>

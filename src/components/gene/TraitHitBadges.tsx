@@ -1,4 +1,4 @@
-import { Link } from 'react-router-dom';
+import { TraitHitBadge } from '@/components/badges/TraitHitBadge';
 import type { TraitHit } from '@/hooks/useTraitHits';
 
 interface Props {
@@ -7,24 +7,16 @@ interface Props {
   ogId?: string;
 }
 
-function traitAbbr(trait: string): string {
-  // "heading_date" -> "HD", "bacterial_leaf_blight" -> "BLB"
-  return trait
-    .split('_')
-    .map((w) => (w[0] ?? '').toUpperCase())
-    .join('');
-}
-
 function formatP(p: number): string {
   if (p < 1e-4) return p.toExponential(1);
   return p.toFixed(3);
 }
 
 /**
- * Small badges showing traits where the OG has p < threshold. Compact form
- * uses trait abbreviations ("HD", "BLB"). Full trait name in tooltip and on
- * click routes to the Analysis home; the specific run link lands in Phase 2
- * once analysis_runs documents exist.
+ * Compact list of trait-hit chips. Each visible hit becomes a
+ * `TraitHitBadge` (amber, links to OG detail when ogId is given).
+ * Overflow beyond `max` collapses to a `+N` count with the remaining
+ * traits in a tooltip.
  */
 export function TraitHitBadges({ hits, max = 3, ogId }: Props) {
   if (hits.length === 0) return null;
@@ -32,23 +24,9 @@ export function TraitHitBadges({ hits, max = 3, ogId }: Props) {
   const overflow = hits.length - shown.length;
   return (
     <span className="inline-flex items-center gap-1 flex-wrap">
-      {shown.map((h) => {
-        const tip =
-          `${h.t}: p=${formatP(h.p)}` +
-          (h.lfc !== undefined ? ` · log2FC ${h.lfc.toFixed(2)}` : '');
-        const to = ogId ? `/og/${ogId}` : '/analysis';
-        return (
-          <Link
-            key={h.t}
-            to={to}
-            title={tip}
-            className="text-[9px] font-mono uppercase tracking-wide px-1 py-[1px] rounded border border-amber-200 bg-amber-50 text-amber-800 hover:bg-amber-100"
-            onClick={(e) => e.stopPropagation()}
-          >
-            {traitAbbr(h.t)}
-          </Link>
-        );
-      })}
+      {shown.map((h) => (
+        <TraitHitBadge key={h.t} hit={h} ogId={ogId} />
+      ))}
       {overflow > 0 && (
         <span
           title={hits

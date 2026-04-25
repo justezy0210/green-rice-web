@@ -1,6 +1,16 @@
 import { Link } from 'react-router-dom';
 import { Card, CardContent } from '@/components/ui/card';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
+import { Badge } from '@/components/ui/badge';
 import { isReferencePathCultivar } from '@/lib/irgsp-constants';
+import { cn } from '@/lib/utils';
 import type { PavPerCultivar } from '@/lib/pav-evidence';
 
 interface Props {
@@ -55,7 +65,7 @@ export function OgCultivarCopyMap({ members, cultivars, groupByCultivar, pavRows
             {panel.length} panel cultivars · sorted by group
           </span>
         </div>
-        <table className="w-full text-sm table-fixed">
+        <Table density="dense" className="table-fixed">
           <colgroup>
             <col className="w-32" />
             <col className="w-20" />
@@ -63,30 +73,30 @@ export function OgCultivarCopyMap({ members, cultivars, groupByCultivar, pavRows
             <col />
             <col className="w-32" />
           </colgroup>
-          <thead>
-            <tr className="text-[10px] uppercase tracking-wide text-gray-500 border-b border-gray-200">
-              <th className="text-left pl-3 pr-2 py-1">Cultivar</th>
-              <th className="text-left px-3 py-1">Group</th>
-              <th className="text-right px-3 py-1">Copy</th>
-              <th className="text-left px-3 py-1">Gene IDs</th>
-              <th className="text-left pl-3 pr-4 py-1">PAV state</th>
-            </tr>
-          </thead>
-          <tbody>
+          <TableHeader>
+            <TableRow className="text-[10px] uppercase tracking-wide text-gray-500">
+              <TableHead className="pl-3">Cultivar</TableHead>
+              <TableHead className="px-3">Group</TableHead>
+              <TableHead className="px-3 text-right">Copy</TableHead>
+              <TableHead className="px-3">Gene IDs</TableHead>
+              <TableHead className="pl-3 pr-4">PAV state</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
             {rows.map((r) => (
-              <tr
+              <TableRow
                 key={r.id}
-                className="border-b border-gray-100 hover:bg-green-50 transition-colors"
+                className="hover:bg-green-50 transition-colors"
               >
-                <td className="pl-3 pr-2 py-1 text-gray-800">
+                <TableCell className="pl-3 text-gray-800">
                   <Link
                     to={`/cultivar/${encodeURIComponent(r.name)}`}
                     className="hover:text-green-700 hover:underline"
                   >
                     {r.name}
                   </Link>
-                </td>
-                <td className="px-3 py-1 text-[11px]">
+                </TableCell>
+                <TableCell className="px-3 text-[11px]">
                   {r.groupLabel ? (
                     <span className="font-mono text-gray-700">
                       {r.groupLabel}
@@ -97,20 +107,20 @@ export function OgCultivarCopyMap({ members, cultivars, groupByCultivar, pavRows
                   ) : (
                     <span className="text-gray-400">—</span>
                   )}
-                </td>
-                <td className="px-3 py-1 text-right tabular-nums text-gray-800">
+                </TableCell>
+                <TableCell className="px-3 text-right tabular-nums text-gray-800">
                   {r.copy}
-                </td>
-                <td className="px-3 py-1 text-[11px]">
+                </TableCell>
+                <TableCell className="px-3 text-[11px]">
                   <GeneIdsList geneIds={r.geneIds} />
-                </td>
-                <td className="pl-3 pr-4 py-1">
+                </TableCell>
+                <TableCell className="pl-3 pr-4">
                   <PavStateBadge state={r.pavState} />
-                </td>
-              </tr>
+                </TableCell>
+              </TableRow>
             ))}
-          </tbody>
-        </table>
+          </TableBody>
+        </Table>
       </CardContent>
     </Card>
   );
@@ -150,12 +160,14 @@ const PAV_STATE_CLASS: Record<string, string> = {
 
 function PavStateBadge({ state }: { state: string }) {
   return (
-    <span
-      className={`text-[10px] font-mono px-1.5 py-0.5 rounded border ${
-        PAV_STATE_CLASS[state] ?? PAV_STATE_CLASS['absent-evidence-pending']
-      }`}
+    <Badge
+      variant="outline"
+      className={cn(
+        'text-[10px] font-mono px-1.5 py-0.5 rounded border h-auto',
+        PAV_STATE_CLASS[state] ?? PAV_STATE_CLASS['absent-evidence-pending'],
+      )}
     >
       {PAV_STATE_LABEL[state] ?? state}
-    </span>
+    </Badge>
   );
 }
