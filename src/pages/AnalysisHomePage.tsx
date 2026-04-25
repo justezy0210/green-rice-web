@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom';
 import { Card, CardContent } from '@/components/ui/card';
+import { AnalysisRunRow } from '@/components/analysis/AnalysisRunRow';
 import { useAnalysisRuns } from '@/hooks/useAnalysisRuns';
 import { TRAITS } from '@/config/traits';
 
@@ -112,30 +113,11 @@ export function AnalysisHomePage() {
           ) : (
             <ul className="divide-y divide-gray-100">
               {runs.map((r) => (
-                <li key={r.runId}>
-                  <Link
-                    to={`/analysis/${r.runId}`}
-                    className="flex items-center justify-between gap-3 py-2 px-1 rounded hover:bg-green-50 transition-colors"
-                  >
-                    <span className="min-w-0">
-                      <span className="text-sm font-medium text-gray-900 block">
-                        {traitLabel.get(r.traitId) ?? r.traitId}
-                      </span>
-                      <span className="font-mono text-[10px] text-gray-500 block truncate">
-                        {r.runId}
-                      </span>
-                    </span>
-                    <span className="flex items-center gap-3 shrink-0 text-[11px] text-gray-500">
-                      <span>
-                        <strong className="text-gray-700 tabular-nums">
-                          {r.candidateCount}
-                        </strong>{' '}
-                        candidates
-                      </span>
-                      <span className="text-green-700">Open →</span>
-                    </span>
-                  </Link>
-                </li>
+                <AnalysisRunRow
+                  key={r.runId}
+                  run={r}
+                  traitLabel={traitLabel.get(r.traitId) ?? r.traitId}
+                />
               ))}
             </ul>
           )}

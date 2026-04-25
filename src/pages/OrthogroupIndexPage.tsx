@@ -2,51 +2,49 @@ import { useMemo, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Card, CardContent } from '@/components/ui/card';
 import { OrthogroupDiffPagination } from '@/components/explore/OrthogroupDiffPagination';
+import { OgCategoryStrip } from '@/components/explore/OgCategoryStrip';
+import { OgIndexRow } from '@/components/explore/OgIndexRow';
 import { useOgIndex } from '@/hooks/useOgIndex';
+import { useOgCategories } from '@/hooks/useOgCategories';
 import { useOrthogroupDiff } from '@/hooks/useOrthogroupDiff';
 import { DEFAULT_TRAIT_ID } from '@/config/traits';
-import { tierLabel, tierTone, type ConservationTier } from '@/lib/og-conservation';
-import type { OgIndexRow } from '@/lib/og-index-service';
-
-const TRAIT_ABBR: Record<string, string> = {
-  heading_date: 'HD', culm_length: 'CL', panicle_length: 'PL',
-  panicle_number: 'PN', spikelets_per_panicle: 'SPP', ripening_rate: 'RR',
-  grain_weight: 'GW', pre_harvest_sprouting: 'PHS', bacterial_leaf_blight: 'BLB',
-};
+import type { CategoryId } from '@/lib/og-functional-categories';
+import type { OgIndexRow as OgIndexRowData } from '@/lib/og-index-service';
 
 type Preset =
   | 'rare+private'   // default — the PAV inventory
   | 'rare'
   | 'private'
   | 'irgsp-absent'
-  | 'trait-linked'
   | 'universal'
-  | 'all';
+  | 'all'
+  | 'trait-linked';  // overlay — kept last and visually grouped on the right
 
 const PRESET_LABELS: Record<Preset, string> = {
   'rare+private': 'Rare + Private (PAV)',
   'rare': 'Rare PAV',
   'private': 'Private',
   'irgsp-absent': 'Absent in IRGSP',
-  'trait-linked': 'Trait-discriminating',
   'universal': 'Universal',
   'all': 'All OGs',
+  'trait-linked': 'Has trait p<0.05 (overlay)',
 };
+
+const INTRINSIC_PRESETS: Preset[] = [
+  'rare+private', 'rare', 'private', 'irgsp-absent', 'universal', 'all',
+];
+const OVERLAY_PRESETS: Preset[] = ['trait-linked'];
 
 const PAGE_SIZE = 100;
 
 /**
- * Build the `/og/:id` link with the OG's strongest trait preselected
- * (when any hit exists). That way OG detail opens with the
- * trait-scoped cards already populated instead of the empty
- * "no trait selected" state.
+ * Neutral entity-first OG link. Trait context is intentionally NOT
+ * injected here so that entity browsing on `/og` does not leak a
+ * specific trait into the detail page. Trait context is preserved on
+ * links coming from analysis surfaces (Analysis home, Step 2, etc.).
  */
-function ogHref(row: OgIndexRow): string {
-  const id = encodeURIComponent(row.ogId);
-  if (row.traits && row.traits.length > 0) {
-    return `/og/${id}?trait=${encodeURIComponent(row.traits[0])}`;
-  }
-  return `/og/${id}`;
+function ogHref(row: OgIndexRowData): string {
+  return `/og/${encodeURIComponent(row.ogId)}`;
 }
 
 export function OrthogroupIndexPage() {
@@ -54,83 +52,118 @@ export function OrthogroupIndexPage() {
   const { doc } = useOrthogroupDiff(DEFAULT_TRAIT_ID);
   const version = doc?.orthofinderVersion ?? null;
   const { bundle, loading, error } = useOgIndex(version);
+  const ogCategories = useOgCategories(version);
 
   const [preset, setPreset] = useState<Preset>('rare+private');
+  const [category, setCategory] = useState<CategoryId | null>(null);
   const [query, setQuery] = useState('');
   const [page, setPage] = useState(0);
 
-  const filtered = useMemo<OgIndexRow[]>(() => {
+  // Apply preset (intrinsic + overlay) BEFORE the category filter so the
+  // category strip counts reflect the active preset cohort.
+  const presetRows = useMemo<OgIndexRowData[]>(() => {
     if (!bundle) return [];
+    switch (preset) {
+      case 'rare': return bundle.ogs.filter((o) => o.tier === 'rare');
+      case 'private': return bundle.ogs.filter((o) => o.tier === 'private');
+      case 'rare+private':
+        return bundle.ogs.filter((o) => o.tier === 'rare' || o.tier === 'private');
+      case 'irgsp-absent':
+        return bundle.ogs.filter((o) => o.irgspCopyCount === 0 && o.tier !== 'absent');
+      case 'trait-linked':
+        return bundle.ogs.filter((o) => o.traits && o.traits.length > 0);
+      case 'universal':
+        return bundle.ogs.filter((o) => o.tier === 'universal');
+      default:
+        return bundle.ogs;
+    }
+  }, [bundle, preset]);
+
+  const filtered = useMemo<OgIndexRowData[]>(() => {
+    let rows = presetRows;
+    if (category) {
+      rows = rows.filter(
+        (o) => (ogCategories?.categories[o.ogId]?.p ?? 'no_annotation') === category,
+      );
+    }
     const q = query.trim().toLowerCase();
     const qOg = q.startsWith('og') ? q.toUpperCase() : '';
-    let rows: OgIndexRow[];
-    switch (preset) {
-      case 'rare': rows = bundle.ogs.filter((o) => o.tier === 'rare'); break;
-      case 'private': rows = bundle.ogs.filter((o) => o.tier === 'private'); break;
-      case 'rare+private':
-        rows = bundle.ogs.filter((o) => o.tier === 'rare' || o.tier === 'private');
-        break;
-      case 'irgsp-absent':
-        rows = bundle.ogs.filter((o) => o.irgspCopyCount === 0 && o.tier !== 'absent');
-        break;
-      case 'trait-linked':
-        rows = bundle.ogs.filter((o) => o.traits && o.traits.length > 0);
-        break;
-      case 'universal':
-        rows = bundle.ogs.filter((o) => o.tier === 'universal');
-        break;
-      default: rows = bundle.ogs;
-    }
     if (q) {
       rows = rows.filter((o) => {
         if (qOg) return o.ogId.toUpperCase().includes(qOg);
         return (o.traits ?? []).some((t) => t.toLowerCase().includes(q));
       });
     }
-    // Default sort: rarity asc (most variable first), then by trait signal, then by ogId.
+    // Entity-first sort: rarity asc (most variable first), then ogId.
+    // Trait p-value intentionally NOT used as a tie-break — trait
+    // ranking lives in /analysis. Stable secondary on ogId keeps the
+    // listing reproducible across reloads.
     return [...rows].sort((a, b) => {
       if (a.presentCount !== b.presentCount) return a.presentCount - b.presentCount;
-      const ap = a.bestTraitP ?? Infinity;
-      const bp = b.bestTraitP ?? Infinity;
-      if (ap !== bp) return ap - bp;
       return a.ogId.localeCompare(b.ogId);
     });
-  }, [bundle, preset, query]);
+  }, [presetRows, category, ogCategories, query]);
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   const safePage = Math.min(page, totalPages - 1);
   const pageRows = filtered.slice(safePage * PAGE_SIZE, (safePage + 1) * PAGE_SIZE);
 
+  // Clearing the category alongside the preset prevents the strip
+  // from becoming a hidden filter when the new preset cohort doesn't
+  // contain the previously-selected category (count→0 buckets aren't
+  // rendered, so the active state would otherwise disappear from the
+  // UI while still constraining results).
   const resetAndSetPreset = (p: Preset) => {
     setPreset(p);
+    setCategory(null);
     setPage(0);
   };
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-3">
       <div>
         <h1 className="text-xl font-semibold text-gray-900">Orthogroups</h1>
         <p className="text-sm text-gray-500 mt-1">
-          Cross-panel orthogroup inventory. Conservation tier, IRGSP
-          reference status, and trait-discrimination signal per OG.
-          Start with a preset, or search for an OG id directly.
+          Cross-panel orthogroup inventory. Conservation tier and IRGSP
+          status are intrinsic axes; trait association is shown as a side
+          badge. For phenotype-group ranking go to{' '}
+          <Link to="/analysis" className="text-green-700 hover:underline">
+            /analysis
+          </Link>
+          .
         </p>
       </div>
 
+      {bundle && (
+        <OgCategoryStrip
+          rows={presetRows}
+          categories={ogCategories}
+          selected={category}
+          onSelect={(id) => {
+            setCategory(id);
+            setPage(0);
+          }}
+        />
+      )}
+
       <div className="flex flex-wrap items-center gap-2">
-        {(Object.keys(PRESET_LABELS) as Preset[]).map((p) => (
-          <button
+        {INTRINSIC_PRESETS.map((p) => (
+          <PresetButton
             key={p}
-            type="button"
+            id={p}
+            active={preset === p}
             onClick={() => resetAndSetPreset(p)}
-            className={`text-[11px] px-2 py-1 rounded border ${
-              preset === p
-                ? 'border-green-400 bg-green-50 text-green-800 font-medium'
-                : 'border-gray-200 bg-white text-gray-600 hover:bg-gray-50'
-            }`}
-          >
-            {PRESET_LABELS[p]}
-          </button>
+          />
+        ))}
+        <span className="mx-1 h-5 w-px bg-gray-200" aria-hidden />
+        {OVERLAY_PRESETS.map((p) => (
+          <PresetButton
+            key={p}
+            id={p}
+            active={preset === p}
+            onClick={() => resetAndSetPreset(p)}
+            overlay
+          />
         ))}
         <input
           type="search"
@@ -152,7 +185,7 @@ export function OrthogroupIndexPage() {
           <p className="text-[11px] text-gray-500">
             {filtered.length.toLocaleString()} / {bundle.count.toLocaleString()} OGs ·{' '}
             {bundle.panelTotalCount} panel cultivars · sort: rarity (present count asc),
-            then strongest trait p-value
+            then OG id
           </p>
           <Card>
             <CardContent className="py-2">
@@ -177,10 +210,11 @@ export function OrthogroupIndexPage() {
                 </thead>
                 <tbody>
                   {pageRows.map((o) => (
-                    <OgRow
+                    <OgIndexRow
                       key={o.ogId}
                       row={o}
                       panelTotal={bundle.panelTotalCount}
+                      href={ogHref(o)}
                       onClick={() => navigate(ogHref(o))}
                     />
                   ))}
@@ -209,69 +243,27 @@ export function OrthogroupIndexPage() {
   );
 }
 
-function OgRow({
-  row,
-  panelTotal,
-  onClick,
+function PresetButton({
+  id, active, onClick, overlay,
 }: {
-  row: OgIndexRow;
-  panelTotal: number;
+  id: Preset;
+  active: boolean;
   onClick: () => void;
+  overlay?: boolean;
 }) {
-  const tier = row.tier as ConservationTier;
+  const baseColor = overlay
+    ? 'border-amber-200 bg-amber-50 text-amber-800 hover:bg-amber-100'
+    : 'border-gray-200 bg-white text-gray-600 hover:bg-gray-50';
+  const activeColor = overlay
+    ? 'border-amber-400 bg-amber-100 text-amber-900 font-medium'
+    : 'border-green-400 bg-green-50 text-green-800 font-medium';
   return (
-    <tr
+    <button
+      type="button"
       onClick={onClick}
-      className="border-b border-gray-100 hover:bg-green-50 cursor-pointer"
+      className={`text-[11px] px-2 py-1 rounded border ${active ? activeColor : baseColor}`}
     >
-      <td className="pl-3 pr-2 py-1.5">
-        <Link
-          to={ogHref(row)}
-          onClick={(e) => e.stopPropagation()}
-          className="font-mono text-[12px] text-gray-900 hover:text-green-700 hover:underline"
-        >
-          {row.ogId}
-        </Link>
-      </td>
-      <td className="px-2 py-1.5">
-        <span className={`text-[10px] uppercase tracking-wide border rounded px-1.5 py-[1px] ${tierTone(tier)}`}>
-          {tierLabel(tier)}
-        </span>
-      </td>
-      <td className="px-2 py-1.5 text-right tabular-nums text-[12px] text-gray-700">
-        {row.presentCount}/{panelTotal}
-      </td>
-      <td className="px-2 py-1.5 text-right tabular-nums text-[12px] text-gray-700">
-        {row.irgspCopyCount === 0 ? <span className="text-gray-400">×</span> : `×${row.irgspCopyCount}`}
-      </td>
-      <td className="px-2 py-1.5 text-right tabular-nums text-[12px] text-gray-700">
-        {row.memberCount}
-      </td>
-      <td className="px-2 py-1.5">
-        {row.traits && row.traits.length > 0 ? (
-          <span className="inline-flex flex-wrap gap-1">
-            {row.traits.slice(0, 5).map((t) => (
-              <span
-                key={t}
-                className="text-[10px] font-mono border border-amber-200 bg-amber-50 text-amber-800 rounded px-1 py-[1px]"
-                title={t}
-              >
-                {TRAIT_ABBR[t] ?? t.slice(0, 3).toUpperCase()}
-              </span>
-            ))}
-            {row.traits.length > 5 && (
-              <span className="text-[10px] text-gray-400">+{row.traits.length - 5}</span>
-            )}
-            {row.bestTraitP !== undefined && (
-              <span className="text-[10px] text-gray-500 tabular-nums">
-                p={row.bestTraitP < 1e-4 ? row.bestTraitP.toExponential(1) : row.bestTraitP.toFixed(3)}
-              </span>
-            )}
-          </span>
-        ) : (
-          <span className="text-[10px] text-gray-400">—</span>
-        )}
-      </td>
-    </tr>
+      {PRESET_LABELS[id]}
+    </button>
   );
 }

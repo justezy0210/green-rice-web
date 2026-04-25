@@ -116,6 +116,22 @@ Run the new script against the current `v{of} + gm{gm} + svReleaseId` tuple. Upl
 - [ ] Tooltip text passes exclusion-list review (no "validated" / "causal" / "LoF" / "driver")
 - [ ] Edge-case fixture passes: gene-engulfing DEL → badge; SV at exon boundary with VCF anchor-only overlap → no badge; alternative-isoform-only SV → no badge (acknowledged false negative)
 
-## Result (fill on completion)
-- Status: TBD
-- Notes: TBD
+## Result (2026-04-25)
+- **Status**: DONE
+- **Frontend**: `SvOverlapBadge` wired into `GeneSearchPage` via split-out `GeneSearchResultList` (kept page under 300-line soft cap). `useGeneSvIndex` loads once per `(of, svRelease)` tuple.
+- **Python builder** (`scripts/build-gene-sv-index.py`): 11/11 edge-case fixtures pass (`scripts/tests/test_build_gene_sv_index.py`). Verified rules:
+  - INS/COMPLEX: strip VCF left-anchor (footprint `[pos+1, pos+max(refLen,1)]`)
+  - DEL: sample-frame breakpoint ±5 bp tolerance
+  - Strong tier = CDS or canonical splice ±2 bp
+  - Locus dedup in 100-bp buckets; multi-type aggregation
+- **Index build output** (sv_v1 / of6):
+  - 18,822 canonical events · 85,399 per-cultivar coord rows · 513,658 genes scanned (11.4 s)
+  - Strong tier: **8,195 genes** (1.6 %); weak-only: **34,030 genes** (6.6 %)
+  - Bundle size: **raw 2,105 KB → gzip 146 KB** (well under estimate)
+  - Types-per-gene distribution (strong): I only 4,462 / D only 1,024 / C only 2,466 / mixed 0 — mixed types rare in this release
+- **Storage**: `gene_sv_index/**` public-read rules deployed (`firebase deploy --only storage`); bundle uploaded to `gene_sv_index/v6_rsv_v1/index.json`, public URL 200 verified.
+- **Deferred**: carrier count (`c`) — requires OG → cross-cultivar gene join, stays 0 in v1.
+- **Known limitations documented in tooltip / docstring**:
+  - Representative transcript only — isoform-only effects produce false positives/negatives
+  - `svType` chip suppressed (multi-allelic carriers could be mistyped — canonical records ALT0 type only)
+  - Framing is strictly observational ("not validation-grade"); no functional-impact claim surface
