@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { uploadOrthofinderFiles, type UploadProgress } from '@/lib/orthofinder-service';
 import { useOrthofinderStatus } from '@/hooks/useOrthofinderStatus';
 import { useAdminClaim } from '@/hooks/useAdminClaim';
+import { Button } from '@/components/ui/button';
 
 export function OrthofinderUploadPanel() {
   const { isAdmin, loading: claimLoading } = useAdminClaim();
@@ -97,13 +98,9 @@ export function OrthofinderUploadPanel() {
 
       {error && <p className="text-xs text-red-600">{error}</p>}
 
-      <button
-        onClick={handleUpload}
-        disabled={!canUpload}
-        className="px-4 py-2 text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed"
-      >
+      <Button size="lg" onClick={handleUpload} disabled={!canUpload}>
         {busy ? 'Processing…' : 'Upload & Compute'}
-      </button>
+      </Button>
     </div>
   );
 }
@@ -129,6 +126,7 @@ function FileInput({
           </span>
         )}
       </div>
+      {/* raw: file input with file:* pseudo-classes — see GenomeUploadPanel comment. */}
       <input
         type="file"
         accept=".tsv"

@@ -151,6 +151,44 @@ For each, log keyboard tab order + visible focus + no hydration warnings in cons
 - [ ] No new ARIA / hydration / nested-anchor warnings in console
 - [ ] Phase deliverables block (raw count delta, exceptions, touched files) appended to plan
 
+## Phase 2 — auth/admin/header (2026-04-25)
+
+### Surfaces touched
+- `src/components/layout/Header.tsx` — Sign Out / Login → `Button` (Login uses `render={<Link to="/login" />}` for navigation)
+- `src/pages/LoginPage.tsx` — submit + mode-switch + Google sign-in buttons → `Button`. Inputs were already shadcn `Input`
+- `src/pages/AdminPage.tsx` — `+ Add Cultivar` → `Button`
+- `src/components/admin/CultivarTable.tsx` — full migration to `Table / TableHeader / TableBody / TableRow / TableHead / TableCell`. Edit/Delete row actions → `Button` (`size="xs"`, custom green tone for Edit; `variant="destructive"` for Delete). Validates default-density `Table` on a small admin surface.
+- `src/components/admin/CultivarForm.tsx` — text/number inputs → `Input`; submit + cancel + `NumInput` → `Button` / `Input`
+- `src/components/admin/GenomeUploadPanel.tsx` — Upload button → `Button`
+- `src/components/admin/OrthofinderUploadPanel.tsx` — Upload & Compute → `Button`
+
+### Raw count delta
+| | before | after | delta |
+|---|---|---|---|
+| `<button>` | 51 | 40 | **−11** |
+| `<table>` | 14 | 13 | **−1** |
+| `<input>` | 15 | 12 | **−3** |
+| `<select>` | 2 | 2 | 0 |
+| button-styled `<Link>` | 17 | 16 | **−1** (Header Login → `Button render={<Link/>}`) |
+
+### Allowed-raw exceptions (new this phase)
+- `CultivarForm.tsx:131` — `<input type="checkbox">` BLB resistance toggles. Reason: shadcn `Checkbox` primitive not installed; defer to Phase 5 if user opts to add it. `// raw: shadcn Checkbox primitive not installed (Phase 5 follow-up).`
+- `GenomeUploadPanel.tsx:64` — `<input type="file">` with `file:*` pseudo-class styling. shadcn `Input` would conflict with the file picker. `// raw: file input with file:* pseudo-classes — shadcn Input would fight the file picker styling; kept raw on purpose.`
+- `OrthofinderUploadPanel.tsx:129` — same file-input rationale.
+
+### QA matrix run (manual)
+| Route | Auth | Key check | Pass |
+|---|---|---|---|
+| `/login` | guest | submit + Google + mode switch + Input focus ring | TBD (smoke locally) |
+| `/admin` | admin | + Add Cultivar opens form, Edit/Delete buttons, table renders all 11 cultivars | TBD |
+| `/admin` (form) | admin | text + number Inputs accept input, BLB checkbox still works, Cancel/Save buttons | TBD |
+| Header (any route) | logged-in | Sign Out button visible, click signs out | TBD |
+| Header (any route) | guest | Login button visible, click → /login | TBD |
+
+### Verification
+- `npm run check:all` ✓
+- `npm run build` ✓ (389 ms)
+
 ## Phase 1 — API decisions (2026-04-25)
 
 ### Button — Link integration

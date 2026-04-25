@@ -1,6 +1,7 @@
 import { useGenomeUpload, } from '@/hooks/useGenomeUpload';
 import type { GenomeFileType } from '@/lib/genome-upload-service';
 import type { GenomeSummary } from '@/types/genome';
+import { Button } from '@/components/ui/button';
 
 const FILE_LABELS: Record<GenomeFileType, { label: string; accept: string }> = {
   genomeFasta: { label: 'Genome FASTA', accept: '.fasta,.fa,.fna' },
@@ -60,6 +61,8 @@ export function GenomeUploadPanel({ cultivarId, genomeSummary }: Props) {
                 </p>
               )}
 
+              {/* raw: file input with file:* pseudo-classes — shadcn Input would
+                  fight the file picker styling; kept raw on purpose. */}
               <input
                 type="file"
                 accept={accept}
@@ -84,13 +87,9 @@ export function GenomeUploadPanel({ cultivarId, genomeSummary }: Props) {
         })}
       </div>
 
-      <button
-        onClick={uploadAll}
-        disabled={uploading || !hasFiles}
-        className="px-4 py-2 text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed"
-      >
+      <Button size="lg" onClick={uploadAll} disabled={uploading || !hasFiles}>
         {uploading ? 'Uploading...' : 'Upload Selected Files'}
-      </button>
+      </Button>
     </div>
   );
 }

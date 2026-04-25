@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import type { CultivarForm as CultivarFormType } from '@/types/cultivar';
 import { emptyCultivarForm } from '@/lib/cultivar-helpers';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 
 interface Props {
   initial?: CultivarFormType;
@@ -67,8 +69,8 @@ export function CultivarForm({ initial, isEdit, onSubmit, onCancel }: Props) {
         <div className="grid grid-cols-2 gap-4">
           <div>
             <label className="block text-sm font-medium text-gray-700">Cultivar Name</label>
-            <input
-              className="mt-1 w-full rounded border border-gray-300 px-3 py-1.5 text-sm focus:border-green-500 focus:ring-1 focus:ring-green-500 disabled:bg-gray-100"
+            <Input
+              className="mt-1"
               value={form.name}
               onChange={(e) => setForm((p) => ({ ...p, name: e.target.value }))}
               disabled={isEdit}
@@ -77,8 +79,8 @@ export function CultivarForm({ initial, isEdit, onSubmit, onCancel }: Props) {
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700">Cross Information</label>
-            <input
-              className="mt-1 w-full rounded border border-gray-300 px-3 py-1.5 text-sm focus:border-green-500 focus:ring-1 focus:ring-green-500"
+            <Input
+              className="mt-1"
               value={form.crossInformation}
               onChange={(e) => setForm((p) => ({ ...p, crossInformation: e.target.value }))}
               placeholder="e.g. Koshihikari mutant(EMS)"
@@ -126,6 +128,7 @@ export function CultivarForm({ initial, isEdit, onSubmit, onCancel }: Props) {
         <div className="flex gap-6">
           {(['k1', 'k2', 'k3', 'k3a'] as const).map((k) => (
             <label key={k} className="flex items-center gap-1.5 text-sm">
+              {/* raw: shadcn Checkbox primitive not installed (Phase 5 follow-up). */}
               <input
                 type="checkbox"
                 checked={form.resistance.bacterialLeafBlight[k] ?? false}
@@ -140,20 +143,12 @@ export function CultivarForm({ initial, isEdit, onSubmit, onCancel }: Props) {
 
       {/* Actions */}
       <div className="flex gap-3 pt-2">
-        <button
-          type="submit"
-          disabled={submitting}
-          className="px-4 py-2 text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700 disabled:opacity-50"
-        >
+        <Button type="submit" size="lg" disabled={submitting}>
           {submitting ? 'Saving…' : isEdit ? 'Update' : 'Add'}
-        </button>
-        <button
-          type="button"
-          onClick={onCancel}
-          className="px-4 py-2 text-sm font-medium rounded-md border border-gray-300 text-gray-700 hover:bg-gray-50"
-        >
+        </Button>
+        <Button type="button" variant="outline" size="lg" onClick={onCancel}>
           Cancel
-        </button>
+        </Button>
       </div>
     </form>
   );
@@ -180,10 +175,9 @@ function NumInput({
   return (
     <div>
       <label className="block text-xs text-gray-600 mb-1">{label}</label>
-      <input
+      <Input
         type="number"
         step="any"
-        className="w-full rounded border border-gray-300 px-3 py-1.5 text-sm focus:border-green-500 focus:ring-1 focus:ring-green-500"
         value={value ?? ''}
         onChange={(e) => onChange(e.target.value)}
       />

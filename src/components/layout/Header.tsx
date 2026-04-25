@@ -6,6 +6,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { useAuthContext } from '@/context/AuthContext';
 import { useAdminClaim } from '@/hooks/useAdminClaim';
@@ -107,19 +108,13 @@ export function Header() {
             </Link>
           )}
           {user ? (
-            <button
-              onClick={() => signOut()}
-              className="ml-4 px-3 py-1.5 rounded-md text-sm font-medium text-white bg-green-600 hover:bg-green-700 transition-colors"
-            >
+            <Button onClick={() => signOut()} className="ml-4">
               Sign Out
-            </button>
+            </Button>
           ) : (
-            <Link
-              to="/login"
-              className="ml-4 px-3 py-1.5 rounded-md text-sm font-medium text-white bg-green-600 hover:bg-green-700 transition-colors"
-            >
+            <Button render={<Link to="/login" />} className="ml-4">
               Login
-            </Link>
+            </Button>
           )}
         </nav>
       </div>
