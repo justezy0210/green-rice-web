@@ -1,20 +1,39 @@
 import { Link, useLocation } from 'react-router-dom';
+import { ChevronDown } from 'lucide-react';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { cn } from '@/lib/utils';
 import { useAuthContext } from '@/context/AuthContext';
 import { useAdminClaim } from '@/hooks/useAdminClaim';
 
-const NAV_ITEMS = [
-  { path: '/', label: 'Overview' },
-  { path: '/cultivars', label: 'Cultivars' },
-  { path: '/genes', label: 'Genes' },
-  { path: '/analysis', label: 'Analysis' },
-  { path: '/download', label: 'Downloads' },
+interface BrowseItem {
+  path: string;
+  label: string;
+  hint: string;
+}
+
+const BROWSE_ITEMS: BrowseItem[] = [
+  { path: '/cultivars', label: 'Cultivars', hint: 'Per-cultivar assembly + phenotype' },
+  { path: '/genes', label: 'Genes', hint: 'Gene id, Pfam / InterPro / GO, product' },
+  { path: '/og', label: 'Orthogroups', hint: 'Conservation tier, function, OG inventory' },
 ];
+
+const navLinkClass = (active: boolean) =>
+  cn(
+    'px-3 py-1.5 rounded-md text-sm font-medium transition-colors',
+    active ? 'bg-green-50 text-green-700' : 'text-gray-600 hover:bg-gray-100',
+  );
 
 export function Header() {
   const { pathname } = useLocation();
   const { user, signOut } = useAuthContext();
   const { isAdmin } = useAdminClaim();
+
+  const browseActive = BROWSE_ITEMS.some((it) => pathname.startsWith(it.path));
 
   return (
     <header className="bg-white sticky top-0 z-10 shadow-sm">
@@ -34,30 +53,56 @@ export function Header() {
         </Link>
 
         <nav className="flex items-center gap-1">
-          {NAV_ITEMS.map((item) => (
-            <Link
-              key={item.path}
-              to={item.path}
-              className={cn(
-                'px-3 py-1.5 rounded-md text-sm font-medium transition-colors',
-                pathname === item.path
-                  ? 'bg-green-50 text-green-700'
-                  : 'text-gray-600 hover:bg-gray-100'
-              )}
+          <Link to="/" className={navLinkClass(pathname === '/')}>
+            Overview
+          </Link>
+
+          <DropdownMenu>
+            <DropdownMenuTrigger
+              render={
+                <button
+                  type="button"
+                  className={cn(
+                    navLinkClass(browseActive),
+                    'inline-flex items-center gap-1',
+                  )}
+                />
+              }
             >
-              {item.label}
-            </Link>
-          ))}
+              Browse
+              <ChevronDown className="size-3.5" aria-hidden />
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-64">
+              {BROWSE_ITEMS.map((item) => {
+                const active = pathname.startsWith(item.path);
+                return (
+                  <DropdownMenuItem
+                    key={item.path}
+                    render={<Link to={item.path} />}
+                    className={cn(
+                      'flex flex-col items-start gap-0.5 py-2 px-2.5',
+                      active && 'bg-green-50 text-green-700 focus:bg-green-50',
+                    )}
+                  >
+                    <span className="font-medium text-sm">{item.label}</span>
+                    <span className="text-[11px] text-gray-500 leading-snug">
+                      {item.hint}
+                    </span>
+                  </DropdownMenuItem>
+                );
+              })}
+            </DropdownMenuContent>
+          </DropdownMenu>
+
+          <Link to="/analysis" className={navLinkClass(pathname.startsWith('/analysis'))}>
+            Analysis
+          </Link>
+          <Link to="/download" className={navLinkClass(pathname === '/download')}>
+            Downloads
+          </Link>
+
           {isAdmin && (
-            <Link
-              to="/admin"
-              className={cn(
-                'px-3 py-1.5 rounded-md text-sm font-medium transition-colors',
-                pathname === '/admin'
-                  ? 'bg-green-50 text-green-700'
-                  : 'text-gray-600 hover:bg-gray-100'
-              )}
-            >
+            <Link to="/admin" className={navLinkClass(pathname === '/admin')}>
               Admin
             </Link>
           )}
