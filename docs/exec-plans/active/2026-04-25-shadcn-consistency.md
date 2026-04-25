@@ -151,6 +151,44 @@ For each, log keyboard tab order + visible focus + no hydration warnings in cons
 - [ ] No new ARIA / hydration / nested-anchor warnings in console
 - [ ] Phase deliverables block (raw count delta, exceptions, touched files) appended to plan
 
+## Phase 4 — analysis tables (2026-04-25)
+
+### Surfaces touched
+- `src/components/explore/OrthogroupDiffRow.tsx` — emits `TableRow / TableCell`; OG selector → `Button variant="link" size="xs"`
+- `src/components/explore/OrthogroupDiffTable.tsx` — search → `Input`; result table → `Table density="dense"` with shadcn `TableHeader / TableBody / TableHead / TableRow`. SortButton extracted to its own file (`OrthogroupDiffSortButton.tsx`) using `Button variant="secondary|outline" size="xs"` so the page stays under the 300-line cap (final 280 lines). Inline `✕` clear glyphs (search + category) kept raw with `// raw:` annotation
+- `src/components/explore/OrthogroupDiffSortButton.tsx` (new) — `Button`-based sort toggle, replaces in-file SortButton helper
+- `src/components/analysis/BlockCandidateTable.tsx` — full migration to dense `Table`; candidateType pill → `Badge variant="secondary"`
+- `src/components/analysis/CrossTraitBlockCompare.tsx` — outer table + Row → dense `Table` / `TableRow / TableCell`. Top-OG indigo chips kept inline (per-row dense list, fits the table)
+- `src/components/explore/OgDrawerAlleleFreqSection.tsx` — table + VariantRow → dense `Table`; event-class pill → `Badge variant="outline"` with class-based tone
+- `src/pages/AnalysisBlockListPage.tsx` — min-OG-count `<input>` → `Input`; FilterChips toggles → `Button variant="secondary|outline" size="xs"`; main blocks table → dense `Table`
+
+### Raw count delta
+| | Phase 3 end | Phase 4 end | delta |
+|---|---|---|---|
+| `<button>` | 34 | 31 | **−3** (FilterChips, SortButton, OG row link) |
+| `<table>` | 10 | 5 | **−5** (OrthogroupDiffTable, BlockCandidateTable, CrossTraitBlockCompare, OgDrawerAlleleFreqSection, AnalysisBlockListPage) |
+| `<input>` | 10 | 8 | **−2** (OrthogroupDiffTable search, AnalysisBlockListPage min-count) |
+| `// raw:` annotations | 5 | 7 | +2 (search-clear ✕, category-clear ✕) |
+
+Cumulative from baseline: button 51→31 (−39 %), table 14→5 (−64 %), input 15→8 (−47 %).
+
+### Allowed-raw exceptions (new this phase)
+- `OrthogroupDiffTable.tsx` — two inline `✕` clear glyphs (search field + category filter). Reason: shadcn `Button` is too padded for an inline 1-character glyph adjacent to an Input. `// raw: inline ✕ clear button …`
+
+### QA matrix run (manual smoke target)
+| Route | Key check | Pass |
+|---|---|---|
+| `/analysis/:run/orthogroups` | sort toggle (OrthogroupDiffSortButton), search input + ✕ clear, dense table renders 20 rows, click row → /og/:id?trait | TBD |
+| `/analysis/:run/blocks` | filter chips (Button variants), min-OG-count Input, dense block list, row click → block detail | TBD |
+| `/analysis/:run/candidate/:id` | BlockCandidateTable dense rendering, candidate-type Badge | TBD |
+| `/analysis/:run/block/:id` | CrossTraitBlockCompare dense table | TBD |
+| `/og/:id?trait=…` (drawer) | OgDrawerAlleleFreqSection dense table with AfBar in cells | TBD |
+
+### Verification
+- `npm run check:all` ✓ (lint + tsc + arch + manifest + cross-language + pytest 32/32)
+- `npm run build` ✓
+- File-size cap held: OrthogroupDiffTable 280 / 300
+
 ## Phase 3 — entity browse (2026-04-25)
 
 ### Surfaces touched

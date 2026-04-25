@@ -1,7 +1,16 @@
 import { useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import {
+  Table,
+  TableBody,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
+import { Input } from '@/components/ui/input';
 import { OrthogroupDiffPagination } from './OrthogroupDiffPagination';
 import { OrthogroupDiffRow } from './OrthogroupDiffRow';
+import { OrthogroupDiffSortButton } from './OrthogroupDiffSortButton';
 import {
   categorizeEntry,
   getCategoryById,
@@ -124,14 +133,15 @@ export function OrthogroupDiffTable({
         <div className="flex items-center gap-2 text-xs flex-wrap">
           <label className="flex items-center gap-1.5 flex-1 min-w-[220px]">
             <span className="text-gray-500 shrink-0">Search:</span>
-            <input
+            <Input
               type="search"
               value={query}
               onChange={(e) => onQueryChange(e.target.value)}
               placeholder="OG id, IRGSP transcript, or description…"
-              className="flex-1 border border-gray-200 rounded px-2 py-1 text-xs focus:outline-none focus:ring-2 focus:ring-green-200 focus:border-green-400"
+              className="flex-1"
             />
             {query && (
+              /* raw: inline ✕ clear button — Button primitive is too padded for an inline 1-char glyph next to an Input. */
               <button
                 type="button"
                 onClick={() => onQueryChange('')}
@@ -144,8 +154,8 @@ export function OrthogroupDiffTable({
           </label>
           <div className="flex items-center gap-1">
             <span className="text-gray-500">Sort:</span>
-            <SortButton current={sortKey} value="p" label="p-value" onClick={onSortChange} />
-            <SortButton current={sortKey} value="log2FC" label="|log₂ FC|" onClick={onSortChange} />
+            <OrthogroupDiffSortButton current={sortKey} value="p" label="p-value" onClick={onSortChange} />
+            <OrthogroupDiffSortButton current={sortKey} value="log2FC" label="|log₂ FC|" onClick={onSortChange} />
           </div>
         </div>
 
@@ -154,6 +164,7 @@ export function OrthogroupDiffTable({
             {activeCategoryLabel && (
               <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded border border-green-200 bg-green-50 text-green-800">
                 Category: <strong>{activeCategoryLabel}</strong>
+                {/* raw: inline ✕ — see search-clear above. */}
                 <button
                   type="button"
                   onClick={() => onCategoryChange(null)}
@@ -180,57 +191,55 @@ export function OrthogroupDiffTable({
           <p className="text-sm text-gray-400 py-4 text-center">No candidates passed the filter.</p>
         ) : (
           <>
-            <div className="overflow-x-auto">
-              <table className="w-full text-xs border-collapse">
-                <thead>
-                  <tr className="border-b border-gray-200 text-gray-500">
-                    <th className="text-left py-1.5 pr-3 font-medium">Orthogroup</th>
-                    {groupLabels.map((lbl) => (
-                      <th key={lbl} className="text-right py-1.5 px-2 font-medium">
-                        {lbl} mean
-                      </th>
-                    ))}
-                    <th className="text-right py-1.5 px-2 font-medium">Δ mean</th>
-                    <th className="text-right py-1.5 px-2 font-medium">Δ presence</th>
-                    <th
-                      className="text-right py-1.5 px-2 font-medium"
-                      title="Raw two-sided Mann-Whitney U p-value (unadjusted)."
-                    >
-                      p-value
-                    </th>
-                    <th className="text-right py-1.5 px-2 font-medium">log₂ FC</th>
-                    <th
-                      className="text-right py-1.5 px-2 font-medium"
-                      title="Max |ΔAF| — largest allele frequency difference between groups in this OG's IRGSP gene region"
-                    >
-                      ΔAF
-                    </th>
-                    <th
-                      className="text-left py-1.5 pl-2 font-medium"
-                      title={`${IRGSP_DISPLAY_NAME} reference transcript and description`}
-                    >
-                      IRGSP representative*
-                    </th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {pageRows.map((entry) => {
-                    const afOg = alleleFreq?.ogs[entry.orthogroup];
-                    const maxDaf = afOg?.variants?.[0]?.deltaAf ?? null;
-                    return (
-                      <OrthogroupDiffRow
-                        key={entry.orthogroup}
-                        entry={entry}
-                        groupLabels={groupLabels}
-                        hasAf={!!afOg}
-                        maxDeltaAf={maxDaf}
-                        onSelectOg={onSelectOg}
-                      />
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
+            <Table density="dense" className="text-xs">
+              <TableHeader>
+                <TableRow className="text-gray-500">
+                  <TableHead className="pr-3">Orthogroup</TableHead>
+                  {groupLabels.map((lbl) => (
+                    <TableHead key={lbl} className="text-right px-2">
+                      {lbl} mean
+                    </TableHead>
+                  ))}
+                  <TableHead className="text-right px-2">Δ mean</TableHead>
+                  <TableHead className="text-right px-2">Δ presence</TableHead>
+                  <TableHead
+                    className="text-right px-2"
+                    title="Raw two-sided Mann-Whitney U p-value (unadjusted)."
+                  >
+                    p-value
+                  </TableHead>
+                  <TableHead className="text-right px-2">log₂ FC</TableHead>
+                  <TableHead
+                    className="text-right px-2"
+                    title="Max |ΔAF| — largest allele frequency difference between groups in this OG's IRGSP gene region"
+                  >
+                    ΔAF
+                  </TableHead>
+                  <TableHead
+                    className="pl-2"
+                    title={`${IRGSP_DISPLAY_NAME} reference transcript and description`}
+                  >
+                    IRGSP representative*
+                  </TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {pageRows.map((entry) => {
+                  const afOg = alleleFreq?.ogs[entry.orthogroup];
+                  const maxDaf = afOg?.variants?.[0]?.deltaAf ?? null;
+                  return (
+                    <OrthogroupDiffRow
+                      key={entry.orthogroup}
+                      entry={entry}
+                      groupLabels={groupLabels}
+                      hasAf={!!afOg}
+                      maxDeltaAf={maxDaf}
+                      onSelectOg={onSelectOg}
+                    />
+                  );
+                })}
+              </TableBody>
+            </Table>
 
             <OrthogroupDiffPagination
               page={page}
@@ -246,34 +255,6 @@ export function OrthogroupDiffTable({
         </p>
       </CardContent>
     </Card>
-  );
-}
-
-function SortButton({
-  current,
-  value,
-  label,
-  onClick,
-}: {
-  current: DiffSortKey;
-  value: DiffSortKey;
-  label: string;
-  onClick: (k: DiffSortKey) => void;
-}) {
-  const active = current === value;
-  return (
-    <button
-      type="button"
-      onClick={() => onClick(value)}
-      aria-pressed={active}
-      className={`px-2 py-0.5 rounded border ${
-        active
-          ? 'bg-gray-900 text-white border-gray-900'
-          : 'bg-white text-gray-700 border-gray-200 hover:bg-gray-50'
-      }`}
-    >
-      {label}
-    </button>
   );
 }
 

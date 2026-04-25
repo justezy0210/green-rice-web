@@ -1,3 +1,13 @@
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
+import { Badge } from '@/components/ui/badge';
+import { cn } from '@/lib/utils';
 import type { OgVariantSummary } from '@/types/orthogroup';
 import {
   classifyVariant,
@@ -51,23 +61,23 @@ export function OgDrawerAlleleFreqSection({
       {summary.variants.length === 0 ? (
         <p className="text-gray-400 italic">No variants found in this gene region.</p>
       ) : (
-        <div className="overflow-x-auto">
-          <table className="w-full text-[11px] border-collapse">
-            <thead>
-              <tr className="border-b border-gray-200 text-gray-500">
-                <th className="text-left py-1 pr-2 font-medium">Position</th>
-                <th className="text-left py-1 px-1 font-medium">Event</th>
-                <th className="text-left py-1 px-1 font-medium">Ref</th>
-                <th className="text-left py-1 px-1 font-medium">Alt</th>
+        <div>
+          <Table density="dense" className="text-[11px]">
+            <TableHeader>
+              <TableRow className="text-gray-500">
+                <TableHead className="pr-2">Position</TableHead>
+                <TableHead className="px-1">Event</TableHead>
+                <TableHead className="px-1">Ref</TableHead>
+                <TableHead className="px-1">Alt</TableHead>
                 {groupLabels.map((lbl) => (
-                  <th key={lbl} className="text-right py-1 px-1 font-medium">
+                  <TableHead key={lbl} className="px-1 text-right">
                     {lbl} AF
-                  </th>
+                  </TableHead>
                 ))}
-                <th className="text-right py-1 pl-1 font-medium">ΔAF</th>
-              </tr>
-            </thead>
-            <tbody>
+                <TableHead className="pl-1 text-right">ΔAF</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
               {summary.variants.slice(0, 30).map((v, i) => (
                 <VariantRow
                   key={`${v.chr}-${v.pos}-${i}`}
@@ -76,8 +86,8 @@ export function OgDrawerAlleleFreqSection({
                   groupColorMap={groupColorMap}
                 />
               ))}
-            </tbody>
-          </table>
+            </TableBody>
+          </Table>
           {summary.variants.length > 30 && (
             <p className="text-[10px] text-gray-400 mt-1">
               Showing the first 30 rows in genomic order. Use for local context; not a ranked list.
@@ -101,18 +111,19 @@ function VariantRow({
   const evtClass = classifyVariant(variant.ref, variant.alt);
   const showLen = shouldShowLength(variant.ref, variant.alt);
   return (
-    <tr className="border-b border-gray-50">
-      <td className="py-1 pr-2 font-mono text-gray-700 whitespace-nowrap">
+    <TableRow>
+      <TableCell className="pr-2 font-mono text-gray-700 whitespace-nowrap">
         {variant.chr}:{variant.pos.toLocaleString()}
-      </td>
-      <td className="py-1 px-1 whitespace-nowrap">
-        <span
-          className={`inline-block text-[10px] px-1.5 py-0.5 rounded border ${eventClassBadgeClass(evtClass)}`}
+      </TableCell>
+      <TableCell className="px-1 whitespace-nowrap">
+        <Badge
+          variant="outline"
+          className={cn('text-[10px] px-1.5 py-0.5 rounded border h-auto', eventClassBadgeClass(evtClass))}
         >
           {evtClass}
-        </span>
-      </td>
-      <td className="py-1 px-1 font-mono text-gray-500 max-w-[80px]">
+        </Badge>
+      </TableCell>
+      <TableCell className="px-1 font-mono text-gray-500 max-w-[80px]">
         <span className="truncate inline-block max-w-full align-bottom">
           {variant.ref.length > 8 ? `${variant.ref.slice(0, 8)}…` : variant.ref}
         </span>
@@ -121,8 +132,8 @@ function VariantRow({
             ({variant.ref.length}bp)
           </span>
         )}
-      </td>
-      <td className="py-1 px-1 font-mono text-gray-500 max-w-[80px]">
+      </TableCell>
+      <TableCell className="px-1 font-mono text-gray-500 max-w-[80px]">
         <span className="truncate inline-block max-w-full align-bottom">
           {variant.alt.length > 8 ? `${variant.alt.slice(0, 8)}…` : variant.alt}
         </span>
@@ -131,20 +142,20 @@ function VariantRow({
             ({variant.alt.length}bp)
           </span>
         )}
-      </td>
+      </TableCell>
       {groupLabels.map((lbl) => {
         const af = variant.afByGroup[lbl] ?? 0;
         const color = groupColorMap[lbl];
         return (
-          <td key={lbl} className="py-1 px-1 text-right tabular-nums">
+          <TableCell key={lbl} className="px-1 text-right tabular-nums">
             <AfBar af={af} color={color?.border ?? '#9ca3af'} />
-          </td>
+          </TableCell>
         );
       })}
-      <td className="py-1 pl-1 text-right tabular-nums text-gray-500">
+      <TableCell className="pl-1 text-right tabular-nums text-gray-500">
         {variant.deltaAf.toFixed(2)}
-      </td>
-    </tr>
+      </TableCell>
+    </TableRow>
   );
 }
 

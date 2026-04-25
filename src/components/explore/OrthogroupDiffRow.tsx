@@ -1,3 +1,5 @@
+import { TableCell, TableRow } from '@/components/ui/table';
+import { Button } from '@/components/ui/button';
 import { IRGSP_DISPLAY_NAME } from '@/lib/irgsp-constants';
 import type { OrthogroupDiffEntry } from '@/types/orthogroup';
 
@@ -16,17 +18,19 @@ export function OrthogroupDiffRow({ entry, groupLabels, hasAf, maxDeltaAf, onSel
   const pStrong = hasP && entry.pValue < 0.01;
 
   return (
-    <tr className="border-b border-gray-100 hover:bg-gray-50">
-      <td className="py-1 pr-3 font-mono text-gray-900">
+    <TableRow className="hover:bg-gray-50">
+      <TableCell className="pr-3 font-mono text-gray-900">
         <div className="flex items-center gap-1">
           {onSelectOg ? (
-            <button
+            <Button
               type="button"
+              variant="link"
+              size="xs"
               onClick={() => onSelectOg(entry.orthogroup)}
-              className="text-left font-mono text-gray-900 hover:text-green-700 hover:underline focus:outline-none focus:ring-2 focus:ring-green-200 rounded px-1 -mx-1"
+              className="font-mono text-gray-900 hover:text-green-700 px-1 h-auto"
             >
               {entry.orthogroup}
-            </button>
+            </Button>
           ) : (
             entry.orthogroup
           )}
@@ -34,28 +38,28 @@ export function OrthogroupDiffRow({ entry, groupLabels, hasAf, maxDeltaAf, onSel
             <span className="text-[9px] text-teal-600" title="Gene-region variant data available">AF</span>
           )}
         </div>
-      </td>
+      </TableCell>
       {groupLabels.map((lbl) => (
-        <td key={lbl} className="py-1 px-2 text-right tabular-nums text-gray-700">
+        <TableCell key={lbl} className="px-2 text-right tabular-nums text-gray-700">
           {(entry.meansByGroup[lbl] ?? 0).toFixed(2)}
-        </td>
+        </TableCell>
       ))}
-      <td className="py-1 px-2 text-right tabular-nums font-medium text-gray-900">
+      <TableCell className="px-2 text-right tabular-nums font-medium text-gray-900">
         {entry.meanDiff.toFixed(2)}
-      </td>
-      <td className="py-1 px-2 text-right tabular-nums text-gray-600">
+      </TableCell>
+      <TableCell className="px-2 text-right tabular-nums text-gray-600">
         {(entry.presenceDiff * 100).toFixed(0)}%
-      </td>
-      <td className={`py-1 px-2 text-right tabular-nums ${pStrong ? 'font-semibold text-gray-900' : 'text-gray-700'}`}>
+      </TableCell>
+      <TableCell className={`px-2 text-right tabular-nums ${pStrong ? 'font-semibold text-gray-900' : 'text-gray-700'}`}>
         {hasP ? formatP(entry.pValue) : '—'}
-      </td>
-      <td className="py-1 px-2 text-right tabular-nums text-gray-600">
+      </TableCell>
+      <TableCell className="px-2 text-right tabular-nums text-gray-600">
         {entry.log2FoldChange === null ? '—' : entry.log2FoldChange.toFixed(2)}
-      </td>
-      <td className="py-1 px-2 text-right tabular-nums text-gray-600">
+      </TableCell>
+      <TableCell className="px-2 text-right tabular-nums text-gray-600">
         {maxDeltaAf != null ? maxDeltaAf.toFixed(2) : '—'}
-      </td>
-      <td className="py-1 pl-2 text-gray-600 max-w-xs truncate">
+      </TableCell>
+      <TableCell className="pl-2 text-gray-600 max-w-xs truncate">
         {rep && primary ? (
           <span title={formatRepresentativeTooltip(rep)}>
             <span className="text-gray-400 font-mono text-[10px] mr-1">
@@ -66,8 +70,8 @@ export function OrthogroupDiffRow({ entry, groupLabels, hasAf, maxDeltaAf, onSel
         ) : (
           <span className="text-gray-300">—</span>
         )}
-      </td>
-    </tr>
+      </TableCell>
+    </TableRow>
   );
 }
 

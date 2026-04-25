@@ -1,4 +1,12 @@
 import { Link } from 'react-router-dom';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
 import { TRAITS } from '@/config/traits';
 import type { CandidateBlock } from '@/types/candidate-block';
 
@@ -49,38 +57,36 @@ export function CrossTraitBlockCompare({ blocks, activeTraitId }: Props) {
   });
 
   return (
-    <div className="overflow-x-auto">
-      <table className="w-full text-sm table-fixed">
-        <colgroup>
-          <col className="w-36" />
-          <col className="w-24" />
-          <col className="w-20" />
-          <col className="w-20" />
-          <col />
-          <col className="w-20" />
-        </colgroup>
-        <thead>
-          <tr className="text-[10px] uppercase tracking-wide text-gray-500 border-b border-gray-200">
-            <th className="text-left pl-3 pr-2 py-1.5">Trait</th>
-            <th className="text-left px-3 py-1.5">Groups</th>
-            <th className="text-right px-3 py-1.5">Candidates</th>
-            <th className="text-right px-3 py-1.5">Intersections</th>
-            <th className="text-left px-3 py-1.5">Top OGs</th>
-            <th className="text-left pl-3 pr-4 py-1.5">Block</th>
-          </tr>
-        </thead>
-        <tbody>
-          {rows.map((b) => (
-            <Row
-              key={`${b.runId}:${b.blockId}`}
-              block={b}
-              label={traitLabels.get(b.traitId) ?? b.traitId}
-              active={b.traitId === activeTraitId}
-            />
-          ))}
-        </tbody>
-      </table>
-    </div>
+    <Table density="dense" className="table-fixed">
+      <colgroup>
+        <col className="w-36" />
+        <col className="w-24" />
+        <col className="w-20" />
+        <col className="w-20" />
+        <col />
+        <col className="w-20" />
+      </colgroup>
+      <TableHeader>
+        <TableRow className="text-[10px] uppercase tracking-wide text-gray-500">
+          <TableHead className="pl-3">Trait</TableHead>
+          <TableHead className="px-3">Groups</TableHead>
+          <TableHead className="px-3 text-right">Candidates</TableHead>
+          <TableHead className="px-3 text-right">Intersections</TableHead>
+          <TableHead className="px-3">Top OGs</TableHead>
+          <TableHead className="pl-3 pr-4">Block</TableHead>
+        </TableRow>
+      </TableHeader>
+      <TableBody>
+        {rows.map((b) => (
+          <Row
+            key={`${b.runId}:${b.blockId}`}
+            block={b}
+            label={traitLabels.get(b.traitId) ?? b.traitId}
+            active={b.traitId === activeTraitId}
+          />
+        ))}
+      </TableBody>
+    </Table>
   );
 }
 
@@ -97,30 +103,27 @@ function Row({
   const nLow = block.groupCounts[low] ?? 0;
   const nHigh = block.groupCounts[high] ?? 0;
   const topOgs = block.topOgIds.slice(0, 4);
-  const rowClass = active
-    ? 'border-b border-gray-100 bg-green-50'
-    : 'border-b border-gray-100 hover:bg-gray-50';
   return (
-    <tr className={rowClass}>
-      <td className="pl-3 pr-2 py-1.5">
+    <TableRow className={active ? 'bg-green-50' : 'hover:bg-gray-50'}>
+      <TableCell className="pl-3">
         <span className="text-[13px] text-gray-800">{label}</span>
         {block.curated && (
           <span className="ml-1.5 text-[9px] uppercase tracking-wide text-amber-800 bg-amber-50 border border-amber-200 rounded px-1 py-[1px]">
             curated
           </span>
         )}
-      </td>
-      <td className="px-3 py-1.5 text-[11px] text-gray-600 tabular-nums">
+      </TableCell>
+      <TableCell className="px-3 text-[11px] text-gray-600 tabular-nums">
         <span className="font-mono">{low}</span> {nLow} ·{' '}
         <span className="font-mono">{high}</span> {nHigh}
-      </td>
-      <td className="px-3 py-1.5 text-right tabular-nums text-gray-800">
+      </TableCell>
+      <TableCell className="px-3 text-right tabular-nums text-gray-800">
         {block.candidateOgCount}
-      </td>
-      <td className="px-3 py-1.5 text-right tabular-nums text-gray-800">
+      </TableCell>
+      <TableCell className="px-3 text-right tabular-nums text-gray-800">
         {block.intersectionCount}
-      </td>
-      <td className="px-3 py-1.5">
+      </TableCell>
+      <TableCell className="px-3">
         <span className="inline-flex flex-wrap gap-1">
           {topOgs.length === 0 ? (
             <span className="text-[11px] text-gray-400">—</span>
@@ -137,15 +140,15 @@ function Row({
             ))
           )}
         </span>
-      </td>
-      <td className="pl-3 pr-4 py-1.5">
+      </TableCell>
+      <TableCell className="pl-3 pr-4">
         <Link
           to={`/analysis/${block.runId}/block/${encodeURIComponent(block.blockId)}`}
           className="text-[11px] text-green-700 hover:underline"
         >
           Open →
         </Link>
-      </td>
-    </tr>
+      </TableCell>
+    </TableRow>
   );
 }
