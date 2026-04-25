@@ -19,6 +19,15 @@ const badgeVariants = cva(
         ghost:
           "hover:bg-muted hover:text-muted-foreground dark:hover:bg-muted/50",
         link: "text-primary underline-offset-4 hover:underline",
+        // Project-generic semantic variants. Domain palettes (tier
+        // tones, trait-hit, SV evidence) live in dedicated wrappers
+        // under src/components/badges/ — do NOT add domain variants
+        // here, that breaks the single-source-of-truth helpers in
+        // src/lib/og-conservation.ts etc.
+        success:
+          "border-green-200 bg-green-50 text-green-800 [a]:hover:bg-green-100",
+        warning:
+          "border-amber-200 bg-amber-50 text-amber-800 [a]:hover:bg-amber-100",
       },
     },
     defaultVariants: {

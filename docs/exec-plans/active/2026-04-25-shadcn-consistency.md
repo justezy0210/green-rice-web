@@ -151,9 +151,44 @@ For each, log keyboard tab order + visible focus + no hydration warnings in cons
 - [ ] No new ARIA / hydration / nested-anchor warnings in console
 - [ ] Phase deliverables block (raw count delta, exceptions, touched files) appended to plan
 
+## Phase 1 — API decisions (2026-04-25)
+
+### Button — Link integration
+Base UI's `Button` primitive accepts a `render` prop (verified via `node_modules/@base-ui/react/utils/types.d.ts:32`). Pattern for navigation buttons:
+
+```tsx
+<Button render={<Link to="/foo" />}>Label</Button>
+```
+
+`asChild` is NOT exposed by base-ui — `render` is the canonical mechanism. All button-styled `<Link>` migrations use this pattern.
+
+### Badge — generic-only variants
+`src/components/ui/badge.tsx` extended with two project-generic semantic variants:
+- `success` — green (`border-green-200 / bg-green-50 / text-green-800`)
+- `warning` — amber (`border-amber-200 / bg-amber-50 / text-amber-800`)
+
+Pre-existing variants (`default | secondary | destructive | outline | ghost | link`) untouched. **No domain variants** (no `tier-private`, `trait`, `sv` etc.) — those would duplicate the canonical helpers in `src/lib/og-conservation.ts`. Domain palettes live in wrappers, not in the primitive.
+
+### Domain badge wrappers — new files
+- `src/components/badges/TierBadge.tsx` — composes `Badge variant="outline"` with `tierTone()` className. Single tier prop.
+- `src/components/badges/TraitHitBadge.tsx` — composes `Badge variant="warning"` + `render={<Link …>}`. One hit per chip; consumer builds the list. Replaces the loop currently inlined in `TraitHitBadges.tsx`.
+- `src/components/gene/SvOverlapBadge.tsx` — refactor in Phase 3 (currently lives in gene/ and uses raw `<span>`; will move to badges/ + use `Badge variant="warning"` for strong, `variant="outline"` for weak).
+
+### Table — density variant
+`src/components/ui/table.tsx` extended with a `density?: 'default' | 'dense'` prop on `Table`. Sets `data-density` attribute on the inner `<table>`; `TableHead` and `TableCell` react via `in-data-[density=dense]:` Tailwind v4 selectors:
+- `TableHead`: `h-10 → h-7`, adds `py-1`, `whitespace-nowrap → whitespace-normal`
+- `TableCell`: drops `p-2` → `py-1`, `whitespace-nowrap → whitespace-normal`
+
+Verifies on `OrthogroupDiffTable` in Phase 4. If shadcn defaults are good enough for non-dense tables, regular consumers omit the prop.
+
+### Verification
+- `npm run check:all` ✓
+- `npm run build` ✓ (386 ms)
+- No consumer file changes — Phase 2+ migrate consumers.
+
 ## Result (fill on completion)
 - Status: TBD
-- Phases done: TBD
+- Phases done: 0 (DropdownMenu baseline) · 1 (API design) — see commit history
 - Final raw counts (button / table / pill / input / select / button-styled-Link): TBD
 - Allowed-raw exceptions (final list): TBD
 - Notes: TBD

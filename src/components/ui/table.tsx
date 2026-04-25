@@ -2,7 +2,20 @@ import * as React from "react"
 
 import { cn } from "@/lib/utils"
 
-function Table({ className, ...props }: React.ComponentProps<"table">) {
+type Density = "default" | "dense"
+
+interface TableExtras {
+  /** Row density. `dense` strips the default `h-10` head height,
+   * `whitespace-nowrap`, and reduces cell padding so 11–12 px tables
+   * with `table-fixed` + `colgroup` widths render without distortion. */
+  density?: Density
+}
+
+function Table({
+  className,
+  density = "default",
+  ...props
+}: React.ComponentProps<"table"> & TableExtras) {
   return (
     <div
       data-slot="table-container"
@@ -10,6 +23,7 @@ function Table({ className, ...props }: React.ComponentProps<"table">) {
     >
       <table
         data-slot="table"
+        data-density={density}
         className={cn("w-full caption-bottom text-sm", className)}
         {...props}
       />
@@ -68,7 +82,11 @@ function TableHead({ className, ...props }: React.ComponentProps<"th">) {
     <th
       data-slot="table-head"
       className={cn(
-        "h-10 px-2 text-left align-middle font-medium whitespace-nowrap text-foreground [&:has([role=checkbox])]:pr-0",
+        "h-10 px-2 text-left align-middle font-medium whitespace-nowrap text-foreground",
+        // Dense mode (Table[data-density=dense]) — shrink head height,
+        // tighten padding, allow wrap. Mirrored on TableCell below.
+        "in-data-[density=dense]:h-7 in-data-[density=dense]:py-1 in-data-[density=dense]:whitespace-normal",
+        "[&:has([role=checkbox])]:pr-0",
         className
       )}
       {...props}
@@ -81,7 +99,9 @@ function TableCell({ className, ...props }: React.ComponentProps<"td">) {
     <td
       data-slot="table-cell"
       className={cn(
-        "p-2 align-middle whitespace-nowrap [&:has([role=checkbox])]:pr-0",
+        "p-2 align-middle whitespace-nowrap",
+        "in-data-[density=dense]:py-1 in-data-[density=dense]:whitespace-normal",
+        "[&:has([role=checkbox])]:pr-0",
         className
       )}
       {...props}
