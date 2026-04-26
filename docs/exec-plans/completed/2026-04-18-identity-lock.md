@@ -156,5 +156,8 @@ Active plans that should be kept and annotated as consistent with the new identi
 
 ## Result (when moving to completed/)
 
-- Status:
-- Notes:
+- Status: SUPERSEDED
+- Notes: The original phenotype-driven identity lock was replaced by the
+  2026-04-20 entity-centered scope in `docs/product-specs/scope.md`,
+  `CLAUDE.md`, and `AGENTS.md`. Its useful constraints live on as the current
+  exclusion list, PAV vocabulary, and tier-gating policy.

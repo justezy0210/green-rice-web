@@ -620,3 +620,11 @@ promote, or against the promoted prefix after.
    BED; use it.
 4. Staging cleanup cadence if promote fails repeatedly: leave as-is for
    the first release; revisit if staging prefixes accumulate.
+
+## Result
+
+- Status: DONE
+- Notes: Discovery download generation, verification, promotion, manifest
+  loading, and `/download` UI are present in current code. Follow-up
+  operational concerns should be handled through release runbooks or specific
+  tech-debt entries, not this broad plan.

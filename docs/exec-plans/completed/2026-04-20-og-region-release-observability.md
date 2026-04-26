@@ -179,5 +179,8 @@ python3 scripts/promote-og-region.py scripts/test-fixtures/og-region-broken-stag
 - [ ] 실제 다음 릴리스 promote에서 stdout 포맷이 템플릿과 1:1 매핑되는지 수기 확인
 
 ## Result (completed 이동 시 작성)
-- Status: TBD
-- Notes: TBD
+- Status: DONE
+- Notes: Runtime fetch status handling, standalone smoke coverage,
+  negative-case fixture generation, promote preflight/smoke output, release
+  template fields, and the v6_g4 release note are present. Remaining operator
+  observations should be recorded in future release notes.

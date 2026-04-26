@@ -269,5 +269,8 @@ Graph: 3 distinct patterns · ref-like dominant (10 cultivars)
 - [ ] Complex OG 1개 (graph_error 클러스터 없는 고복잡도) 에서 렌더 성능 확인 (< 500ms)
 
 ## Result (completed 이동 시 작성)
-- Status: TBD
-- Notes: TBD
+- Status: ABANDONED
+- Notes: This design targets the old tube-map renderer assumptions and was not
+  implemented. The current code reads v2 graph/AF bundles and the legacy
+  `og_tubemap` read surface was removed on 2026-04-26. Any future pangenome
+  visualization work needs a fresh v2-first plan.

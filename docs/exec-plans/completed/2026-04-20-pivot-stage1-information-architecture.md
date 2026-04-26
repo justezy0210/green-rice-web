@@ -192,5 +192,7 @@ export function classifyAnchorTier(
 - [ ] scope.md / CLAUDE.md의 Declaration 문장과 Dashboard hero 본문이 의미상 일치
 
 ## Result (completed 이동 시 작성)
-- Status: TBD
-- Notes: TBD
+- Status: DONE
+- Notes: Dashboard/entity framing, Trait Association relabeling, scope strips,
+  and anchor-tier gating are reflected in the current app and product scope.
+  Later analysis-module routing superseded some `/explore` details.

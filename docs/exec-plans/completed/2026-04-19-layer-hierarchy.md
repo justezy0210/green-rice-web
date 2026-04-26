@@ -140,5 +140,8 @@ No new files. No data pipeline changes.
 
 ## Result (fill in when moving to completed/)
 
-- Status:
-- Notes:
+- Status: DONE
+- Notes: Layer hierarchy and supporting-evidence language were absorbed into
+  the entity-centered scope, Explore relabeling, OG detail tier gating, and
+  analysis-module routing. Later pivots superseded the exact file list in this
+  plan, but the intent is implemented.

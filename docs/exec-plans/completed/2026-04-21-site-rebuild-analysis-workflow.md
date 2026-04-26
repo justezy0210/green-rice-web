@@ -350,5 +350,8 @@ Dashboard는 "어디를 탐색하는 곳인가 + 지금 무엇을 분석할 수 
 
 ## Result (completed 이동 시 작성)
 
-- Status: —
-- Notes: —
+- Status: PARTIAL
+- Notes: The analysis module, runId utilities, five-step routes, candidate
+  pages, block pages, entity backlinks, SV/intersection surfaces, and scope.md
+  updates are present. Future-evidence placeholders, full QC policy, and
+  potential `/explore` retirement remain separate follow-up work.

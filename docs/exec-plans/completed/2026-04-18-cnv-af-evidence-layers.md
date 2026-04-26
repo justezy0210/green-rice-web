@@ -152,5 +152,9 @@ Use these exact samples so reviewers agree:
 
 ## Result (fill when moving to completed/)
 
-- Status:
-- Notes:
+- Status: PARTIAL
+- Notes: The current UI has tier-gated anchor-locus AF, cluster status copy,
+  `resolveClusterRegionStatus`, `Layer2CoverageBadge`, and event-class
+  labelling through later OG detail work. The planned dedicated unit tests and
+  fixed manual sample audit were not added as part of this exact plan. Future
+  copy-number evidence work should start from a fresh plan.

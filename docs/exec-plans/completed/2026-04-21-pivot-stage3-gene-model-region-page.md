@@ -283,5 +283,8 @@ match /gene_models/{path=**} {
 - [ ] Gene → Region, Region → Gene, OG → Region 딥링크 작동
 
 ## Result (completed 이동 시 작성)
-- Status: TBD
-- Notes: TBD
+- Status: DONE
+- Notes: Gene model precompute, gene model SVG, gene detail, region page,
+  overlapping genes, region track, conservation summary, and deep links are
+  present in current code. Remaining enhancements such as multi-isoform and
+  repeat tracks belong in future scoped plans.

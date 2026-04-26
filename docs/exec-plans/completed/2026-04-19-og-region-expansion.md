@@ -490,3 +490,11 @@ Codified in acceptance.
 3. Whether AF `variants[]` should be truncated for very rich clusters
    to keep JSON size down. Default: no truncation; revisit if any
    cluster JSON exceeds 1 MB.
+
+## Result
+
+- Status: DONE
+- Notes: The v2 pointer, graph bundle, AF bundle, verifier, promote script,
+  release record, and UI cutover are implemented. The 2026-04-26 cleanup also
+  removed the unused v1 read/upload surfaces. The `og_tubemap` fallback matrix
+  and legacy dual-read notes are historical and no longer active direction.

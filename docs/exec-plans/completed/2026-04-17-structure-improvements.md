@@ -36,3 +36,11 @@ Priority: medium (address when adding synteny pipeline)
 ## 트리거 시점
 - Synteny 파이프라인 추가 시 함께 진행 (HAL extraction + 새 산출물 → run 체계 자연스러운 진입점)
 - 단독으로 하면 기존 코드 대규모 리팩터 필요 → synteny와 묶는 게 효율적
+
+## Result
+
+- Status: SUPERSEDED
+- Notes: This was a medium-term backlog note, not an active implementation
+  plan. The later runId-based analysis module and versioned manifest work
+  addressed the highest-value parts. Remaining items should be tracked as
+  specific tech-debt entries or new active plans when implementation starts.
