@@ -349,9 +349,56 @@ Verifies on `OrthogroupDiffTable` in Phase 4. If shadcn defaults are good enough
 - `npm run build` ✓ (386 ms)
 - No consumer file changes — Phase 2+ migrate consumers.
 
-## Result (fill on completion)
-- Status: TBD
-- Phases done: 0 (DropdownMenu baseline) · 1 (API design) — see commit history
-- Final raw counts (button / table / pill / input / select / button-styled-Link): TBD
-- Allowed-raw exceptions (final list): TBD
-- Notes: TBD
+## Phase 6 — cleanup + final verification (2026-04-26)
+
+### knip pass (final)
+- shadcn `ui/*` primitives in active use: `card` (38), `button`, `badge`, `dropdown-menu`, `select`, `input`, `table` ✓
+- `tabs.tsx`, `separator.tsx`: 0 imports — kept per user's "통일" directive (don't delete unused primitives, just establish consistency for future use)
+- `buttonVariants`, `badgeVariants` exports: shadcn convention (cva variant composition for consumers) — kept
+- All other knip "unused exports" are pre-existing (og-region v1 legacy, dataconnect scaffold, sub-exports of shadcn primitives) — outside this plan's scope, deferred
+- **No new unused exports introduced by Phases 1–5** ✓
+
+### Final verification
+- `npm run check:all` ✓ (lint + tsc + arch + manifest + cross-language + pytest 32/32)
+- `npm run build` ✓ (389 ms)
+- File-size cap held everywhere (highest now `OrthogroupDiffTable.tsx` at 280, `AnalysisStepVariantsPage.tsx` at 209)
+
+## Result (2026-04-26)
+
+- **Status**: DONE
+
+- **Phases done**: 0 (DropdownMenu baseline) → 1 (API design) → 2 (auth/admin/header) → 3 (entity browse) → 4 (analysis tables) → 5 (remaining) → 6 (cleanup)
+
+- **Final raw counts** (vs. baseline):
+  | | Baseline | Final | Delta |
+  |---|---|---|---|
+  | `<button>` | 51 | 20 | **−61 %** |
+  | `<table>` | 14 | **0** | **−100 %** |
+  | `<input>` | 15 | 5 | **−67 %** |
+  | `<select>` | 2 | 2 | 0 (deferred) |
+  | button-styled `<Link>` | 17 | ~16 | partial |
+
+- **Allowed-raw exceptions (final, all annotated `// raw: <reason>`)**: 23 sites across 5 categories
+  1. **Inline ✕/× clear glyph**: OgDrawerHeader, OrthogroupDiffTable (search clear, category clear), DownloadPage (search clear), RegionTrackHeader (focus clear), CultivarDetailPage (oversized ← back glyph)
+  2. **Dense 10–11 px toggle chip**: OgCategoryStrip, OrthogroupIndexPage preset row, RegionTrackHeader scope toggle + zoom levels (1× 2× 4× 8×), PhenotypeDistributionChart trait + season selectors
+  3. **Full-width row-as-button list item**: DashboardPage cultivar suggestion, MiniSearch suggestion, OgFunctionCategoriesChart row, DownloadPage sidebar list, ClusterContextCard cluster selector
+  4. **Disclosure / section toggle**: OgDetailPage `Anchor-locus variants` Hide/Show
+  5. **Specialty inputs without shadcn primitives in this kit**: 1× `<input type="checkbox">` (CultivarForm BLB resistance), 2× `<input type="file">` (GenomeUploadPanel + OrthofinderUploadPanel — `file:*` pseudo-class chrome), 1× `<input type="range">` (AnalysisStepVariantsPage |ΔAF| slider). Phase 6 follow-up: consider adding shadcn `Checkbox`, `Slider` primitives if a future surface needs another.
+
+- **Primitives extended**:
+  - `ui/badge.tsx`: added `success`, `warning` semantic variants
+  - `ui/table.tsx`: added `density?: 'default' | 'dense'` prop with `data-density`-driven Tailwind selectors (`in-data-[density=dense]:`) on TableHead/TableCell
+  - `ui/dropdown-menu.tsx`: added in Phase 0 (Header Browse menu)
+  - `ui/button.tsx`: untouched (existing `xs/sm/default/lg/icon-*` sizes were sufficient)
+
+- **Domain wrappers (new)**:
+  - `components/badges/TierBadge.tsx` — composes `Badge variant="outline"` + `tierTone()` className
+  - `components/badges/TraitHitBadge.tsx` — composes `Badge variant="warning"` + Base UI `render={<Link/>}` for chip-as-anchor
+  - `components/badges/SvOverlapBadge.tsx` — moved from `gene/`; refactored to `Badge variant="warning|outline"`
+
+- **Notes**:
+  - The pill-class grep count (`border-amber-200 bg-amber-50` etc) actually rose 32 → 36 across the migration. Reason: many migrations replaced raw `<span className="...">` with `<Badge className="...">` keeping the same color tokens. The semantic refactor (Badge / domain wrapper vs raw `<span>`) is the truer signal but isn't grep-countable.
+  - Surface-by-surface phasing (Codex's correction to my v1 draft) prevented re-visiting the same files multiple times. Each phase touched a clean cohort.
+  - The `OrthogroupDiffSortButton` and `AnalysisStepSvTable` extractions kept their parent pages under the 300-line cap.
+  - Foreign tone overrides on `Button` / `Badge` (e.g. CultivarTable Edit's green tone, Header's specific green-600 background) are passed via `className` rather than added as variants — keeps the generic primitives generic.
+  - `<select>` migration (2 sites) was deprioritized since shadcn `Select` is more involved than `Input`/`Button` and the existing raw selects are tiny one-offs. Documented as deferred.
