@@ -163,23 +163,6 @@ export interface TubeMapPath {
   visits: TubeMapPathVisit[];
 }
 
-export interface TubeMapAnnotate {
-  count: number;
-  label: string;
-  type: 'reference' | 'haplotype';
-}
-
-export interface OgTubeMapData {
-  ogId: string;
-  region: string;
-  anchorGene: string;
-  schemaVersion: number;
-  nodes: TubeMapNode[];
-  edges: TubeMapEdge[];
-  paths: TubeMapPath[];
-  annotate: Record<string, TubeMapAnnotate>;
-}
-
 // Per-cluster region types live in ./og-region.ts
 export type {
   RegionAnchor,

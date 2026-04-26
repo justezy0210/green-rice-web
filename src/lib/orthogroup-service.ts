@@ -7,10 +7,9 @@ import {
   orthofinderOgMembersPath,
 } from '@/lib/storage-paths';
 import type { OrthogroupDiffDocument, OrthogroupDiffPayload } from '@/types/orthogroup';
-// Region artifacts (gene coords, tube map, AF) live in og-region-service.ts
+// Region-adjacent artifacts (gene coords, AF) live in og-region-service.ts
 export {
   fetchOgGeneCoords,
-  fetchOgTubeMap,
   fetchOgAlleleFreq,
 } from '@/lib/og-region-service';
 import type { TraitId } from '@/types/grouping';

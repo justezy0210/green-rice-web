@@ -1,6 +1,9 @@
 /**
- * Per-cluster region artifacts produced by scripts/batch-region-extract.py.
- * Schema v1.
+ * Compatibility shape consumed by current OG detail UI components.
+ *
+ * Runtime data is loaded from the v2 graph + AF bundles and projected into
+ * this shape by useOgRegion. It is no longer read from versionless v1
+ * `og_region/{og}/{cluster}.json` objects.
  */
 
 import type {

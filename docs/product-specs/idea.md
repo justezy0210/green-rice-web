@@ -64,7 +64,7 @@ Molecular breeder (KASP marker 개발자), GS/MAS 운영자, pangenome 방법론
 | Orthogroups | OrthoFinder | `orthofinder/v{N}/` |
 | Differential | Mann-Whitney U | `orthogroup_diffs/v{N}/g{M}/` |
 | Allele frequency | Cactus pangenome VCF | `og_allele_freq/v{N}/g{M}/` |
-| Per-cluster region | halLiftover + vg chunk | `og_region/{ogId}/{clusterId}.json` |
+| Per-cluster region | halLiftover + vg chunk | `og_region_graph/v{N}_g{M}/`, `og_region_af/v{N}_g{M}/` |
 | Functional annotation | IRGSP GFF + LLM | `og_categories.json` |
 
 ## What this DB CAN answer

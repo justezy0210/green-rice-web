@@ -5,18 +5,19 @@ Batch extraction of per-cluster region data (graph + AF) for candidate OGs.
 Derived from pilot-region-extract.py. Differences:
 - Takes a candidate OG list (TSV from select-candidate-ogs.py) instead of auto-sampling.
 - Iterates ALL clusters per OG (up to --cluster-cap).
-- Writes one JSON per cluster: og_region/{ogId}/{clusterId}.json (schema v1).
-- Emits og_region/_manifest.json with per-OG/per-cluster status summary.
+- Writes v2 trait-neutral graph bundles under og_region_graph/<runId>/.
+- Writes v2 trait-specific AF bundles under og_region_af/<runId>/.
+- Emits graph, per-trait AF, and cross-trait AF summary manifests.
 
 Usage:
   python3 scripts/batch-region-extract.py \\
-    --candidates /tmp/candidates_heading_date.tsv \\
+    --og-list /tmp/og_region_inputs/candidate_ogs.txt \\
     --hal /path/to/full.hal \\
     --gbz /path/to/graph.gbz \\
     --vcf /path/to/variants.vcf.gz \\
     --gene-coords-dir /path/to/og_gene_coords/ \\
-    --groupings /path/to/groupings.json \\
-    --trait heading_date \\
+    --groupings /tmp/og_region_inputs/groupings_all.json \\
+    --of 6 --g 4 \\
     --output /tmp/og_region_output/ \\
     --flank 10000 \\
     --cluster-cap 5

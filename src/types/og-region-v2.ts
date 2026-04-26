@@ -5,9 +5,8 @@
  * under v{of}_g{g}. Contract locked in:
  *   docs/exec-plans/active/2026-04-19-og-region-expansion.md
  *
- * Legacy v1 (trait-baked single file at og_region/{og}/{cluster}.json)
- * keeps its `src/types/og-region.ts` types for the Release A dual-read
- * fallback. Release B removes the legacy types.
+ * `src/types/og-region.ts` now contains only the compatibility projection
+ * shape consumed by existing OG detail UI components.
  */
 
 import type {

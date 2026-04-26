@@ -10,18 +10,6 @@ def og_gene_coords_path(chunk_key: str) -> str:
     return f"og_gene_coords/chunk_{chunk_key}.json"
 
 
-def og_tubemap_path(og_id: str) -> str:
-    return f"og_tubemap/{og_id}.json"
-
-
-def og_region_path(og_id: str, cluster_id: str) -> str:
-    return f"og_region/{og_id}/{cluster_id}.json"
-
-
-def og_region_manifest_path() -> str:
-    return "og_region/_manifest.json"
-
-
 def og_allele_freq_path(orthofinder_version: int, grouping_version: int, trait_id: str) -> str:
     return f"og_allele_freq/v{orthofinder_version}/g{grouping_version}/{trait_id}.json"
 

@@ -1,5 +1,5 @@
 /**
- * Per-OG region artifacts: gene coordinates, tube map, allele frequency.
+ * Per-OG region artifacts: gene coordinates and allele frequency.
  * Split from orthogroup-service.ts to keep files under 300 lines.
  */
 
@@ -9,17 +9,11 @@ import {
   ogAlleleFreqLegacyPath,
   ogAlleleFreqPath,
   ogGeneCoordsPath,
-  ogRegionManifestPath,
-  ogRegionPath,
-  ogTubeMapPath,
 } from '@/lib/storage-paths';
 import type { TraitId } from '@/types/grouping';
 import type {
   OgAlleleFreqPayload,
   OgGeneCoords,
-  OgRegionManifest,
-  OgTubeMapData,
-  RegionData,
 } from '@/types/orthogroup';
 
 // ─────────────────────────────────────────────────────────────
@@ -70,92 +64,6 @@ export async function fetchOgGeneCoords(
   } catch {
     return null;
   }
-}
-
-// ─────────────────────────────────────────────────────────────
-// Tube map
-// ─────────────────────────────────────────────────────────────
-
-const _tubeMapData = new Map<string, OgTubeMapData>();
-
-export async function fetchOgTubeMap(
-  ogId: string,
-  signal?: AbortSignal,
-): Promise<OgTubeMapData | null> {
-  const cached = _tubeMapData.get(ogId);
-  if (cached) return cached;
-  try {
-    const data = await downloadJson<OgTubeMapData>(ogTubeMapPath(ogId), signal);
-    _tubeMapData.set(ogId, data);
-    return data;
-  } catch {
-    return null;
-  }
-}
-
-// ─────────────────────────────────────────────────────────────
-// Per-cluster region data (batch-region-extract.py artifact)
-// ─────────────────────────────────────────────────────────────
-
-const _regionData = new Map<string, RegionData>();
-let _manifestData: OgRegionManifest | null = null;
-let _manifestInflight: Promise<OgRegionManifest | null> | null = null;
-
-export async function fetchOgRegion(
-  ogId: string,
-  clusterId: string,
-  signal?: AbortSignal,
-): Promise<RegionData | null> {
-  const key = `${ogId}/${clusterId}`;
-  const cached = _regionData.get(key);
-  if (cached) return cached;
-  try {
-    const data = await downloadJson<RegionData>(
-      ogRegionPath(ogId, clusterId),
-      signal,
-    );
-    _regionData.set(key, data);
-    return data;
-  } catch {
-    return null;
-  }
-}
-
-export async function fetchOgRegionManifest(
-  signal?: AbortSignal,
-): Promise<OgRegionManifest | null> {
-  if (_manifestData) return _manifestData;
-  // Share an in-flight request across concurrent callers, but let its own
-  // signal-free fetch finish even if a caller aborts — otherwise a
-  // strict-mode double-mount poisons the cache with a null result.
-  if (!_manifestInflight) {
-    _manifestInflight = (async () => {
-      try {
-        const data = await downloadJson<OgRegionManifest>(ogRegionManifestPath());
-        _manifestData = data;
-        return data;
-      } catch {
-        return null;
-      } finally {
-        _manifestInflight = null;
-      }
-    })();
-  }
-  const result = await raceWithAbort(_manifestInflight, signal);
-  return result;
-}
-
-function raceWithAbort<T>(p: Promise<T>, signal?: AbortSignal): Promise<T | null> {
-  if (!signal) return p;
-  if (signal.aborted) return Promise.resolve(null);
-  return new Promise<T | null>((resolve) => {
-    const onAbort = () => resolve(null);
-    signal.addEventListener('abort', onAbort, { once: true });
-    p.then((v) => {
-      signal.removeEventListener('abort', onAbort);
-      resolve(v);
-    });
-  });
 }
 
 // ─────────────────────────────────────────────────────────────

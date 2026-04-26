@@ -11,22 +11,6 @@ export function ogGeneCoordsPath(chunkKey: string): string {
   return `og_gene_coords/chunk_${chunkKey}.json`;
 }
 
-export function ogTubeMapPath(ogId: string): string {
-  return `og_tubemap/${ogId}.json`;
-}
-
-/** Legacy trait-baked per-cluster region JSON. Kept for dual-read
- * fallback during Release A of docs/exec-plans/active/2026-04-19-og-region-expansion.md.
- * Retired by Release B. */
-export function ogRegionPath(ogId: string, clusterId: string): string {
-  return `og_region/${ogId}/${clusterId}.json`;
-}
-
-/** Legacy top-level manifest (single trait, versionless). Dual-read only. */
-export function ogRegionManifestPath(): string {
-  return `og_region/_manifest.json`;
-}
-
 // ─────────────────────────────────────────────────────────────
 // OG region v2 — trait-split, version-namespaced. See
 // docs/exec-plans/active/2026-04-19-og-region-expansion.md for the

@@ -23,8 +23,8 @@ All pipelines that produce artifacts for the web database.
 ┌──────────────────────────────────────────────────────────┐
 │  MANUAL (server scripts — requires HAL + GBZ + VCF)       │
 │                                                          │
-│  6. batch-region-extract.py    → per-cluster og_region   │
-│                                   (graph + AF)           │
+│  6. batch-region-extract.py    → og_region_graph +       │
+│                                   og_region_af bundles   │
 └──────────────────────────────────────────────────────────┘
 ```
 
@@ -100,9 +100,15 @@ orthogroup_diffs/v{N}/g{M}/{trait}.json
 
 og_allele_freq/v{N}/g{M}/{trait}.json
 
-og_tubemap/{ogId}.json                    ← per-OG default IRGSP-anchored tube map
-og_region/{ogId}/{clusterId}.json          ← per-cluster region (graph + AF)
-og_region/_manifest.json                   ← cluster status manifest
+downloads/_og_region_manifest.json         ← active OG region v2 pointer
+og_region_graph/v{N}_g{M}/                 ← trait-neutral cluster graph bundles
+  ├─ _manifest.json
+  └─ {ogId}/{clusterId}.json
+og_region_af/v{N}_g{M}/                    ← trait-specific cluster AF bundles
+  ├─ _manifest.json
+  └─ {trait}/
+     ├─ _manifest.json
+     └─ {ogId}/{clusterId}.json
 
 genomes/{cultivarId}/genome.fasta|gene.gff3|repeat.out
 

@@ -40,7 +40,9 @@ from shared.traits import TRAITS
 from shared.manifests import load_cultivars
 from shared.reference import IRGSP_SAMPLE_ID, IRGSP_DISPLAY_NAME, IRGSP_LONG_NAME
 from shared.storage_paths import (
-    og_gene_coords_path, og_tubemap_path, og_region_path, og_region_manifest_path,
+    og_gene_coords_path,
+    og_region_pointer_path, og_region_graph_path, og_region_graph_manifest_path,
+    og_region_af_path, og_region_af_manifest_path, og_region_af_summary_manifest_path,
     og_allele_freq_path, orthofinder_og_members_path,
     orthofinder_baegilmi_annotation_path, orthofinder_og_categories_path,
 )
@@ -64,9 +66,12 @@ print(json.dumps({
     },
     "paths": {
         "ogGeneCoordsPath_007": og_gene_coords_path("007"),
-        "ogTubeMapPath_OG0000987": og_tubemap_path("OG0000987"),
-        "ogRegionPath_OG0000987_cluster": og_region_path("OG0000987", "baegilmi_chr02_10083653"),
-        "ogRegionManifestPath": og_region_manifest_path(),
+        "ogRegionPointerPath": og_region_pointer_path(),
+        "ogRegionGraphPath_6_4_OG0000987_cluster": og_region_graph_path(6, 4, "OG0000987", "baegilmi_chr02_10083653"),
+        "ogRegionGraphManifestPath_6_4": og_region_graph_manifest_path(6, 4),
+        "ogRegionAfPath_6_4_heading_OG0000987_cluster": og_region_af_path(6, 4, "heading_date", "OG0000987", "baegilmi_chr02_10083653"),
+        "ogRegionAfManifestPath_6_4_heading": og_region_af_manifest_path(6, 4, "heading_date"),
+        "ogRegionAfSummaryManifestPath_6_4": og_region_af_summary_manifest_path(6, 4),
         "ogAlleleFreqPath_1_2_heading": og_allele_freq_path(1, 2, "heading_date"),
         "orthofinderOgMembersPath_1_000": orthofinder_og_members_path(1, "000"),
         "orthofinderBaegilmiAnnotationPath_1": orthofinder_baegilmi_annotation_path(1),
@@ -122,9 +127,12 @@ const ts = {
   },
   paths: {
     ogGeneCoordsPath_007: storagePathsMod.ogGeneCoordsPath('007'),
-    ogTubeMapPath_OG0000987: storagePathsMod.ogTubeMapPath('OG0000987'),
-    ogRegionPath_OG0000987_cluster: storagePathsMod.ogRegionPath('OG0000987', 'baegilmi_chr02_10083653'),
-    ogRegionManifestPath: storagePathsMod.ogRegionManifestPath(),
+    ogRegionPointerPath: storagePathsMod.ogRegionPointerPath(),
+    ogRegionGraphPath_6_4_OG0000987_cluster: storagePathsMod.ogRegionGraphPath(6, 4, 'OG0000987', 'baegilmi_chr02_10083653'),
+    ogRegionGraphManifestPath_6_4: storagePathsMod.ogRegionGraphManifestPath(6, 4),
+    ogRegionAfPath_6_4_heading_OG0000987_cluster: storagePathsMod.ogRegionAfPath(6, 4, 'heading_date', 'OG0000987', 'baegilmi_chr02_10083653'),
+    ogRegionAfManifestPath_6_4_heading: storagePathsMod.ogRegionAfManifestPath(6, 4, 'heading_date'),
+    ogRegionAfSummaryManifestPath_6_4: storagePathsMod.ogRegionAfSummaryManifestPath(6, 4),
     ogAlleleFreqPath_1_2_heading: storagePathsMod.ogAlleleFreqPath(1, 2, 'heading_date'),
     orthofinderOgMembersPath_1_000: storagePathsMod.orthofinderOgMembersPath(1, '000'),
     orthofinderBaegilmiAnnotationPath_1: storagePathsMod.orthofinderBaegilmiAnnotationPath(1),
