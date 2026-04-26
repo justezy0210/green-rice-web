@@ -1,3 +1,5 @@
+import { Button } from '@/components/ui/button';
+
 /**
  * Controls strip above the Region track SVG: mode badge (summary vs
  * detail), focus-OG chip, range/count readout, SV-scope toggle
@@ -43,9 +45,6 @@ export function TrackHeader({
   svSampleCount?: number | null;
 }) {
   const cultivarMode = svScope !== 'all';
-  // Sample count comes from the active SV release manifest so the
-  // label reflects the pipeline state, not a UI literal. `null` means
-  // the manifest is still loading — fall back to a generic phrase.
   const allLabel =
     svSampleCount != null
       ? `SV · all ${svSampleCount} cultivars`
@@ -77,6 +76,7 @@ export function TrackHeader({
               ? `${focusedGeneCount} here`
               : 'none in window'}
             {onClearFocusedOg && (
+              /* raw: inline × clear glyph adjacent to a chip — see allowed-raw rule. */
               <button
                 type="button"
                 onClick={onClearFocusedOg}
@@ -95,6 +95,7 @@ export function TrackHeader({
           · {svLoading ? '…' : svCount} SV
         </span>
         {onToggleSvScope && (
+          /* raw: dense 10px scope toggle chip with cultivar/pangenome variant — Button primitive over-pads. */
           <button
             type="button"
             onClick={onToggleSvScope}
@@ -111,6 +112,7 @@ export function TrackHeader({
           aria-label="Zoom level"
         >
           {[1, 2, 4, 8].map((z) => (
+            /* raw: dense zoom-level chip group (1× / 2× / 4× / 8×). */
             <button
               key={z}
               type="button"
@@ -127,14 +129,15 @@ export function TrackHeader({
             </button>
           ))}
         </span>
-        <button
-          type="button"
+        <Button
+          variant="link"
+          size="xs"
           onClick={onBack}
-          className="text-[10px] text-gray-600 hover:text-green-700 hover:underline"
+          className="text-[10px] text-gray-600 hover:text-green-700"
           title="Go back to the previous region"
         >
           ← Back
-        </button>
+        </Button>
       </div>
     </div>
   );

@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { usePhenotypeData } from '@/hooks/usePhenotypeData';
 import { PhenotypeDistributionChart } from '@/components/dashboard/PhenotypeDistributionChart';
 import { EntityCardsGrid } from '@/components/dashboard/EntityCardsGrid';
+import { Input } from '@/components/ui/input';
 import {
   PANEL_LABEL,
   REFERENCE_SHORT_NAME,
@@ -90,7 +91,7 @@ export function DashboardPage() {
               Cultivar lookup
             </label>
             <div className="relative">
-              <input
+              <Input
                 type="text"
                 placeholder="Search a cultivar…"
                 value={search}
@@ -102,12 +103,13 @@ export function DashboardPage() {
                 onKeyDown={handleKeyDown}
                 onFocus={() => { setDropdownOpen(true); setHighlightIdx(-1); }}
                 onBlur={() => { setTimeout(() => setDropdownOpen(false), 150); }}
-                className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm bg-white focus:border-green-500 focus:ring-2 focus:ring-green-200 outline-none"
+                className="text-sm"
               />
               {suggestions.length > 0 && (
                 <ul className="absolute z-20 w-full mt-1 bg-white border border-gray-200 rounded-md shadow-lg max-h-60 overflow-y-auto">
                   {suggestions.map((r, i) => (
                     <li key={r.cultivar}>
+                      {/* raw: full-width suggestion-list-item button — Button primitive doesn't fit row-as-button layout. */}
                       <button
                         className={`w-full text-left px-3 py-1.5 text-sm cursor-pointer flex items-center justify-between ${i === highlightIdx ? 'bg-green-100 text-green-800' : 'hover:bg-green-50'}`}
                         onMouseDown={(e) => e.preventDefault()}

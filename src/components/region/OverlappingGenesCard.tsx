@@ -8,6 +8,8 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 import { OrthogroupDiffPagination } from '@/components/explore/OrthogroupDiffPagination';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import type { RegionGene } from '@/lib/region-helpers';
 
 interface Props {
@@ -63,20 +65,21 @@ export function OverlappingGenesCard({
           </span>
         </CardTitle>
         <CardAction className="flex items-center gap-2">
-          <input
+          <Input
             type="search"
             value={functionQuery}
             onChange={(e) => setFunctionQuery(e.target.value)}
             placeholder="Filter by function (product · Pfam · InterPro · GO)"
-            className="w-72 text-[12px] border border-gray-200 rounded px-2 py-1 bg-white focus:border-green-500 focus:ring-1 focus:ring-green-200 outline-none"
+            className="w-72"
           />
           {functionQuery && (
-            <button
+            <Button
+              variant="outline"
+              size="xs"
               onClick={() => setFunctionQuery('')}
-              className="text-[11px] text-gray-500 hover:text-gray-800 px-2 py-1 border border-gray-200 rounded"
             >
               Clear
-            </button>
+            </Button>
           )}
         </CardAction>
       </CardHeader>

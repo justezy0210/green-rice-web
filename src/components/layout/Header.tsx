@@ -61,6 +61,7 @@ export function Header() {
           <DropdownMenu>
             <DropdownMenuTrigger
               render={
+                /* raw: bare <button> as the Base UI DropdownMenuTrigger render target so the trigger inherits the nav-link class. */
                 <button
                   type="button"
                   className={cn(

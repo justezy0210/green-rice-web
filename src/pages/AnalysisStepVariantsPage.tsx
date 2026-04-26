@@ -1,7 +1,12 @@
 import { useMemo, useState } from 'react';
-import { useParams, Navigate, Link } from 'react-router-dom';
+import { useParams, Navigate } from 'react-router-dom';
 import { Card, CardContent } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
 import { AnalysisShell } from '@/components/analysis/AnalysisShell';
+import {
+  AnalysisStepSvTable,
+  type RankedSvRow,
+} from '@/components/analysis/AnalysisStepSvTable';
 import { useAnalysisRun } from '@/hooks/useAnalysisRun';
 import {
   useSvManifest,
@@ -10,19 +15,10 @@ import {
 } from '@/hooks/useSvMatrix';
 import { isValidRunId, decodeRunId } from '@/lib/analysis-run-id';
 import { SV_RELEASE_ID } from '@/lib/releases';
-import type { SvEvent, SvType } from '@/types/sv-event';
+import type { SvType } from '@/types/sv-event';
 
 const TYPE_OPTIONS: SvType[] = ['INS', 'DEL', 'COMPLEX'];
 const PAGE_SIZE = 50;
-
-interface RankedSvRow {
-  event: SvEvent;
-  freqA: number | null;
-  freqB: number | null;
-  groupALabel: string | null;
-  groupBLabel: string | null;
-  absDeltaAf: number;
-}
 
 export function AnalysisStepVariantsPage() {
   const { runId } = useParams<{ runId: string }>();
@@ -118,8 +114,12 @@ export function AnalysisStepVariantsPage() {
               {TYPE_OPTIONS.map((t) => {
                 const active = typeFilter.has(t);
                 return (
-                  <button
+                  <Button
                     key={t}
+                    type="button"
+                    variant={active ? 'secondary' : 'outline'}
+                    size="xs"
+                    className={`font-mono ${active ? 'border-green-300 bg-green-50 text-green-700 hover:bg-green-100' : ''}`}
                     onClick={() => {
                       const next = new Set(typeFilter);
                       if (active) next.delete(t);
@@ -128,14 +128,9 @@ export function AnalysisStepVariantsPage() {
                       setTypeFilter(next);
                       setPage(0);
                     }}
-                    className={`px-2 py-1 rounded border font-mono ${
-                      active
-                        ? 'border-green-300 bg-green-50 text-green-700'
-                        : 'border-gray-200 text-gray-500 hover:border-gray-300'
-                    }`}
                   >
                     {t}
-                  </button>
+                  </Button>
                 );
               })}
             </div>
@@ -143,6 +138,7 @@ export function AnalysisStepVariantsPage() {
               <span className="uppercase tracking-wide text-gray-500">
                 Min |ΔAF|
               </span>
+              {/* raw: <input type="range"> — shadcn doesn't ship a Slider primitive in this kit yet (Phase 5+ follow-up). */}
               <input
                 type="range"
                 min={0}
@@ -180,26 +176,28 @@ export function AnalysisStepVariantsPage() {
                   {ranked.length} event{ranked.length === 1 ? '' : 's'} · page{' '}
                   {page + 1} / {totalPages}
                 </div>
-                <SvTable rows={pageRows} cultivar={run.traitId} />
+                <AnalysisStepSvTable rows={pageRows} cultivar={run.traitId} />
                 {totalPages > 1 && (
                   <div className="flex items-center justify-center gap-2 mt-3 text-xs">
-                    <button
+                    <Button
+                      variant="outline"
+                      size="xs"
                       onClick={() => setPage((p) => Math.max(0, p - 1))}
                       disabled={page === 0}
-                      className="px-2 py-1 rounded border border-gray-200 text-gray-700 disabled:text-gray-300 disabled:border-gray-100 hover:bg-gray-50"
                     >
                       ← Prev
-                    </button>
+                    </Button>
                     <span className="text-gray-500">
                       {page + 1} / {totalPages}
                     </span>
-                    <button
+                    <Button
+                      variant="outline"
+                      size="xs"
                       onClick={() => setPage((p) => Math.min(totalPages - 1, p + 1))}
                       disabled={page >= totalPages - 1}
-                      className="px-2 py-1 rounded border border-gray-200 text-gray-700 disabled:text-gray-300 disabled:border-gray-100 hover:bg-gray-50"
                     >
                       Next →
-                    </button>
+                    </Button>
                   </div>
                 )}
               </>
@@ -208,85 +206,5 @@ export function AnalysisStepVariantsPage() {
         </Card>
       </div>
     </AnalysisShell>
-  );
-}
-
-function SvTable({ rows }: { rows: RankedSvRow[]; cultivar: string }) {
-  return (
-    <table className="w-full text-sm table-fixed">
-      <colgroup>
-        <col className="w-20" />
-        <col className="w-16" />
-        <col className="w-20" />
-        <col className="w-20" />
-        <col />
-        <col />
-        <col className="w-20" />
-      </colgroup>
-      <thead>
-        <tr className="text-[10px] uppercase tracking-wide text-gray-500 border-b border-gray-200">
-          <th className="text-left pl-3 pr-2 py-1.5">Chr</th>
-          <th className="text-left px-3 py-1.5">Type</th>
-          <th className="text-right px-3 py-1.5">Pos</th>
-          <th className="text-right px-3 py-1.5">|svLen|</th>
-          <th className="text-left px-3 py-1.5">Group A freq</th>
-          <th className="text-left px-3 py-1.5">Group B freq</th>
-          <th className="text-right pl-3 pr-4 py-1.5">|ΔAF|</th>
-        </tr>
-      </thead>
-      <tbody>
-        {rows.map(({ event, freqA, freqB, groupALabel, groupBLabel, absDeltaAf }) => {
-          const regionStart = Math.max(0, event.pos - 2000);
-          const regionEnd = event.pos + Math.max(event.refLen, event.altLen) + 2000;
-          const regionLink = `/region/baegilmi/${event.chr}/${regionStart}-${regionEnd}`;
-          return (
-            <tr
-              key={event.eventId}
-              className="border-b border-gray-100 hover:bg-green-50 transition-colors"
-            >
-              <td className="pl-3 pr-2 py-1.5 text-gray-700 font-mono text-[11px]">
-                <Link to={regionLink} className="hover:underline hover:text-green-700">
-                  {event.chr}
-                </Link>
-              </td>
-              <td className="px-3 py-1.5">
-                <span className="text-[10px] font-mono font-medium text-gray-600 bg-gray-100 px-1.5 py-0.5 rounded">
-                  {event.svType}
-                </span>
-              </td>
-              <td className="px-3 py-1.5 text-right tabular-nums text-[11px] text-gray-600">
-                {event.pos.toLocaleString()}
-              </td>
-              <td className="px-3 py-1.5 text-right tabular-nums text-[11px] text-gray-600">
-                {event.svLenAbs.toLocaleString()}
-              </td>
-              <td className="px-3 py-1.5 text-[11px] text-gray-600">
-                {groupALabel && freqA !== null ? (
-                  <>
-                    <span className="text-gray-400">{groupALabel}: </span>
-                    <span className="tabular-nums">{freqA.toFixed(2)}</span>
-                  </>
-                ) : (
-                  <span className="text-gray-300">—</span>
-                )}
-              </td>
-              <td className="px-3 py-1.5 text-[11px] text-gray-600">
-                {groupBLabel && freqB !== null ? (
-                  <>
-                    <span className="text-gray-400">{groupBLabel}: </span>
-                    <span className="tabular-nums">{freqB.toFixed(2)}</span>
-                  </>
-                ) : (
-                  <span className="text-gray-300">—</span>
-                )}
-              </td>
-              <td className="pl-3 pr-4 py-1.5 text-right tabular-nums font-medium text-gray-900">
-                {freqA !== null && freqB !== null ? absDeltaAf.toFixed(2) : '—'}
-              </td>
-            </tr>
-          );
-        })}
-      </tbody>
-    </table>
   );
 }

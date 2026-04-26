@@ -1,6 +1,16 @@
 import { useState } from 'react';
 import { useParams, Link, Navigate } from 'react-router-dom';
 import { Card, CardContent } from '@/components/ui/card';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 import { AnalysisShell } from '@/components/analysis/AnalysisShell';
 import { JumpToBlockChip } from '@/components/analysis/JumpToBlockChip';
 import { useAnalysisRun } from '@/hooks/useAnalysisRun';
@@ -60,23 +70,25 @@ export function AnalysisStepCandidatesPage() {
                 <CandidateTable runId={validRunId} candidates={pageSlice} />
                 {pages > 1 && (
                   <div className="flex items-center justify-center gap-2 mt-3 text-xs">
-                    <button
+                    <Button
+                      variant="outline"
+                      size="xs"
                       onClick={() => setPage((p) => Math.max(0, p - 1))}
                       disabled={page === 0}
-                      className="px-2 py-1 rounded border border-gray-200 text-gray-700 disabled:text-gray-300 disabled:border-gray-100 hover:bg-gray-50"
                     >
                       ← Prev
-                    </button>
+                    </Button>
                     <span className="text-gray-500">
                       {page + 1} / {pages}
                     </span>
-                    <button
+                    <Button
+                      variant="outline"
+                      size="xs"
                       onClick={() => setPage((p) => Math.min(pages - 1, p + 1))}
                       disabled={page >= pages - 1}
-                      className="px-2 py-1 rounded border border-gray-200 text-gray-700 disabled:text-gray-300 disabled:border-gray-100 hover:bg-gray-50"
                     >
                       Next →
-                    </button>
+                    </Button>
                   </div>
                 )}
               </>
@@ -96,7 +108,7 @@ function CandidateTable({
   candidates: Candidate[];
 }) {
   return (
-    <table className="w-full text-sm table-fixed">
+    <Table density="dense" className="table-fixed">
       <colgroup>
         <col className="w-12" />
         <col className="w-28" />
@@ -107,42 +119,39 @@ function CandidateTable({
         <col className="w-28" />
         <col className="w-20" />
       </colgroup>
-      <thead>
-        <tr className="text-[10px] uppercase tracking-wide text-gray-500 border-b border-gray-200">
-          <th className="text-left pl-3 pr-2 py-1.5">Rank</th>
-          <th className="text-left px-3 py-1.5">OG</th>
-          <th className="text-left px-3 py-1.5">Type</th>
-          <th className="text-left px-3 py-1.5">OG pattern</th>
-          <th className="text-left px-3 py-1.5">Best SV</th>
-          <th className="text-left px-3 py-1.5">Function</th>
-          <th className="text-left px-3 py-1.5">Block</th>
-          <th className="text-right pl-3 pr-4 py-1.5">Score</th>
-        </tr>
-      </thead>
-      <tbody>
+      <TableHeader>
+        <TableRow className="text-[10px] uppercase tracking-wide text-gray-500">
+          <TableHead className="pl-3">Rank</TableHead>
+          <TableHead className="px-3">OG</TableHead>
+          <TableHead className="px-3">Type</TableHead>
+          <TableHead className="px-3">OG pattern</TableHead>
+          <TableHead className="px-3">Best SV</TableHead>
+          <TableHead className="px-3">Function</TableHead>
+          <TableHead className="px-3">Block</TableHead>
+          <TableHead className="pl-3 pr-4 text-right">Score</TableHead>
+        </TableRow>
+      </TableHeader>
+      <TableBody>
         {candidates.map((c) => (
-          <tr
-            key={c.candidateId}
-            className="border-b border-gray-100 hover:bg-green-50 transition-colors"
-          >
-            <td className="pl-3 pr-2 py-1.5 text-gray-500 tabular-nums">{c.rank}</td>
-            <td className="px-3 py-1.5">
+          <TableRow key={c.candidateId} className="hover:bg-green-50 transition-colors">
+            <TableCell className="pl-3 text-gray-500 tabular-nums">{c.rank}</TableCell>
+            <TableCell className="px-3">
               <Link
                 to={`/analysis/${runId}/candidate/${c.candidateId}`}
                 className="text-green-700 hover:underline font-mono text-[12px]"
               >
                 {c.primaryOgId}
               </Link>
-            </td>
-            <td className="px-3 py-1.5">
-              <span className="text-[10px] font-medium text-gray-600 bg-gray-100 px-1.5 py-0.5 rounded">
+            </TableCell>
+            <TableCell className="px-3">
+              <Badge variant="secondary" className="text-[10px] px-1.5 py-0.5 h-auto">
                 {c.candidateType}
-              </span>
-            </td>
-            <td className="px-3 py-1.5 text-[11px] text-gray-600 truncate">
+              </Badge>
+            </TableCell>
+            <TableCell className="px-3 text-[11px] text-gray-600 truncate">
               {c.orthogroupPatternSummary ?? '—'}
-            </td>
-            <td className="px-3 py-1.5 text-[11px] text-gray-600 truncate">
+            </TableCell>
+            <TableCell className="px-3 text-[11px] text-gray-600 truncate">
               {c.bestSv ? (
                 <span>
                   <span className="font-mono text-[10px]">{c.bestSv.eventId}</span>{' '}
@@ -154,19 +163,19 @@ function CandidateTable({
               ) : (
                 <span className="text-gray-400">—</span>
               )}
-            </td>
-            <td className="px-3 py-1.5 text-[11px] text-gray-600 truncate">
+            </TableCell>
+            <TableCell className="px-3 text-[11px] text-gray-600 truncate">
               {c.functionSummary ?? <span className="text-gray-400">no annotation</span>}
-            </td>
-            <td className="px-3 py-1.5">
+            </TableCell>
+            <TableCell className="px-3">
               <JumpToBlockChip runId={runId} blockId={c.blockId} />
-            </td>
-            <td className="pl-3 pr-4 py-1.5 text-right tabular-nums font-medium text-gray-900">
+            </TableCell>
+            <TableCell className="pl-3 pr-4 text-right tabular-nums font-medium text-gray-900">
               {(c.combinedScore ?? c.totalScore).toFixed(3)}
-            </td>
-          </tr>
+            </TableCell>
+          </TableRow>
         ))}
-      </tbody>
-    </table>
+      </TableBody>
+    </Table>
   );
 }

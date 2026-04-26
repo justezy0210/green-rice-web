@@ -208,6 +208,7 @@ export function PhenotypeDistributionChart({ records }: PhenotypeDistributionCha
           {TRAIT_OPTIONS.map((o) => {
             const isActive = selectedKey === o.key;
             return (
+              /* raw: dense trait selector chip — category-coded color tones don't map to a generic Button variant. */
               <button
                 key={o.key}
                 onClick={() => setSelectedKey(o.key)}
@@ -225,6 +226,7 @@ export function PhenotypeDistributionChart({ records }: PhenotypeDistributionCha
         {isHeading && (
           <div className="flex gap-1 mt-2">
             {HEADING_SEASONS.map((s) => (
+              /* raw: dense season selector chip with per-season custom tone. */
               <button
                 key={s.key}
                 onClick={() => setHeadingSeason(s.key)}

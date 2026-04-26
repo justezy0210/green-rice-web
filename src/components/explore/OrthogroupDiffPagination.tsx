@@ -1,3 +1,5 @@
+import { Button } from '@/components/ui/button';
+
 interface Props {
   page: number;            // 0-indexed
   pageSize: number;
@@ -27,41 +29,41 @@ export function OrthogroupDiffPagination({ page, pageSize, totalItems, onPageCha
         {first.toLocaleString()}–{last.toLocaleString()} of {totalItems.toLocaleString()}
       </span>
       <div className="flex items-center gap-1">
-        <button
+        <Button
           type="button"
+          variant="outline"
+          size="xs"
           onClick={() => canPrev && onPageChange(page - 1)}
           disabled={!canPrev}
-          className="px-2 py-1 rounded border border-gray-200 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed"
         >
           Prev
-        </button>
+        </Button>
         {pages.map((p, i) =>
           p === null ? (
             <span key={`gap-${i}`} className="px-1 text-gray-400">…</span>
           ) : (
-            <button
+            <Button
               key={p}
               type="button"
+              variant={p === page ? 'secondary' : 'outline'}
+              size="xs"
               onClick={() => onPageChange(p)}
               aria-current={p === page ? 'page' : undefined}
-              className={`min-w-[2rem] px-2 py-1 rounded border tabular-nums ${
-                p === page
-                  ? 'bg-gray-900 text-white border-gray-900'
-                  : 'border-gray-200 hover:bg-gray-50'
-              }`}
+              className={`min-w-[2rem] tabular-nums ${p === page ? 'bg-gray-900 text-white border-gray-900 hover:bg-gray-800' : ''}`}
             >
               {p + 1}
-            </button>
+            </Button>
           ),
         )}
-        <button
+        <Button
           type="button"
+          variant="outline"
+          size="xs"
           onClick={() => canNext && onPageChange(page + 1)}
           disabled={!canNext}
-          className="px-2 py-1 rounded border border-gray-200 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed"
         >
           Next
-        </button>
+        </Button>
       </div>
     </nav>
   );

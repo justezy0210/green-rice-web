@@ -16,6 +16,7 @@ export function OgDrawerHeader({ ogId, onClose }: Props) {
       <h2 id="og-drawer-title" className="font-mono text-base font-semibold text-gray-900">
         {ogId}
       </h2>
+      {/* raw: oversized × close glyph — Button primitive's built-in padding distorts the icon. */}
       <button
         ref={closeBtnRef}
         type="button"

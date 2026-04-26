@@ -59,6 +59,7 @@ export function OgFunctionCategoriesChart({ entries, activeCategory, onCategoryS
             return (
               <li key={c.category.id}>
                 {onCategorySelect ? (
+                  /* raw: full-width row-as-button with category swatch + bar — Button primitive doesn't fit. */
                   <button
                     type="button"
                     onClick={() => onCategorySelect(c.category.id)}

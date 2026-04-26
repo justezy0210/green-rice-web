@@ -151,6 +151,51 @@ For each, log keyboard tab order + visible focus + no hydration warnings in cons
 - [ ] No new ARIA / hydration / nested-anchor warnings in console
 - [ ] Phase deliverables block (raw count delta, exceptions, touched files) appended to plan
 
+## Phase 5 — remaining surfaces (2026-04-26)
+
+### Surfaces touched
+- `src/components/dashboard/ResistanceGrid.tsx` — full migration to dense `Table`
+- `src/pages/AnalysisStepPhenotypePage.tsx` — Group balance table → dense `Table`
+- `src/pages/AnalysisStepIntersectionsPage.tsx` — Block list table → dense `Table`
+- `src/pages/AnalysisStepCandidatesPage.tsx` — Candidate ranking table → dense `Table`; pagination → `Button`; candidateType pill → `Badge variant="secondary"`
+- `src/pages/AnalysisStepVariantsPage.tsx` — Type filter chips → `Button variant="secondary|outline"`; svType pill → `Badge`; pagination → `Button`. SvTable extracted to `components/analysis/AnalysisStepSvTable.tsx` to keep page under cap (final 209 lines)
+- `src/components/analysis/AnalysisStepSvTable.tsx` (new) — extracted SV ranking table using dense `Table`. `RankedSvRow` type exported for the page
+- `src/components/explore/OrthogroupDiffPagination.tsx` — Prev / page-window / Next → `Button variant="outline|secondary" size="xs"`
+- `src/pages/DownloadPage.tsx` — search → `Input`; ✕ glyph + sidebar list-item button kept raw with `// raw:`
+- `src/pages/DashboardPage.tsx` — cultivar lookup → `Input`; suggestion list-item kept raw
+- `src/pages/CultivarDetailPage.tsx` — `Go back` link → `Button variant="link"`; oversized ← back glyph kept raw with annotation
+- `src/components/region/OverlappingGenesCard.tsx` — function-filter `<input>` + Clear button → `Input` + `Button variant="outline"`
+- `src/components/region/RegionTrackHeader.tsx` — `← Back` → `Button variant="link"`. Inline × clear, scope toggle chip, zoom-level chip group all annotated `// raw:`
+- `src/components/cultivar/MiniSearch.tsx` — search → `Input`; suggestion list-item kept raw
+- `src/components/explore/OgDrawerHeader.tsx` — × close glyph annotated `// raw:`
+- `src/components/explore/OgFunctionCategoriesChart.tsx` — full-width row-as-button annotated `// raw:`
+- `src/components/dashboard/PhenotypeDistributionChart.tsx` — trait + season selector chips annotated `// raw:` (per-category color tones don't fit a generic Button variant)
+- `src/components/explore/OgCategoryStrip.tsx` + `OrthogroupIndexPage.tsx` — preset toggle chips already used `// raw:` from Phase 3; verified the comment is in place
+- `src/components/analysis/BlockExportPanel.tsx` — download CTA → `Button variant="outline"` with project tone via className
+- `src/components/layout/Header.tsx` — DropdownMenuTrigger render-prop button annotated (it IS a real `<button>` because Base UI's render prop accepts an element to clone)
+
+### Raw count delta
+| | Phase 4 end | Phase 5 end | delta |
+|---|---|---|---|
+| `<button>` | 31 | 20 | **−11** |
+| `<table>` | 5 | 0 | **−5 (zero remain!)** |
+| `<input>` | 8 | 5 | **−3** |
+| `// raw:` annotations | 7 | 23 | +16 |
+
+Cumulative from baseline: button 51→20 (**−61 %**), table 14→0 (**−100 %**), input 15→5 (**−67 %**).
+
+The remaining 20 raw `<button>` sites and 5 raw `<input>` sites are ALL annotated `// raw:` with a one-line reason. They fall into the documented allowed-raw categories:
+- Inline ✕/× clear glyphs adjacent to Inputs or chips
+- Dense 10–11 px toggle chips (preset rows, category strip, zoom levels, scope toggle, trait/season selectors)
+- Full-width row-as-button list items (suggestion lists, OG function categories, sidebar list)
+- Disclosure/section toggles (anchor-locus, ClusterContextCard row)
+- Specialty inputs without shadcn primitives in this kit (Checkbox, file picker, range slider — Phase 6 follow-up to consider adding them)
+
+### Verification
+- `npm run check:all` ✓
+- `npm run build` ✓
+- File-size cap held: `AnalysisStepVariantsPage.tsx` 209 / 300 (was 292 pre-migration; SvTable extracted)
+
 ## Phase 4 — analysis tables (2026-04-25)
 
 ### Surfaces touched

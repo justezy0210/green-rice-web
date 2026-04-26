@@ -1,6 +1,14 @@
 import { useMemo } from 'react';
 import { useParams, Navigate } from 'react-router-dom';
 import { Card, CardContent } from '@/components/ui/card';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
 import { ScopeStrip } from '@/components/common/ScopeStrip';
 import { GroupingSummaryCard } from '@/components/explore/GroupingSummaryCard';
 import { AnalysisShell } from '@/components/analysis/AnalysisShell';
@@ -79,26 +87,26 @@ export function AnalysisStepPhenotypePage() {
               <h3 className="text-xs uppercase tracking-wide text-gray-500 mb-2">
                 Group balance
               </h3>
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="text-[10px] uppercase tracking-wide text-gray-500 border-b border-gray-200">
-                    <th className="text-left px-2 py-1.5">Group</th>
-                    <th className="text-right px-2 py-1.5">Cultivars</th>
-                    <th className="text-right px-2 py-1.5">High confidence</th>
-                    <th className="text-right px-2 py-1.5">Borderline</th>
-                  </tr>
-                </thead>
-                <tbody>
+              <Table density="dense">
+                <TableHeader>
+                  <TableRow className="text-[10px] uppercase tracking-wide text-gray-500">
+                    <TableHead className="px-2">Group</TableHead>
+                    <TableHead className="px-2 text-right">Cultivars</TableHead>
+                    <TableHead className="px-2 text-right">High confidence</TableHead>
+                    <TableHead className="px-2 text-right">Borderline</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
                   {Object.entries(balance).map(([label, b]) => (
-                    <tr key={label} className="border-b border-gray-100">
-                      <td className="px-2 py-1.5 font-medium text-gray-800">{label}</td>
-                      <td className="px-2 py-1.5 text-right tabular-nums">{b.total}</td>
-                      <td className="px-2 py-1.5 text-right tabular-nums">{b.high}</td>
-                      <td className="px-2 py-1.5 text-right tabular-nums text-amber-700">{b.borderline}</td>
-                    </tr>
+                    <TableRow key={label}>
+                      <TableCell className="px-2 font-medium text-gray-800">{label}</TableCell>
+                      <TableCell className="px-2 text-right tabular-nums">{b.total}</TableCell>
+                      <TableCell className="px-2 text-right tabular-nums">{b.high}</TableCell>
+                      <TableCell className="px-2 text-right tabular-nums text-amber-700">{b.borderline}</TableCell>
+                    </TableRow>
                   ))}
-                </tbody>
-              </table>
+                </TableBody>
+              </Table>
             </CardContent>
           </Card>
         )}

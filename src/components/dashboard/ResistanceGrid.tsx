@@ -1,3 +1,11 @@
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
 import type { PhenotypeRecord } from '@/types/phenotype';
 import { cn } from '@/lib/utils';
 
@@ -21,24 +29,26 @@ export function ResistanceGrid({ records, onClickCultivar, cultivarNameToColor }
           <span className="w-3 h-3 rounded-sm bg-red-200 inline-block" /> Susceptible
         </span>
       </div>
-      <table className="text-xs border-collapse w-full">
-        <thead>
-          <tr>
-            <th className="text-left pr-4 py-1 text-gray-500 font-medium">Cultivar</th>
+      <Table density="dense" className="text-xs">
+        <TableHeader>
+          <TableRow>
+            <TableHead className="pr-4 text-gray-500 font-medium">Cultivar</TableHead>
             {BLB_STRAINS.map((s) => (
-              <th key={s} className="px-2 py-1 text-center text-gray-500 font-medium">{s.toUpperCase()}</th>
+              <TableHead key={s} className="px-2 text-center text-gray-500 font-medium">
+                {s.toUpperCase()}
+              </TableHead>
             ))}
-            <th className="px-2 py-1 text-center text-gray-500 font-medium">Total</th>
-          </tr>
-        </thead>
-        <tbody>
+            <TableHead className="px-2 text-center text-gray-500 font-medium">Total</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
           {records.map((r) => {
             const detail = r.bacterialLeafBlightDetail;
             const groupColor = cultivarNameToColor?.[r.cultivar];
             return (
-              <tr key={r.cultivar} className="hover:bg-gray-50">
-                <td
-                  className="pr-4 py-1 font-medium whitespace-nowrap cursor-pointer hover:underline"
+              <TableRow key={r.cultivar} className="hover:bg-gray-50">
+                <TableCell
+                  className="pr-4 font-medium whitespace-nowrap cursor-pointer hover:underline"
                   style={{ color: groupColor ?? undefined }}
                   onClick={() => onClickCultivar?.(r.cultivar)}
                 >
@@ -51,11 +61,11 @@ export function ResistanceGrid({ records, onClickCultivar, cultivarNameToColor }
                     )}
                     {r.cultivar}
                   </span>
-                </td>
+                </TableCell>
                 {BLB_STRAINS.map((s) => {
                   const val = detail?.[s];
                   return (
-                    <td key={s} className="px-2 py-1 text-center">
+                    <TableCell key={s} className="px-2 text-center">
                       <div
                         className={cn(
                           'w-6 h-6 rounded-sm mx-auto',
@@ -63,17 +73,17 @@ export function ResistanceGrid({ records, onClickCultivar, cultivarNameToColor }
                         )}
                         title={val === true ? 'Resistant' : val === false ? 'Susceptible' : 'Unknown'}
                       />
-                    </td>
+                    </TableCell>
                   );
                 })}
-                <td className="px-2 py-1 text-center font-medium text-gray-600">
+                <TableCell className="px-2 text-center font-medium text-gray-600">
                   {r.bacterialLeafBlight ?? '–'}<span className="text-gray-400">/4</span>
-                </td>
-              </tr>
+                </TableCell>
+              </TableRow>
             );
           })}
-        </tbody>
-      </table>
+        </TableBody>
+      </Table>
     </div>
   );
 }

@@ -4,6 +4,7 @@ import { useCultivars } from '@/hooks/useCultivars';
 import { useGenomeSummary } from '@/hooks/useGenomeSummary';
 import { GenomeDownloadSection } from '@/components/cultivar/GenomeDownloadSection';
 import { DiscoveryDownloadSection } from '@/components/download/DiscoveryDownloadSection';
+import { Input } from '@/components/ui/input';
 
 export function DownloadPage() {
   const [params, setParams] = useSearchParams();
@@ -74,14 +75,14 @@ export function DownloadPage() {
           </div>
           <div className="px-2 py-2 border-b border-gray-100">
             <div className="relative">
-              <input
+              <Input
                 type="search"
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
                 placeholder="Search cultivar…"
-                className="w-full border border-gray-200 rounded px-2 py-1 text-xs focus:outline-none focus:ring-2 focus:ring-green-200 focus:border-green-400"
               />
               {query && (
+                /* raw: inline ✕ clear glyph — see allowed-raw rule. */
                 <button
                   type="button"
                   onClick={() => setQuery('')}
@@ -107,6 +108,7 @@ export function DownloadPage() {
                 const active = c.id === effectiveId;
                 return (
                   <li key={c.id}>
+                    {/* raw: full-width sidebar list-item with left-border active state — Button primitive doesn't fit row-as-button. */}
                     <button
                       type="button"
                       onClick={() => selectCultivar(c.id)}

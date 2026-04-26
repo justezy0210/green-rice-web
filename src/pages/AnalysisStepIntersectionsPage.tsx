@@ -1,6 +1,14 @@
 import { useMemo } from 'react';
 import { useParams, Navigate, Link } from 'react-router-dom';
 import { Card, CardContent } from '@/components/ui/card';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
 import { AnalysisShell } from '@/components/analysis/AnalysisShell';
 import { JumpToBlockChip } from '@/components/analysis/JumpToBlockChip';
 import { useAnalysisRun } from '@/hooks/useAnalysisRun';
@@ -92,7 +100,7 @@ export function AnalysisStepIntersectionsPage() {
                 No blocks materialised for this run.
               </p>
             ) : (
-              <table className="w-full text-sm table-fixed">
+              <Table density="dense" className="table-fixed">
                 <colgroup>
                   <col className="w-28" />
                   <col />
@@ -101,54 +109,51 @@ export function AnalysisStepIntersectionsPage() {
                   <col className="w-24" />
                   <col className="w-32" />
                 </colgroup>
-                <thead>
-                  <tr className="text-[10px] uppercase tracking-wide text-gray-500 border-b border-gray-200">
-                    <th className="text-left pl-3 pr-2 py-1.5">Region</th>
-                    <th className="text-left px-3 py-1.5">Annotations</th>
-                    <th className="text-right px-3 py-1.5">Candidates</th>
-                    <th className="text-right px-3 py-1.5">w/ SV</th>
-                    <th className="text-right px-3 py-1.5">Intersections</th>
-                    <th className="text-left pl-3 pr-4 py-1.5">Block</th>
-                  </tr>
-                </thead>
-                <tbody>
+                <TableHeader>
+                  <TableRow className="text-[10px] uppercase tracking-wide text-gray-500">
+                    <TableHead className="pl-3">Region</TableHead>
+                    <TableHead className="px-3">Annotations</TableHead>
+                    <TableHead className="px-3 text-right">Candidates</TableHead>
+                    <TableHead className="px-3 text-right">w/ SV</TableHead>
+                    <TableHead className="px-3 text-right">Intersections</TableHead>
+                    <TableHead className="pl-3 pr-4">Block</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
                   {rows.map((r) => {
                     const region = `${r.chr}:${(r.start / 1_000_000).toFixed(1)}–${(r.end / 1_000_000).toFixed(1)} Mb`;
                     return (
-                      <tr
-                        key={r.blockId}
-                        className="border-b border-gray-100 hover:bg-green-50 transition-colors"
-                      >
-                        <td className="pl-3 pr-2 py-1.5 font-mono text-[11px]">
+                      <TableRow key={r.blockId} className="hover:bg-green-50 transition-colors">
+                        <TableCell className="pl-3 font-mono text-[11px]">
                           <Link
                             to={`/analysis/${validRunId}/block/${encodeURIComponent(r.blockId)}`}
                             className="text-gray-800 hover:text-green-700"
                           >
                             {region}
                           </Link>
-                        </td>
-                        <td className="px-3 py-1.5 text-[11px] text-gray-600 truncate">
+                        </TableCell>
+                        <TableCell className="px-3 text-[11px] text-gray-600 truncate">
                           {r.representativeAnnotations.length > 0
                             ? r.representativeAnnotations.join(' · ')
                             : <span className="text-gray-400">none</span>}
-                        </td>
-                        <td className="px-3 py-1.5 text-right tabular-nums text-[11px]">
+                        </TableCell>
+                        <TableCell className="px-3 text-right tabular-nums text-[11px]">
                           {r.candidateCount}
-                        </td>
-                        <td className="px-3 py-1.5 text-right tabular-nums text-[11px]">
+                        </TableCell>
+                        <TableCell className="px-3 text-right tabular-nums text-[11px]">
                           {r.withSv}
-                        </td>
-                        <td className="px-3 py-1.5 text-right tabular-nums font-medium text-gray-900">
+                        </TableCell>
+                        <TableCell className="px-3 text-right tabular-nums font-medium text-gray-900">
                           {r.intersectionCount}
-                        </td>
-                        <td className="pl-3 pr-4 py-1.5">
+                        </TableCell>
+                        <TableCell className="pl-3 pr-4">
                           <JumpToBlockChip runId={validRunId} blockId={r.blockId} />
-                        </td>
-                      </tr>
+                        </TableCell>
+                      </TableRow>
                     );
                   })}
-                </tbody>
-              </table>
+                </TableBody>
+              </Table>
             )}
           </CardContent>
         </Card>

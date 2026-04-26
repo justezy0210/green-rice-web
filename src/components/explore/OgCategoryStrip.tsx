@@ -62,6 +62,8 @@ export function OgCategoryStrip({
       {buckets.map((b) => {
         const active = selected === b.id;
         return (
+          /* raw: dense 11px function-category chip with color swatch — Button primitive
+             would inflate the call site without saving anything. */
           <button
             key={b.id}
             type="button"

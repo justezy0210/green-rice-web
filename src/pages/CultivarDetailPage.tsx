@@ -8,6 +8,7 @@ import { GenomeDownloadSection } from '@/components/cultivar/GenomeDownloadSecti
 import { GenomeStatsCard } from '@/components/cultivar/GenomeStatsCard';
 import { ChromosomeBrowseCard } from '@/components/cultivar/ChromosomeBrowseCard';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
 import { PHENOTYPE_FIELDS, getNumericValue } from '@/lib/utils';
 import { cultivarNameToId } from '@/lib/cultivar-helpers';
 import type { PhenotypeRecord } from '@/types/phenotype';
@@ -78,9 +79,9 @@ export function CultivarDetailPage() {
     return (
       <div className="flex flex-col items-center justify-center h-64 gap-3">
         <p className="text-gray-500">Cultivar "{name}" not found.</p>
-        <button onClick={() => navigate(-1)} className="text-sm text-green-600 hover:underline">
+        <Button variant="link" size="sm" onClick={() => navigate(-1)}>
           Go back
-        </button>
+        </Button>
       </div>
     );
   }
@@ -89,6 +90,7 @@ export function CultivarDetailPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
+          {/* raw: oversized inline ← glyph used as a back-nav handle. */}
           <button
             onClick={() => navigate(-1)}
             className="text-xl font-bold text-gray-400 hover:text-gray-600 cursor-pointer"

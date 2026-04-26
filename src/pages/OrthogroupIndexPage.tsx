@@ -267,6 +267,8 @@ function PresetButton({
     ? 'border-amber-400 bg-amber-100 text-amber-900 font-medium'
     : 'border-green-400 bg-green-50 text-green-800 font-medium';
   return (
+    /* raw: 11px preset toggle chip with intrinsic-vs-overlay color swap — Button primitive
+       would over-pad and lose the divider grouping in a single nav row. */
     <button
       type="button"
       onClick={onClick}

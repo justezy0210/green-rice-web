@@ -1,5 +1,6 @@
 import { useCallback, useMemo } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
 import { useRunIntersections } from '@/hooks/useRunIntersections';
 import {
   enumerateBlockExports,
@@ -95,13 +96,15 @@ function DownloadButton({
     setTimeout(() => URL.revokeObjectURL(url), 1000);
   };
   return (
-    <button
+    <Button
       type="button"
+      variant="outline"
+      size="xs"
       onClick={handleClick}
       disabled={disabled}
-      className="text-[12px] border border-green-200 bg-green-50 text-green-700 hover:bg-green-100 disabled:opacity-40 disabled:cursor-not-allowed rounded px-2.5 py-1 font-mono"
+      className="font-mono border-green-200 bg-green-50 text-green-700 hover:bg-green-100"
     >
       {file.filename}
-    </button>
+    </Button>
   );
 }

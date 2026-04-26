@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Input } from '@/components/ui/input';
 import type { PhenotypeRecord } from '@/types/phenotype';
 
 interface Props {
@@ -37,7 +38,7 @@ export function MiniSearch({ records, onSelect }: Props) {
 
   return (
     <div className="relative">
-      <input
+      <Input
         type="text"
         placeholder="Search cultivar…"
         value={q}
@@ -45,12 +46,13 @@ export function MiniSearch({ records, onSelect }: Props) {
         onKeyDown={handleKey}
         onFocus={() => { setOpen(true); setIdx(-1); }}
         onBlur={() => { setTimeout(() => setOpen(false), 150); }}
-        className="w-72 h-7 rounded border border-gray-300 px-2.5 text-xs shadow-sm focus:border-green-500 focus:ring-1 focus:ring-green-200 outline-none"
+        className="w-72"
       />
       {hits.length > 0 && (
         <ul className="absolute z-20 right-0 w-full mt-1 bg-white border border-gray-200 rounded shadow-lg max-h-48 overflow-y-auto">
           {hits.map((r, i) => (
             <li key={r.cultivar}>
+              {/* raw: full-width suggestion-list-item button — see DashboardPage. */}
               <button
                 className={`w-full text-left px-3 py-1.5 text-xs cursor-pointer flex items-center justify-between ${i === idx ? 'bg-green-100 text-green-800' : 'hover:bg-green-50'}`}
                 onMouseDown={(e) => e.preventDefault()}
