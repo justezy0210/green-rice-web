@@ -1,8 +1,8 @@
 import { useParams, Link, Navigate } from 'react-router-dom';
 import { Card, CardContent } from '@/components/ui/card';
 import { ScopeStrip } from '@/components/common/ScopeStrip';
-import { AnalysisShell } from '@/components/analysis/AnalysisShell';
-import { CandidateScoreBoard } from '@/components/analysis/CandidateScoreBoard';
+import { DiscoveryShell } from '@/components/discovery/DiscoveryShell';
+import { CandidateScoreBoard } from '@/components/discovery/CandidateScoreBoard';
 import { useAnalysisRun } from '@/hooks/useAnalysisRun';
 import { useCandidate } from '@/hooks/useCandidates';
 import { isValidRunId } from '@/lib/analysis-run-id';
@@ -13,7 +13,7 @@ export function CandidateDetailPage() {
   const { run, error } = useAnalysisRun(validRunId);
   const { candidate, loading } = useCandidate(validRunId, candidateId ?? null);
 
-  if (!validRunId) return <Navigate to="/analysis" replace />;
+  if (!validRunId) return <Navigate to="/discovery" replace />;
   if (error || !run) {
     return (
       <div className="py-10 text-center text-sm text-gray-500">
@@ -23,11 +23,11 @@ export function CandidateDetailPage() {
   }
 
   return (
-    <AnalysisShell runId={validRunId} stepAvailability={run.stepAvailability}>
+    <DiscoveryShell runId={validRunId} stepAvailability={run.stepAvailability}>
       <div className="space-y-4">
         <div className="text-sm text-gray-500">
           <Link
-            to={`/analysis/${validRunId}/candidates`}
+            to={`/discovery/${validRunId}/candidates`}
             className="hover:text-green-700 hover:underline"
           >
             ← Candidates
@@ -135,6 +135,6 @@ export function CandidateDetailPage() {
           </>
         )}
       </div>
-    </AnalysisShell>
+    </DiscoveryShell>
   );
 }

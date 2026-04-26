@@ -10,13 +10,13 @@ multi-stage pivot history see `docs/exec-plans/active/2026-04-20*` and
 ## Product identity
 
 **Korean japonica comparative pangenome resource** for 16 temperate
-japonica cultivars, with phenotype association surfaced as one of
-several analysis modules (not the organizing spine).
+japonica cultivars, with phenotype association surfaced through the
+separate Discovery module (not the organizing spine).
 
 Entity hierarchy (reflected in URLs, navigation, and copy):
 
 1. **Cultivar / Gene / Orthogroup / Region** — first-class entities
-2. **Trait Association** — overlay module
+2. **Discovery** — candidate-evidence overlay module
 
 ## Tech stack
 

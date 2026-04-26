@@ -1,22 +1,22 @@
 import { useParams, Navigate, Link } from 'react-router-dom';
 import { Card, CardContent } from '@/components/ui/card';
-import { AnalysisShell } from '@/components/analysis/AnalysisShell';
+import { DiscoveryShell } from '@/components/discovery/DiscoveryShell';
 import { useAnalysisRun } from '@/hooks/useAnalysisRun';
 import { useBlocks } from '@/hooks/useBlock';
 import { isValidRunId } from '@/lib/analysis-run-id';
 import type { CandidateBlock } from '@/types/candidate-block';
 
-export function AnalysisRunPage() {
+export function DiscoveryRunPage() {
   const { runId } = useParams<{ runId: string }>();
   const validRunId = runId && isValidRunId(runId) ? runId : null;
   const { run, error } = useAnalysisRun(validRunId);
   if (!validRunId) {
-    return <Navigate to="/analysis" replace />;
+    return <Navigate to="/discovery" replace />;
   }
-  return <AnalysisRunOverview runId={validRunId} run={run} error={error} />;
+  return <DiscoveryRunOverview runId={validRunId} run={run} error={error} />;
 }
 
-function AnalysisRunOverview({
+function DiscoveryRunOverview({
   runId,
   run,
   error,
@@ -38,10 +38,10 @@ function AnalysisRunOverview({
   const priorityBlocks = [...blocks].sort(priorityBlockSort).slice(0, 5);
 
   return (
-    <AnalysisShell runId={runId} stepAvailability={run.stepAvailability}>
+    <DiscoveryShell runId={runId} stepAvailability={run.stepAvailability}>
       <div className="space-y-4">
         <header>
-          <h1 className="text-xl font-semibold text-gray-900">Run overview</h1>
+          <h1 className="text-xl font-semibold text-gray-900">Discovery overview</h1>
           <p className="text-sm text-gray-600 mt-1">
             Trait <strong>{run.traitId}</strong> · {run.sampleCount} samples ·
             scoring v{run.scoringVersion}
@@ -65,8 +65,8 @@ function AnalysisRunOverview({
               <code className="text-[11px] bg-gray-100 px-1 py-0.5 rounded">{run.status}</code>
             </p>
             <p className="text-[11px] text-gray-500">
-              Use the stepper on the left. Block detail surfaces all four
-              evidences (SV, OG, intersection, function) on one card.
+              Use the stepper on the left. Block detail brings SV, OG,
+              intersection, and function evidence together.
             </p>
           </CardContent>
         </Card>
@@ -92,7 +92,7 @@ function AnalysisRunOverview({
           </CardContent>
         </Card>
       </div>
-    </AnalysisShell>
+    </DiscoveryShell>
   );
 }
 
@@ -106,7 +106,7 @@ function PriorityBlockRow({ runId, block }: { runId: string; block: CandidateBlo
   return (
     <li>
       <Link
-        to={`/analysis/${runId}/block/${encodeURIComponent(block.blockId)}`}
+        to={`/discovery/${runId}/block/${encodeURIComponent(block.blockId)}`}
         className="flex items-center justify-between gap-3 py-2 px-1 rounded hover:bg-green-50"
       >
         <span className="min-w-0">

@@ -2,11 +2,11 @@ import { useMemo, useState } from 'react';
 import { useParams, Navigate } from 'react-router-dom';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { AnalysisShell } from '@/components/analysis/AnalysisShell';
+import { DiscoveryShell } from '@/components/discovery/DiscoveryShell';
 import {
-  AnalysisStepSvTable,
+  DiscoveryStepSvTable,
   type RankedSvRow,
-} from '@/components/analysis/AnalysisStepSvTable';
+} from '@/components/discovery/DiscoveryStepSvTable';
 import { useAnalysisRun } from '@/hooks/useAnalysisRun';
 import {
   useSvManifest,
@@ -20,7 +20,7 @@ import type { SvType } from '@/types/sv-event';
 const TYPE_OPTIONS: SvType[] = ['INS', 'DEL', 'COMPLEX'];
 const PAGE_SIZE = 50;
 
-export function AnalysisStepVariantsPage() {
+export function DiscoveryStepVariantsPage() {
   const { runId } = useParams<{ runId: string }>();
   const validRunId = runId && isValidRunId(runId) ? runId : null;
   const parts = validRunId ? decodeRunId(validRunId) : null;
@@ -77,7 +77,7 @@ export function AnalysisStepVariantsPage() {
     return rows;
   }, [eventsByChr, freqByEvent, typeFilter, minAbsDelta]);
 
-  if (!validRunId) return <Navigate to="/analysis" replace />;
+  if (!validRunId) return <Navigate to="/discovery" replace />;
   if (error || !run) {
     return (
       <div className="py-10 text-center text-sm text-gray-500">
@@ -91,7 +91,7 @@ export function AnalysisStepVariantsPage() {
   const pageRows = ranked.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE);
 
   return (
-    <AnalysisShell runId={validRunId} stepAvailability={run.stepAvailability}>
+    <DiscoveryShell runId={validRunId} stepAvailability={run.stepAvailability}>
       <div className="space-y-4">
         <header>
           <h1 className="text-xl font-semibold text-gray-900">Step 3 — Variants</h1>
@@ -176,7 +176,7 @@ export function AnalysisStepVariantsPage() {
                   {ranked.length} event{ranked.length === 1 ? '' : 's'} · page{' '}
                   {page + 1} / {totalPages}
                 </div>
-                <AnalysisStepSvTable rows={pageRows} cultivar={run.traitId} />
+                <DiscoveryStepSvTable rows={pageRows} cultivar={run.traitId} />
                 {totalPages > 1 && (
                   <div className="flex items-center justify-center gap-2 mt-3 text-xs">
                     <Button
@@ -205,6 +205,6 @@ export function AnalysisStepVariantsPage() {
           </CardContent>
         </Card>
       </div>
-    </AnalysisShell>
+    </DiscoveryShell>
   );
 }

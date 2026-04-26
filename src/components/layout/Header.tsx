@@ -96,8 +96,8 @@ export function Header() {
             </DropdownMenuContent>
           </DropdownMenu>
 
-          <Link to="/analysis" className={navLinkClass(pathname.startsWith('/analysis'))}>
-            Analysis
+          <Link to="/discovery" className={navLinkClass(pathname.startsWith('/discovery'))}>
+            Discovery
           </Link>
           <Link to="/download" className={navLinkClass(pathname === '/download')}>
             Downloads
@@ -113,7 +113,7 @@ export function Header() {
               Sign Out
             </Button>
           ) : (
-            <Button render={<Link to="/login" />} className="ml-4">
+            <Button nativeButton={false} render={<Link to="/login" />} className="ml-4">
               Login
             </Button>
           )}

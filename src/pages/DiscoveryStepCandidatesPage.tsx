@@ -11,8 +11,15 @@ import {
 } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { AnalysisShell } from '@/components/analysis/AnalysisShell';
-import { JumpToBlockChip } from '@/components/analysis/JumpToBlockChip';
+import { DiscoveryShell } from '@/components/discovery/DiscoveryShell';
+import { JumpToBlockChip } from '@/components/discovery/JumpToBlockChip';
+import {
+  discoveryTableCellClass,
+  discoveryTableClass,
+  discoveryTableHeaderClass,
+  discoveryTableHeadRowClass,
+  discoveryTableRowClass,
+} from '@/components/discovery/DiscoveryTableStyles';
 import { useAnalysisRun } from '@/hooks/useAnalysisRun';
 import { useCandidates } from '@/hooks/useCandidates';
 import { isValidRunId } from '@/lib/analysis-run-id';
@@ -20,14 +27,14 @@ import type { Candidate } from '@/types/candidate';
 
 const PAGE_SIZE = 25;
 
-export function AnalysisStepCandidatesPage() {
+export function DiscoveryStepCandidatesPage() {
   const { runId } = useParams<{ runId: string }>();
   const validRunId = runId && isValidRunId(runId) ? runId : null;
   const { run, error } = useAnalysisRun(validRunId);
   const { candidates, loading } = useCandidates(validRunId);
   const [page, setPage] = useState(0);
 
-  if (!validRunId) return <Navigate to="/analysis" replace />;
+  if (!validRunId) return <Navigate to="/discovery" replace />;
   if (error || !run) {
     return (
       <div className="py-10 text-center text-sm text-gray-500">
@@ -40,7 +47,7 @@ export function AnalysisStepCandidatesPage() {
   const pageSlice = candidates.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE);
 
   return (
-    <AnalysisShell runId={validRunId} stepAvailability={run.stepAvailability}>
+    <DiscoveryShell runId={validRunId} stepAvailability={run.stepAvailability}>
       <div className="space-y-4">
         <header>
           <h1 className="text-xl font-semibold text-gray-900">
@@ -96,7 +103,7 @@ export function AnalysisStepCandidatesPage() {
           </CardContent>
         </Card>
       </div>
-    </AnalysisShell>
+    </DiscoveryShell>
   );
 }
 
@@ -108,7 +115,7 @@ function CandidateTable({
   candidates: Candidate[];
 }) {
   return (
-    <Table density="dense" className="table-fixed">
+    <Table density="dense" className={discoveryTableClass}>
       <colgroup>
         <col className="w-12" />
         <col className="w-28" />
@@ -119,8 +126,8 @@ function CandidateTable({
         <col className="w-28" />
         <col className="w-20" />
       </colgroup>
-      <TableHeader>
-        <TableRow className="text-[10px] uppercase tracking-wide text-gray-500">
+      <TableHeader className={discoveryTableHeaderClass}>
+        <TableRow className={discoveryTableHeadRowClass}>
           <TableHead className="pl-3">Rank</TableHead>
           <TableHead className="px-3">OG</TableHead>
           <TableHead className="px-3">Type</TableHead>
@@ -133,25 +140,40 @@ function CandidateTable({
       </TableHeader>
       <TableBody>
         {candidates.map((c) => (
-          <TableRow key={c.candidateId} className="hover:bg-green-50 transition-colors">
-            <TableCell className="pl-3 text-gray-500 tabular-nums">{c.rank}</TableCell>
-            <TableCell className="px-3">
+          <TableRow key={c.candidateId} className={discoveryTableRowClass}>
+            <TableCell
+              className={discoveryTableCellClass({
+                position: 'first',
+                className: 'pl-3 text-gray-500 tabular-nums',
+              })}
+            >
+              {c.rank}
+            </TableCell>
+            <TableCell className={discoveryTableCellClass({ className: 'px-3' })}>
               <Link
-                to={`/analysis/${runId}/candidate/${c.candidateId}`}
+                to={`/discovery/${runId}/candidate/${encodeURIComponent(c.candidateId)}`}
                 className="text-green-700 hover:underline font-mono text-[12px]"
               >
                 {c.primaryOgId}
               </Link>
             </TableCell>
-            <TableCell className="px-3">
+            <TableCell className={discoveryTableCellClass({ className: 'px-3' })}>
               <Badge variant="secondary" className="text-[10px] px-1.5 py-0.5 h-auto">
                 {c.candidateType}
               </Badge>
             </TableCell>
-            <TableCell className="px-3 text-[11px] text-gray-600 truncate">
+            <TableCell
+              className={discoveryTableCellClass({
+                className: 'px-3 text-[11px] text-gray-600 truncate',
+              })}
+            >
               {c.orthogroupPatternSummary ?? '—'}
             </TableCell>
-            <TableCell className="px-3 text-[11px] text-gray-600 truncate">
+            <TableCell
+              className={discoveryTableCellClass({
+                className: 'px-3 text-[11px] text-gray-600 truncate',
+              })}
+            >
               {c.bestSv ? (
                 <span>
                   <span className="font-mono text-[10px]">{c.bestSv.eventId}</span>{' '}
@@ -164,13 +186,22 @@ function CandidateTable({
                 <span className="text-gray-400">—</span>
               )}
             </TableCell>
-            <TableCell className="px-3 text-[11px] text-gray-600 truncate">
+            <TableCell
+              className={discoveryTableCellClass({
+                className: 'px-3 text-[11px] text-gray-600 truncate',
+              })}
+            >
               {c.functionSummary ?? <span className="text-gray-400">no annotation</span>}
             </TableCell>
-            <TableCell className="px-3">
+            <TableCell className={discoveryTableCellClass({ className: 'px-3' })}>
               <JumpToBlockChip runId={runId} blockId={c.blockId} />
             </TableCell>
-            <TableCell className="pl-3 pr-4 text-right tabular-nums font-medium text-gray-900">
+            <TableCell
+              className={discoveryTableCellClass({
+                position: 'last',
+                className: 'pl-3 pr-4 text-right tabular-nums font-medium text-gray-900',
+              })}
+            >
               {(c.combinedScore ?? c.totalScore).toFixed(3)}
             </TableCell>
           </TableRow>

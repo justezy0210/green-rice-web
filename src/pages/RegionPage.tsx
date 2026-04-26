@@ -6,7 +6,7 @@ import { OverlappingBlocksPanel } from '@/components/entity/OverlappingBlocksPan
 import { OverlappingGenesCard } from '@/components/region/OverlappingGenesCard';
 import { RegionOverviewMap } from '@/components/region/RegionOverviewMap';
 import { RegionTrackViz } from '@/components/region/RegionTrackViz';
-import { TraitRibbon } from '@/components/analysis/TraitRibbon';
+import { TraitRibbon } from '@/components/discovery/TraitRibbon';
 import { useGeneModelsPartition } from '@/hooks/useGeneModel';
 import { useGeneIndexPartition } from '@/hooks/useGeneIndex';
 import { useCultivars } from '@/hooks/useCultivars';
@@ -202,7 +202,7 @@ export function RegionPage() {
         cultivar's funannotate GFF3; OG assignment per gene comes from
         OrthoFinder. Variants on an arbitrary region are deferred — use
         each OG detail's anchor-locus variants tab for per-cluster VCF
-        context. Analysis-scoped review blocks appear below.
+        context. Discovery-scoped review blocks appear below.
       </ScopeStrip>
 
       {Object.keys(traitCells).length > 0 && (
@@ -217,9 +217,9 @@ export function RegionPage() {
               linkFor={(traitId) => {
                 const rep = traitRepresentatives[traitId];
                 if (!rep) return null;
-                return `/analysis/${rep.runId}/block/${encodeURIComponent(rep.blockId)}`;
+                return `/discovery/${rep.runId}/block/${encodeURIComponent(rep.blockId)}`;
               }}
-              title="Analysis runs with a block overlapping this window"
+              title="Discovery runs with a block overlapping this window"
             />
           </CardContent>
         </Card>

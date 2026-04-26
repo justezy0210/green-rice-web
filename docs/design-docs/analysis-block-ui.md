@@ -1,4 +1,4 @@
-# 06. Analysis Block UI — Block-First Interpretation Design
+# 06. Discovery Block UI — Block-First Interpretation Design
 
 Status: draft · cross-verified 2026-04-22 (Codex general-review)  
 Date: 2026-04-22
@@ -6,13 +6,13 @@ Date: 2026-04-22
 Companion docs:
 
 - `docs/product-specs/scope.md`
-- `docs/product-specs/analysis-idea.md`
+- `docs/product-specs/discovery-idea.md`
 - `docs/exec-plans/active/2026-04-21-site-rebuild-analysis-workflow.md`
 - `docs/exec-plans/active/2026-04-22-candidate-block-rollout.md` — implementation plan
 
 ## Terminology caveat (must be surfaced in every UI instance)
 
-`CandidateBlock` is a review-unit abstraction for the analysis module. It
+`CandidateBlock` is a review-unit abstraction for the Discovery module. It
 is NOT a claim about an inferred haplotype boundary or a recombination
 block. Auto-aggregated blocks are fixed 1 Mb review windows; curated
 blocks are expert-chosen review regions. Every block surface MUST carry:
@@ -59,7 +59,7 @@ read as *review unit*, not *haplotype block*.
 
 - 전역 리소스의 새로운 정체성 객체가 아니다.
 - canonical entity (`Gene`, `Orthogroup`, `Cultivar`, `Region`)를 대체하지 않는다.
-- 오직 `/analysis/:runId/*` 안에서 해석 단위로만 존재한다.
+- 오직 `/discovery/:runId/*` 안에서 해석 단위로만 존재한다.
 
 즉:
 
@@ -237,21 +237,21 @@ alongside each block doc.
 분석 모듈 안에 block 전용 route를 둔다.
 
 ```text
-/analysis/:runId/blocks
-/analysis/:runId/block/:blockId
+/discovery/:runId/blocks
+/discovery/:runId/block/:blockId
 ```
 
 기존 route와 관계는 다음과 같다.
 
 ```text
-/analysis/:runId/phenotype
-/analysis/:runId/orthogroups
-/analysis/:runId/variants
-/analysis/:runId/intersections
-/analysis/:runId/blocks
-/analysis/:runId/block/:blockId
-/analysis/:runId/candidates
-/analysis/:runId/candidate/:candidateId
+/discovery/:runId/phenotype
+/discovery/:runId/orthogroups
+/discovery/:runId/variants
+/discovery/:runId/intersections
+/discovery/:runId/blocks
+/discovery/:runId/block/:blockId
+/discovery/:runId/candidates
+/discovery/:runId/candidate/:candidateId
 ```
 
 권장 구조:
@@ -477,7 +477,7 @@ block은 canonical entity가 아니다.
 원칙:
 
 - `Gene`, `Orthogroup`, `Cultivar`, `Region`는 canonical 유지
-- `CandidateBlock`은 analysis module 내부 객체
+- `CandidateBlock`은 Discovery module 내부 객체
 
 연결 방식:
 
@@ -555,7 +555,7 @@ Cross-entity side effects on promote:
 ### MVP 3
 
 - cross-trait shared block view
-- `Observed In Analyses` backlink
+- `Observed In Discovery` backlink
 - export / shareable report
 
 ## Decision Rule

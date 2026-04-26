@@ -7,6 +7,13 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
+import {
+  discoveryTableCellClass,
+  discoveryTableClass,
+  discoveryTableHeaderClass,
+  discoveryTableHeadRowClass,
+  discoveryTableRowClass,
+} from '@/components/discovery/DiscoveryTableStyles';
 import { TRAITS } from '@/config/traits';
 import type { CandidateBlock } from '@/types/candidate-block';
 
@@ -57,7 +64,7 @@ export function CrossTraitBlockCompare({ blocks, activeTraitId }: Props) {
   });
 
   return (
-    <Table density="dense" className="table-fixed">
+    <Table density="dense" className={discoveryTableClass}>
       <colgroup>
         <col className="w-36" />
         <col className="w-24" />
@@ -66,8 +73,8 @@ export function CrossTraitBlockCompare({ blocks, activeTraitId }: Props) {
         <col />
         <col className="w-20" />
       </colgroup>
-      <TableHeader>
-        <TableRow className="text-[10px] uppercase tracking-wide text-gray-500">
+      <TableHeader className={discoveryTableHeaderClass}>
+        <TableRow className={discoveryTableHeadRowClass}>
           <TableHead className="pl-3">Trait</TableHead>
           <TableHead className="px-3">Groups</TableHead>
           <TableHead className="px-3 text-right">Candidates</TableHead>
@@ -104,8 +111,14 @@ function Row({
   const nHigh = block.groupCounts[high] ?? 0;
   const topOgs = block.topOgIds.slice(0, 4);
   return (
-    <TableRow className={active ? 'bg-green-50' : 'hover:bg-gray-50'}>
-      <TableCell className="pl-3">
+    <TableRow className={discoveryTableRowClass}>
+      <TableCell
+        className={discoveryTableCellClass({
+          position: 'first',
+          tone: active ? 'active' : 'default',
+          className: 'pl-3',
+        })}
+      >
         <span className="text-[13px] text-gray-800">{label}</span>
         {block.curated && (
           <span className="ml-1.5 text-[9px] uppercase tracking-wide text-amber-800 bg-amber-50 border border-amber-200 rounded px-1 py-[1px]">
@@ -113,17 +126,37 @@ function Row({
           </span>
         )}
       </TableCell>
-      <TableCell className="px-3 text-[11px] text-gray-600 tabular-nums">
+      <TableCell
+        className={discoveryTableCellClass({
+          tone: active ? 'active' : 'default',
+          className: 'px-3 text-[11px] text-gray-600 tabular-nums',
+        })}
+      >
         <span className="font-mono">{low}</span> {nLow} ·{' '}
         <span className="font-mono">{high}</span> {nHigh}
       </TableCell>
-      <TableCell className="px-3 text-right tabular-nums text-gray-800">
+      <TableCell
+        className={discoveryTableCellClass({
+          tone: active ? 'active' : 'default',
+          className: 'px-3 text-right tabular-nums text-gray-800',
+        })}
+      >
         {block.candidateOgCount}
       </TableCell>
-      <TableCell className="px-3 text-right tabular-nums text-gray-800">
+      <TableCell
+        className={discoveryTableCellClass({
+          tone: active ? 'active' : 'default',
+          className: 'px-3 text-right tabular-nums text-gray-800',
+        })}
+      >
         {block.intersectionCount}
       </TableCell>
-      <TableCell className="px-3">
+      <TableCell
+        className={discoveryTableCellClass({
+          tone: active ? 'active' : 'default',
+          className: 'px-3',
+        })}
+      >
         <span className="inline-flex flex-wrap gap-1">
           {topOgs.length === 0 ? (
             <span className="text-[11px] text-gray-400">—</span>
@@ -141,9 +174,15 @@ function Row({
           )}
         </span>
       </TableCell>
-      <TableCell className="pl-3 pr-4">
+      <TableCell
+        className={discoveryTableCellClass({
+          position: 'last',
+          tone: active ? 'active' : 'default',
+          className: 'pl-3 pr-4',
+        })}
+      >
         <Link
-          to={`/analysis/${block.runId}/block/${encodeURIComponent(block.blockId)}`}
+          to={`/discovery/${block.runId}/block/${encodeURIComponent(block.blockId)}`}
           className="text-[11px] text-green-700 hover:underline"
         >
           Open →

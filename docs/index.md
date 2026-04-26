@@ -11,7 +11,7 @@
 - [type-definitions.md](design-docs/type-definitions.md) — Phenotype/genotype/common type definitions
 - [firebase-architecture.md](design-docs/firebase-architecture.md) — Firebase integration, Auth, Firestore model
 - [component-design.md](design-docs/component-design.md) — Per-page component design
-- [analysis-block-ui.md](design-docs/analysis-block-ui.md) — Block-first analysis UI for locus-level interpretation
+- [analysis-block-ui.md](design-docs/analysis-block-ui.md) — Block-first Discovery UI for locus-level interpretation
 
 ## Execution Plans
 - [README.md](exec-plans/README.md) — Plan workflow and template

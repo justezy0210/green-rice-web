@@ -1,16 +1,16 @@
 import { useMemo } from 'react';
 import { useParams, Link, Navigate } from 'react-router-dom';
 import { Card, CardContent } from '@/components/ui/card';
-import { AnalysisShell } from '@/components/analysis/AnalysisShell';
-import { ConvergentEvidenceCard } from '@/components/analysis/ConvergentEvidenceCard';
-import { BlockCaveatStrip } from '@/components/analysis/BlockCaveatStrip';
-import { BlockTypeBadge } from '@/components/analysis/BlockTypeBadge';
-import { BlockNarrative } from '@/components/analysis/BlockNarrative';
-import { PhenotypeContrastPanel } from '@/components/analysis/PhenotypeContrastPanel';
-import { BlockCandidateTable } from '@/components/analysis/BlockCandidateTable';
-import { BlockExportPanel } from '@/components/analysis/BlockExportPanel';
-import { TraitRibbon } from '@/components/analysis/TraitRibbon';
-import { CrossTraitBlockCompare } from '@/components/analysis/CrossTraitBlockCompare';
+import { DiscoveryShell } from '@/components/discovery/DiscoveryShell';
+import { ConvergentEvidenceCard } from '@/components/discovery/ConvergentEvidenceCard';
+import { BlockCaveatStrip } from '@/components/discovery/BlockCaveatStrip';
+import { BlockTypeBadge } from '@/components/discovery/BlockTypeBadge';
+import { BlockNarrative } from '@/components/discovery/BlockNarrative';
+import { PhenotypeContrastPanel } from '@/components/discovery/PhenotypeContrastPanel';
+import { BlockCandidateTable } from '@/components/discovery/BlockCandidateTable';
+import { BlockExportPanel } from '@/components/discovery/BlockExportPanel';
+import { TraitRibbon } from '@/components/discovery/TraitRibbon';
+import { CrossTraitBlockCompare } from '@/components/discovery/CrossTraitBlockCompare';
 import { useAnalysisRun } from '@/hooks/useAnalysisRun';
 import { useBlock, useBlockCandidates } from '@/hooks/useBlock';
 import { useOverlappingBlocks } from '@/hooks/useOverlappingBlocks';
@@ -20,7 +20,7 @@ import {
   representativeBlockPerTrait,
 } from '@/lib/trait-ribbon-data';
 
-export function AnalysisBlockDetailPage() {
+export function DiscoveryBlockDetailPage() {
   const { runId, blockId } = useParams<{ runId: string; blockId: string }>();
   const validRunId = runId && isValidRunId(runId) ? runId : null;
   const { run, error: runError } = useAnalysisRun(validRunId);
@@ -41,7 +41,7 @@ export function AnalysisBlockDetailPage() {
     [overlapping],
   );
 
-  if (!validRunId) return <Navigate to="/analysis" replace />;
+  if (!validRunId) return <Navigate to="/discovery" replace />;
   if (runError || !run) {
     return (
       <div className="py-10 text-center text-sm text-gray-500">
@@ -54,11 +54,11 @@ export function AnalysisBlockDetailPage() {
   const topSvId = candidates[0]?.bestSv?.eventId ?? null;
 
   return (
-    <AnalysisShell runId={validRunId} stepAvailability={run.stepAvailability}>
+    <DiscoveryShell runId={validRunId} stepAvailability={run.stepAvailability}>
       <div className="space-y-4">
         <div className="text-sm text-gray-500">
           <Link
-            to={`/analysis/${validRunId}`}
+            to={`/discovery/${validRunId}`}
             className="hover:text-green-700 hover:underline"
           >
             ← Run overview
@@ -138,7 +138,7 @@ export function AnalysisBlockDetailPage() {
                       linkFor={(traitId) => {
                         const rep = traitRepresentatives[traitId];
                         if (!rep) return null;
-                        return `/analysis/${rep.runId}/block/${encodeURIComponent(rep.blockId)}`;
+                        return `/discovery/${rep.runId}/block/${encodeURIComponent(rep.blockId)}`;
                       }}
                       title="Blocks in this region"
                     />
@@ -193,6 +193,6 @@ export function AnalysisBlockDetailPage() {
           </>
         )}
       </div>
-    </AnalysisShell>
+    </DiscoveryShell>
   );
 }

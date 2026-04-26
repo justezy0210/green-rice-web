@@ -1,12 +1,12 @@
 # Scope — Korean Japonica Comparative Pangenome Resource (updated 2026-04-21)
 
-> **History.** 2026-04-18 locked the resource as a *phenotype-driven candidate discovery DB*. 2026-04-20 reframed the identity as **a comparative pangenome resource with candidate discovery as one analysis module** — entity units became first-class. 2026-04-21 expands the analysis module into a full **5-step analysis workflow** (`/analysis/:runId/*`) with a first-class `Candidate` object *inside the module*. Entity spine remains primary; the workflow is how the module exposes its output.
+> **History.** 2026-04-18 locked the resource as a *phenotype-driven candidate discovery DB*. 2026-04-20 reframed the identity as **a comparative pangenome resource with candidate discovery as one separate module** — entity units became first-class. 2026-04-21 expands the module into a full **5-step candidate-discovery workflow** (`/discovery/:runId/*`) with a first-class `Candidate` object *inside the module*. 2026-04-26 renames the user-facing module and URL namespace to **Discovery**. Entity spine remains primary; the workflow is how the module exposes its output.
 
 ## Declaration
 
 > **"이 리소스는 16개 한국 temperate japonica 품종의 de novo assembly, gene annotation, orthogroup, pangenome graph를 gene·orthogroup·cultivar·region 단위로 통합 탐색하는 비교유전체(pan-genome) 데이터베이스이며, 형질 그룹을 구분하는 후보 증거를 **별도 분석 모듈**로 함께 제공한다."**
 >
-> "This resource is a comparative pangenome database integrating de novo assemblies, gene annotations, orthogroups, and pangenome graph across 16 Korean temperate japonica cultivars, with phenotype-driven candidate evidence exposed as a **separate analysis module**."
+> "This resource is a comparative pangenome database integrating de novo assemblies, gene annotations, orthogroups, and pangenome graph across 16 Korean temperate japonica cultivars, with phenotype-driven candidate evidence exposed as a **separate Discovery module**."
 
 This sentence is the single point of identity. Every landing surface (Dashboard hero, README, idea.md, manuscript abstract) must stay consistent with it. The trait module's copy is scoped per-module, not rolled up to the resource identity.
 
@@ -35,9 +35,9 @@ Both are first-class; neither framing subsumes the other.
 - Evidence-graded PAV state per OG × cultivar (see classes below)
 - Non-reference Korean japonica sequences not captured by Nipponbare
 
-### At the analysis module (5-step workflow)
+### At the Discovery module (5-step workflow)
 
-Exposed as a dedicated module at `/analysis/:runId/*`. Not a replacement for the entity surfaces — it consumes them.
+Exposed as a dedicated module at `/discovery/:runId/*`. Not a replacement for the entity surfaces — it consumes them.
 
 - **Step 1 Phenotype** — proposed group definition, group balance, QC placeholders (PCA/kinship when available)
 - **Step 2 Orthogroups** — OG ranking by copy-count contrast between proposed phenotype groups
@@ -48,9 +48,9 @@ Exposed as a dedicated module at `/analysis/:runId/*`. Not a replacement for the
 
 ### `Candidate` — module-scoped first-class object
 
-`Candidate` is first-class **inside the analysis module**, not at the resource level. It is bound to a specific `runId` (frozen snapshot of trait · grouping version · OrthoFinder version · SV release · gene_model version · scoring version). The same OG can surface as different candidates across runs; candidates do not exist outside a run.
+`Candidate` is first-class **inside the Discovery module**, not at the resource level. It is bound to a specific `runId` (frozen snapshot of trait · grouping version · OrthoFinder version · SV release · gene_model version · scoring version). The same OG can surface as different candidates across runs; candidates do not exist outside a run.
 
-URL: `/analysis/:runId/candidate/:candidateId`. Entity URLs stay canonical; the run context is passed as `?run=...` query only.
+URL: `/discovery/:runId/candidate/:candidateId`. Entity URLs stay canonical; the run context is passed as `?run=...` query only.
 
 Candidate types (for ranking/explanation only — not biological categories):
 - `og_only` — copy/PAV pattern only
@@ -153,19 +153,19 @@ Browse axis (canonical, entity-first)
             ├─ Gene ─ Orthogroup ─ Region / Graph
             └─ (private OG, assembly stats, annotation summary)
 
-Analysis axis (module, runId-scoped)
-  /analysis/:runId ─ step1 phenotype
+Discovery axis (module, runId-scoped)
+  /discovery/:runId ─ step1 phenotype
                    ─ step2 orthogroups
                    ─ step3 variants
                    ─ step4 intersections
                    ─ step5 candidates ─ /candidate/:candidateId
 ```
 
-**Primacy rule.** Entity pages (`/cultivar/:name`, `/genes/:geneId`, `/og/:ogId`, `/region/...`) are the resource-identity surface. They must be reachable without passing through the analysis module. Dashboard copy, README, and manuscript abstract stay entity-first.
+**Primacy rule.** Entity pages (`/cultivar/:name`, `/genes/:geneId`, `/og/:ogId`, `/region/...`) are the resource-identity surface. They must be reachable without passing through the Discovery module. Dashboard copy, README, and manuscript abstract stay entity-first.
 
-**Module rule.** The analysis module owns `/analysis/*` and all trait-first, candidate-first, ranking-first UI lives there. The module links *into* entity pages (`?run=...` query), and entity pages link *back* via an `Observed In Analyses` panel, but the module's URLs never escape to the resource root.
+**Module rule.** The Discovery module owns `/discovery/*` and all trait-first, candidate-first, ranking-first UI lives there. The module links *into* entity pages (`?run=...` query), and entity pages link *back* via an `Observed In Discovery` panel, but the module's URLs never escape to the resource root.
 
-If a new surface would put Trait Association above Gene/OG/Cultivar *at the resource level*, it belongs in the analysis module, not at the resource level. The module itself can be trait-first internally.
+If a new surface would put Trait Association above Gene/OG/Cultivar *at the resource level*, it belongs in the Discovery module, not at the resource level. The module itself can be trait-first internally.
 
 ## How to use this doc
 
@@ -178,4 +178,5 @@ If a new surface would put Trait Association above Gene/OG/Cultivar *at the reso
 
 - **2026-04-18** — Initial lock: *Phenotype-driven candidate discovery DB*.
 - **2026-04-20** — Reframed to *Comparative pangenome resource with phenotype-association module* after methodology review (anchor-locus AF over-representation). PAV banned-entirely → evidence-graded-allowed. Entity spine (Gene/OG/Cultivar/Region) promoted to first-class.
-- **2026-04-21** — Analysis module expanded from "trait association table" to a **5-step workflow** at `/analysis/:runId/*` with `Candidate` as a first-class object *inside the module*. IA restated as dual-axis (Browse + Analysis). Entity spine remains the resource identity. `runId` 6-tuple snapshot (`trait · groupingV · orthofinderV · svReleaseV · geneModelV · scoringV`) supports version coexistence (11-cultivar MVP ↔ 16-cultivar release, SV-off ↔ SV-on). Exclusion list unchanged.
+- **2026-04-21** — Candidate-discovery module expanded from "trait association table" to a **5-step workflow** with `Candidate` as a first-class object *inside the module*. IA restated as dual-axis (Browse + Discovery). Entity spine remains the resource identity. `runId` 6-tuple snapshot (`trait · groupingV · orthofinderV · svReleaseV · geneModelV · scoringV`) supports version coexistence (11-cultivar MVP ↔ 16-cultivar release, SV-off ↔ SV-on). Exclusion list unchanged.
+- **2026-04-26** — User-facing module label and route namespace renamed from Analysis to Discovery (`/discovery/*`), while backend identifiers such as `analysis_runs` remain unchanged.

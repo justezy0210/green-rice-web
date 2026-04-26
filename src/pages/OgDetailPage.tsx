@@ -148,7 +148,7 @@ export function OgDetailPage() {
         {traitId ? (
           <>
             <Link
-              to={`/analysis/${runIdFor(traitId)}`}
+              to={`/discovery/${runIdFor(traitId)}`}
               className="hover:text-green-700 hover:underline"
             >
               ← {traitId.replace(/_/g, ' ')} run

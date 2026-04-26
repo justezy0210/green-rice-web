@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react';
 import { Link, useLocation } from 'react-router-dom';
+import { StepStatusBadge } from '@/components/discovery/StepStatusBadge';
 import { cn } from '@/lib/utils';
-import { StepStatusBadge } from './StepStatusBadge';
 import { decodeRunId } from '@/lib/analysis-run-id';
 import type { AnalysisStepKey, AnalysisStepStatus, RunId } from '@/types/analysis-run';
 
@@ -19,12 +19,12 @@ const STEPS: Array<{ key: AnalysisStepKey; label: string; slug: string }> = [
   { key: 'candidates', label: '5. Candidates', slug: 'candidates' },
 ];
 
-export function AnalysisShell({ runId, stepAvailability, children }: Props) {
+export function DiscoveryShell({ runId, stepAvailability, children }: Props) {
   const { pathname } = useLocation();
   const parts = decodeRunId(runId);
 
   return (
-    <div className="grid grid-cols-[220px_1fr] gap-6">
+    <div className="grid grid-cols-1 gap-6 lg:grid-cols-[220px_1fr]">
       <aside className="space-y-4">
         <div className="rounded border border-gray-200 bg-white p-3">
           <div className="text-[10px] uppercase tracking-wide text-gray-500 mb-1">
@@ -64,7 +64,7 @@ export function AnalysisShell({ runId, stepAvailability, children }: Props) {
         </div>
         <nav className="space-y-0.5">
           {STEPS.map((step) => {
-            const to = `/analysis/${runId}/${step.slug}`;
+            const to = `/discovery/${runId}/${step.slug}`;
             const active = pathname === to;
             const status = stepAvailability[step.key];
             const disabled = status === 'disabled';
@@ -96,10 +96,10 @@ export function AnalysisShell({ runId, stepAvailability, children }: Props) {
         </nav>
         <div className="pt-2 border-t border-gray-100">
           <Link
-            to={`/analysis/${runId}/blocks`}
+            to={`/discovery/${runId}/blocks`}
             className={cn(
               'flex items-center justify-between px-2 py-1.5 rounded text-[13px] transition-colors',
-              pathname === `/analysis/${runId}/blocks`
+              pathname === `/discovery/${runId}/blocks`
                 ? 'bg-amber-50 text-amber-800 font-medium'
                 : 'text-amber-700 hover:bg-amber-50',
             )}

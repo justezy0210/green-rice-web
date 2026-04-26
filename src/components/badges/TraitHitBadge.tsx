@@ -24,7 +24,7 @@ function formatP(p: number): string {
 
 /**
  * One trait-hit chip — amber pill linking to the OG detail (or the
- * Analysis home as fallback when no OG is in scope). Built on the
+ * Discovery home as fallback when no OG is in scope). Built on the
  * `Badge` primitive with `variant="warning"` for the amber palette;
  * routing is wired through Base UI's `render` prop so the chip
  * functions as a real `<a>` element without nested-anchor risk.
@@ -33,7 +33,7 @@ export function TraitHitBadge({ hit, ogId }: Props) {
   const tip =
     `${hit.t}: p=${formatP(hit.p)}` +
     (hit.lfc !== undefined ? ` · log2FC ${hit.lfc.toFixed(2)}` : '');
-  const to = ogId ? `/og/${ogId}` : '/analysis';
+  const to = ogId ? `/og/${ogId}` : '/discovery';
   return (
     <Badge
       variant="warning"

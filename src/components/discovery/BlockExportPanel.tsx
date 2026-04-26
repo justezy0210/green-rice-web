@@ -13,6 +13,8 @@ import type { IntersectionRow } from '@/types/intersection';
 interface Props {
   block: CandidateBlock;
   candidates: Candidate[];
+  title?: string;
+  description?: string;
 }
 
 /**
@@ -25,7 +27,12 @@ interface Props {
  * curated regions that span multiple 1 Mb bins, the filter picks up
  * every row inside the region.
  */
-export function BlockExportPanel({ block, candidates }: Props) {
+export function BlockExportPanel({
+  block,
+  candidates,
+  title = 'Export bundle',
+  description = 'Candidate-discovery export. Not validation-grade, not causal, not marker-ready. Window boundaries do not imply an inferred haplotype (see scope.md).',
+}: Props) {
   const regionFilter = useCallback(
     (row: IntersectionRow): boolean => {
       if (row.chr !== block.region.chr) return false;
@@ -47,12 +54,10 @@ export function BlockExportPanel({ block, candidates }: Props) {
     <Card>
       <CardContent className="py-3">
         <h3 className="text-xs uppercase tracking-wide text-gray-500 mb-2">
-          Export bundle
+          {title}
         </h3>
         <p className="text-[11px] text-gray-500 mb-2 leading-snug">
-          Candidate-discovery export. Not validation-grade, not causal, not
-          marker-ready. Window boundaries do not imply an inferred haplotype
-          (see scope.md).
+          {description}
         </p>
         <div className="flex flex-wrap gap-2">
           {files.map((f) => (

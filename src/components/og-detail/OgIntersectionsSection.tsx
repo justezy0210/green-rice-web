@@ -10,6 +10,13 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
+import {
+  ogDetailTableCellClass,
+  ogDetailTableClass,
+  ogDetailTableHeaderClass,
+  ogDetailTableHeadRowClass,
+  ogDetailTableRowClass,
+} from '@/components/og-detail/OgDetailTableStyles';
 import { useOgIntersectionBundle } from '@/hooks/useBlock';
 import type { IntersectionRow, ImpactClass } from '@/types/intersection';
 
@@ -76,7 +83,7 @@ export function OgIntersectionsSection({ ogId, intersectionReleaseId }: Props) {
             {bundle?.runs.length === 1 ? '' : 's'}
           </span>
         </div>
-        <Table density="dense" className="table-fixed">
+        <Table density="dense" className={`${ogDetailTableClass} min-w-[760px]`}>
           <colgroup>
             <col className="w-28" />
             <col className="w-20" />
@@ -85,8 +92,8 @@ export function OgIntersectionsSection({ ogId, intersectionReleaseId }: Props) {
             <col />
             <col className="w-16" />
           </colgroup>
-          <TableHeader>
-            <TableRow className="text-[10px] uppercase tracking-wide text-gray-500">
+          <TableHeader className={ogDetailTableHeaderClass}>
+            <TableRow className={ogDetailTableHeadRowClass}>
               <TableHead className="pl-3">SV</TableHead>
               <TableHead className="px-3">Type</TableHead>
               <TableHead className="px-3">Impact</TableHead>
@@ -97,23 +104,46 @@ export function OgIntersectionsSection({ ogId, intersectionReleaseId }: Props) {
           </TableHeader>
           <TableBody>
             {visible.map((r, idx) => (
-              <TableRow
-                key={`${r.runId}:${r.eventId}:${idx}`}
-                className="hover:bg-green-50"
-              >
-                <TableCell className="pl-3 font-mono text-[11px] text-gray-800">
-                  {r.eventId}
+              <TableRow key={`${r.runId}:${r.eventId}:${idx}`} className={ogDetailTableRowClass}>
+                <TableCell
+                  className={ogDetailTableCellClass({
+                    position: 'first',
+                    className: 'min-w-0 pl-3 font-mono text-[11px] text-gray-800',
+                  })}
+                >
+                  <span className="block truncate" title={r.eventId}>
+                    {r.eventId}
+                  </span>
                 </TableCell>
-                <TableCell className="px-3 text-[11px] text-gray-600">{r.svType}</TableCell>
-                <TableCell className="px-3 text-[11px]">
+                <TableCell
+                  className={ogDetailTableCellClass({
+                    className: 'px-3 text-[11px] text-gray-600',
+                  })}
+                >
+                  {r.svType}
+                </TableCell>
+                <TableCell className={ogDetailTableCellClass({ className: 'px-3 text-[11px]' })}>
                   <ImpactBadge impactClass={r.impactClass} />
                 </TableCell>
-                <TableCell className="px-3 text-[11px] text-gray-600">{r.cultivar}</TableCell>
-                <TableCell className="px-3 text-[11px]">
+                <TableCell
+                  className={ogDetailTableCellClass({
+                    className: 'min-w-0 px-3 text-[11px] text-gray-600',
+                  })}
+                >
+                  <span className="block truncate" title={r.cultivar}>
+                    {r.cultivar}
+                  </span>
+                </TableCell>
+                <TableCell
+                  className={ogDetailTableCellClass({
+                    className: 'min-w-0 px-3 text-[11px]',
+                  })}
+                >
                   {r.geneId ? (
                     <Link
                       to={`/genes/${encodeURIComponent(r.geneId)}`}
-                      className="font-mono text-gray-700 hover:text-green-700 hover:underline"
+                      className="block truncate font-mono text-gray-700 hover:text-green-700 hover:underline"
+                      title={r.geneId}
                     >
                       {r.geneId}
                     </Link>
@@ -121,7 +151,12 @@ export function OgIntersectionsSection({ ogId, intersectionReleaseId }: Props) {
                     <span className="text-gray-400">—</span>
                   )}
                 </TableCell>
-                <TableCell className="pl-3 pr-4 text-right tabular-nums text-gray-800">
+                <TableCell
+                  className={ogDetailTableCellClass({
+                    position: 'last',
+                    className: 'pl-3 pr-4 text-right tabular-nums text-gray-800',
+                  })}
+                >
                   {typeof r.absDeltaAf === 'number' ? r.absDeltaAf.toFixed(2) : '—'}
                 </TableCell>
               </TableRow>

@@ -9,6 +9,13 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
+import {
+  ogDetailTableCellClass,
+  ogDetailTableClass,
+  ogDetailTableHeaderClass,
+  ogDetailTableHeadRowClass,
+  ogDetailTableRowClass,
+} from '@/components/og-detail/OgDetailTableStyles';
 import { isReferencePathCultivar } from '@/lib/irgsp-constants';
 import { cn } from '@/lib/utils';
 import type { PavPerCultivar } from '@/lib/pav-evidence';
@@ -65,7 +72,7 @@ export function OgCultivarCopyMap({ members, cultivars, groupByCultivar, pavRows
             {panel.length} panel cultivars · sorted by group
           </span>
         </div>
-        <Table density="dense" className="table-fixed">
+        <Table density="dense" className={`${ogDetailTableClass} min-w-[760px]`}>
           <colgroup>
             <col className="w-32" />
             <col className="w-20" />
@@ -73,8 +80,8 @@ export function OgCultivarCopyMap({ members, cultivars, groupByCultivar, pavRows
             <col />
             <col className="w-32" />
           </colgroup>
-          <TableHeader>
-            <TableRow className="text-[10px] uppercase tracking-wide text-gray-500">
+          <TableHeader className={ogDetailTableHeaderClass}>
+            <TableRow className={ogDetailTableHeadRowClass}>
               <TableHead className="pl-3">Cultivar</TableHead>
               <TableHead className="px-3">Group</TableHead>
               <TableHead className="px-3 text-right">Copy</TableHead>
@@ -84,19 +91,22 @@ export function OgCultivarCopyMap({ members, cultivars, groupByCultivar, pavRows
           </TableHeader>
           <TableBody>
             {rows.map((r) => (
-              <TableRow
-                key={r.id}
-                className="hover:bg-green-50 transition-colors"
-              >
-                <TableCell className="pl-3 text-gray-800">
+              <TableRow key={r.id} className={ogDetailTableRowClass}>
+                <TableCell
+                  className={ogDetailTableCellClass({
+                    position: 'first',
+                    className: 'min-w-0 pl-3 text-gray-800',
+                  })}
+                >
                   <Link
                     to={`/cultivar/${encodeURIComponent(r.name)}`}
-                    className="hover:text-green-700 hover:underline"
+                    className="block truncate hover:text-green-700 hover:underline"
+                    title={r.name}
                   >
                     {r.name}
                   </Link>
                 </TableCell>
-                <TableCell className="px-3 text-[11px]">
+                <TableCell className={ogDetailTableCellClass({ className: 'px-3 text-[11px]' })}>
                   {r.groupLabel ? (
                     <span className="font-mono text-gray-700">
                       {r.groupLabel}
@@ -108,13 +118,26 @@ export function OgCultivarCopyMap({ members, cultivars, groupByCultivar, pavRows
                     <span className="text-gray-400">—</span>
                   )}
                 </TableCell>
-                <TableCell className="px-3 text-right tabular-nums text-gray-800">
+                <TableCell
+                  className={ogDetailTableCellClass({
+                    className: 'px-3 text-right tabular-nums text-gray-800',
+                  })}
+                >
                   {r.copy}
                 </TableCell>
-                <TableCell className="px-3 text-[11px]">
+                <TableCell
+                  className={ogDetailTableCellClass({
+                    className: 'min-w-0 px-3 text-[11px]',
+                  })}
+                >
                   <GeneIdsList geneIds={r.geneIds} />
                 </TableCell>
-                <TableCell className="pl-3 pr-4">
+                <TableCell
+                  className={ogDetailTableCellClass({
+                    position: 'last',
+                    className: 'pl-3 pr-4',
+                  })}
+                >
                   <PavStateBadge state={r.pavState} />
                 </TableCell>
               </TableRow>
@@ -129,12 +152,13 @@ export function OgCultivarCopyMap({ members, cultivars, groupByCultivar, pavRows
 function GeneIdsList({ geneIds }: { geneIds: string[] }) {
   if (geneIds.length === 0) return <span className="text-gray-400">—</span>;
   return (
-    <span className="inline-flex gap-1 flex-wrap">
+    <span className="inline-flex max-w-full gap-1 truncate">
       {geneIds.slice(0, 3).map((g) => (
         <Link
           key={g}
           to={`/genes/${encodeURIComponent(g)}`}
-          className="font-mono text-[10px] text-gray-700 hover:text-green-700 hover:underline"
+          className="shrink truncate font-mono text-[10px] text-gray-700 hover:text-green-700 hover:underline"
+          title={g}
         >
           {g}
         </Link>

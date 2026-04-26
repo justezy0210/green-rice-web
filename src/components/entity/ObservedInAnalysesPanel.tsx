@@ -24,20 +24,20 @@ export function ObservedInAnalysesPanel({ entityType, entityId, links }: Props) 
       <CardContent className="py-4">
         <div className="flex items-baseline justify-between mb-2">
           <h3 className="text-xs uppercase tracking-wide text-gray-500">
-            Observed in analyses
+            Observed in discovery
           </h3>
           <span className="text-[10px] text-gray-400 font-mono">
             {entityType}:{entityId}
           </span>
         </div>
         {loading ? (
-          <p className="text-[12px] text-gray-400">Loading analyses…</p>
+          <p className="text-[12px] text-gray-400">Loading discovery links...</p>
         ) : rows.length === 0 ? (
           <p className="text-[12px] text-gray-500 leading-snug">
-            No analysis runs reference this entity yet. This panel lists
+            No discovery runs reference this entity yet. This panel lists
             candidates across runs once{' '}
-            <Link to="/analysis" className="text-green-700 hover:underline">
-              Analysis
+            <Link to="/discovery" className="text-green-700 hover:underline">
+              Discovery
             </Link>{' '}
             is populated.
           </p>
@@ -48,8 +48,8 @@ export function ObservedInAnalysesPanel({ entityType, entityId, links }: Props) 
                 <Link
                   to={
                     r.candidateId
-                      ? `/analysis/${r.runId}/candidate/${r.candidateId}`
-                      : `/analysis/${r.runId}`
+                      ? `/discovery/${r.runId}/candidate/${r.candidateId}`
+                      : `/discovery/${r.runId}`
                   }
                   className="text-gray-800 hover:text-green-700 hover:underline"
                 >

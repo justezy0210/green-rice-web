@@ -3,7 +3,6 @@ import {
   doc,
   getDoc,
   getDocs,
-  orderBy,
   query,
   where,
 } from 'firebase/firestore';
@@ -32,9 +31,11 @@ export async function listCandidatesInBlock(
   blockId: string,
 ): Promise<Array<Record<string, unknown>>> {
   const col = collection(db, 'analysis_runs', runId, 'candidates');
-  const q = query(col, where('blockId', '==', blockId), orderBy('rank', 'asc'));
+  const q = query(col, where('blockId', '==', blockId));
   const snap = await getDocs(q);
-  return snap.docs.map((d) => d.data());
+  return snap.docs
+    .map((d) => d.data())
+    .sort((a, b) => Number(a.rank ?? 0) - Number(b.rank ?? 0));
 }
 
 const ogIntersectionCache = new Map<string, OgIntersectionBundle>();

@@ -85,10 +85,10 @@ export function DiscoveryDownloadSection() {
               </p>
             </div>
             <Link
-              to="/analysis"
+              to="/discovery"
               className="shrink-0 text-xs text-green-700 hover:underline whitespace-nowrap"
             >
-              Go to Analysis →
+              Go to Discovery →
             </Link>
           </div>
 

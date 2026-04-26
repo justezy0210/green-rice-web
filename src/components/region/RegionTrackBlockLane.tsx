@@ -18,7 +18,7 @@ const CURATED_FILL = '#d97706'; // amber-600
  * lists both curated and auto blocks as rows for reference.
  *
  * Same-blockId duplicates across trait runs (e.g. a curated region
- * used by 3 traits' analysis runs) collapse to a single bar so the
+ * used by 3 traits' discovery runs) collapse to a single bar so the
  * lane reads as "this locus is under curated review", not "three
  * identical bars stacked". The aggregated trait list appears in the
  * tooltip; the representative run (first curated, highest OG count)
@@ -98,7 +98,7 @@ function BlockBar({
   const y = BLOCK_TOP + 1 + row * BLOCK_ROW_H;
   const onClick = () => {
     navigate(
-      `/analysis/${block.runId}/block/${encodeURIComponent(block.blockId)}`,
+      `/discovery/${block.runId}/block/${encodeURIComponent(block.blockId)}`,
     );
   };
   const traitSummary =

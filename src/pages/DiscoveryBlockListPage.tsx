@@ -11,9 +11,16 @@ import {
 } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { AnalysisShell } from '@/components/analysis/AnalysisShell';
-import { BlockCaveatStrip } from '@/components/analysis/BlockCaveatStrip';
-import { BlockTypeBadge } from '@/components/analysis/BlockTypeBadge';
+import { DiscoveryShell } from '@/components/discovery/DiscoveryShell';
+import { BlockCaveatStrip } from '@/components/discovery/BlockCaveatStrip';
+import { BlockTypeBadge } from '@/components/discovery/BlockTypeBadge';
+import {
+  discoveryTableCellClass,
+  discoveryTableClass,
+  discoveryTableHeaderClass,
+  discoveryTableHeadRowClass,
+  discoveryTableRowClass,
+} from '@/components/discovery/DiscoveryTableStyles';
 import { useAnalysisRun } from '@/hooks/useAnalysisRun';
 import { useBlocks } from '@/hooks/useBlock';
 import { isValidRunId } from '@/lib/analysis-run-id';
@@ -21,7 +28,7 @@ import type { CandidateBlock } from '@/types/candidate-block';
 
 type Filter = 'all' | 'curated' | 'auto';
 
-export function AnalysisBlockListPage() {
+export function DiscoveryBlockListPage() {
   const { runId } = useParams<{ runId: string }>();
   const validRunId = runId && isValidRunId(runId) ? runId : null;
   const { run, error } = useAnalysisRun(validRunId);
@@ -44,7 +51,7 @@ export function AnalysisBlockListPage() {
       .sort(sortBlocks);
   }, [blocks, filter, chrFilter, minCount]);
 
-  if (!validRunId) return <Navigate to="/analysis" replace />;
+  if (!validRunId) return <Navigate to="/discovery" replace />;
   if (error || !run) {
     return (
       <div className="py-10 text-center text-sm text-gray-500">
@@ -54,7 +61,7 @@ export function AnalysisBlockListPage() {
   }
 
   return (
-    <AnalysisShell runId={validRunId} stepAvailability={run.stepAvailability}>
+    <DiscoveryShell runId={validRunId} stepAvailability={run.stepAvailability}>
       <div className="space-y-4">
         <header>
           <h1 className="text-xl font-semibold text-gray-900">Review blocks</h1>
@@ -110,7 +117,7 @@ export function AnalysisBlockListPage() {
             ) : visible.length === 0 ? (
               <p className="text-sm text-gray-500">No blocks match the filters.</p>
             ) : (
-              <Table density="dense" className="table-fixed">
+              <Table density="dense" className={discoveryTableClass}>
                 <colgroup>
                   <col className="w-32" />
                   <col className="w-20" />
@@ -119,8 +126,8 @@ export function AnalysisBlockListPage() {
                   <col className="w-20" />
                   <col className="w-20" />
                 </colgroup>
-                <TableHeader>
-                  <TableRow className="text-[10px] uppercase tracking-wide text-gray-500">
+                <TableHeader className={discoveryTableHeaderClass}>
+                  <TableRow className={discoveryTableHeadRowClass}>
                     <TableHead className="pl-3">Region</TableHead>
                     <TableHead className="px-3">Kind</TableHead>
                     <TableHead className="px-3">Type</TableHead>
@@ -139,7 +146,7 @@ export function AnalysisBlockListPage() {
           </CardContent>
         </Card>
       </div>
-    </AnalysisShell>
+    </DiscoveryShell>
   );
 }
 
@@ -186,16 +193,21 @@ function Row({ runId, block }: { runId: string; block: CandidateBlock }) {
   const region = `${block.region.chr}:${(block.region.start / 1_000_000).toFixed(1)}–${(block.region.end / 1_000_000).toFixed(1)} Mb`;
   const annotations = block.representativeAnnotations.slice(0, 2);
   return (
-    <TableRow className="hover:bg-green-50">
-      <TableCell className="pl-3 text-gray-800 font-mono text-[11px]">
+    <TableRow className={discoveryTableRowClass}>
+      <TableCell
+        className={discoveryTableCellClass({
+          position: 'first',
+          className: 'pl-3 text-gray-800 font-mono text-[11px]',
+        })}
+      >
         <Link
-          to={`/analysis/${runId}/block/${encodeURIComponent(block.blockId)}`}
+          to={`/discovery/${runId}/block/${encodeURIComponent(block.blockId)}`}
           className="hover:text-green-700"
         >
           {region}
         </Link>
       </TableCell>
-      <TableCell className="px-3">
+      <TableCell className={discoveryTableCellClass({ className: 'px-3' })}>
         {block.curated ? (
           <span className="text-[10px] font-mono text-amber-700 bg-amber-50 border border-amber-200 rounded px-1 py-[1px]">
             curated
@@ -206,10 +218,14 @@ function Row({ runId, block }: { runId: string; block: CandidateBlock }) {
           </span>
         )}
       </TableCell>
-      <TableCell className="px-3">
+      <TableCell className={discoveryTableCellClass({ className: 'px-3' })}>
         <BlockTypeBadge blockType={block.blockType} />
       </TableCell>
-      <TableCell className="px-3 text-[11px] text-gray-600 truncate">
+      <TableCell
+        className={discoveryTableCellClass({
+          className: 'px-3 text-[11px] text-gray-600 truncate',
+        })}
+      >
         {annotations.length === 0 ? (
           <span className="text-gray-400">none</span>
         ) : (
@@ -217,10 +233,19 @@ function Row({ runId, block }: { runId: string; block: CandidateBlock }) {
           (block.representativeAnnotations.length > 2 ? ` · +${block.representativeAnnotations.length - 2}` : '')
         )}
       </TableCell>
-      <TableCell className="px-3 text-right tabular-nums text-gray-800">
+      <TableCell
+        className={discoveryTableCellClass({
+          className: 'px-3 text-right tabular-nums text-gray-800',
+        })}
+      >
         {block.candidateOgCount}
       </TableCell>
-      <TableCell className="pl-3 pr-4 text-right tabular-nums text-gray-800">
+      <TableCell
+        className={discoveryTableCellClass({
+          position: 'last',
+          className: 'pl-3 pr-4 text-right tabular-nums text-gray-800',
+        })}
+      >
         {block.intersectionCount}
       </TableCell>
     </TableRow>

@@ -20,7 +20,7 @@ export function CandidateBlocksInAnalysesPanel({ entityType, entityId }: Props) 
       <CardContent className="py-4">
         <div className="flex items-baseline justify-between mb-2">
           <h3 className="text-xs uppercase tracking-wide text-gray-500">
-            Candidate blocks in analyses
+            Candidate blocks in discovery
           </h3>
           <span className="text-[10px] text-gray-400 font-mono">
             {entityType}:{entityId}
@@ -40,7 +40,7 @@ export function CandidateBlocksInAnalysesPanel({ entityType, entityId }: Props) 
               return (
                 <li key={`${b.runId}:${b.blockId}`} className="py-1.5">
                   <Link
-                    to={`/analysis/${b.runId}/block/${encodeURIComponent(b.blockId)}`}
+                    to={`/discovery/${b.runId}/block/${encodeURIComponent(b.blockId)}`}
                     className="flex items-center justify-between gap-3 hover:text-green-700 hover:underline"
                   >
                     <span>

@@ -74,7 +74,7 @@ export function DashboardPage() {
               Explore de novo assemblies, gene annotations, orthogroups, and
               pangenome graph across {TOTAL_CULTIVARS} Korean temperate
               japonica cultivars. Phenotype-associated candidates are
-              available as one of several analysis surfaces.
+              available in the Discovery module.
             </p>
             <div className="flex flex-wrap gap-x-6 gap-y-1 pt-1 text-[11px] text-gray-500">
               <span>{records.length} cultivars loaded</span>

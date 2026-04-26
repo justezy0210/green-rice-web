@@ -20,8 +20,11 @@ interface Props {
 export function OgIndexRow({ row, panelTotal, href, onClick }: Props) {
   const tier = row.tier as ConservationTier;
   return (
-    <TableRow onClick={onClick} className="cursor-pointer">
-      <TableCell className="pl-3">
+    <TableRow
+      onClick={onClick}
+      className="group cursor-pointer border-0 hover:bg-transparent"
+    >
+      <TableCell className="rounded-l-md border-y border-l border-gray-100 bg-white pl-3 group-hover:bg-green-50/50">
         <Link
           to={href}
           onClick={(e) => e.stopPropagation()}
@@ -30,19 +33,19 @@ export function OgIndexRow({ row, panelTotal, href, onClick }: Props) {
           {row.ogId}
         </Link>
       </TableCell>
-      <TableCell>
+      <TableCell className="border-y border-gray-100 bg-white group-hover:bg-green-50/50">
         <TierBadge tier={tier} />
       </TableCell>
-      <TableCell className="text-right tabular-nums text-[12px] text-gray-700">
+      <TableCell className="border-y border-gray-100 bg-white text-right tabular-nums text-[12px] text-gray-700 group-hover:bg-green-50/50">
         {row.presentCount}/{panelTotal}
       </TableCell>
-      <TableCell className="text-right tabular-nums text-[12px] text-gray-700">
+      <TableCell className="border-y border-gray-100 bg-white text-right tabular-nums text-[12px] text-gray-700 group-hover:bg-green-50/50">
         {row.irgspCopyCount === 0 ? <span className="text-gray-400">×</span> : `×${row.irgspCopyCount}`}
       </TableCell>
-      <TableCell className="text-right tabular-nums text-[12px] text-gray-700">
+      <TableCell className="border-y border-gray-100 bg-white text-right tabular-nums text-[12px] text-gray-700 group-hover:bg-green-50/50">
         {row.memberCount}
       </TableCell>
-      <TableCell>
+      <TableCell className="rounded-r-md border-y border-r border-gray-100 bg-white group-hover:bg-green-50/50">
         {row.traits && row.traits.length > 0 ? (
           <span className="inline-flex flex-wrap gap-1">
             {row.traits.slice(0, 5).map((t) => (

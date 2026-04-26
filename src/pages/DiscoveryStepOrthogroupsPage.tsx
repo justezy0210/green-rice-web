@@ -1,6 +1,6 @@
 import { useCallback, useMemo } from 'react';
 import { useParams, useSearchParams, Navigate } from 'react-router-dom';
-import { AnalysisShell } from '@/components/analysis/AnalysisShell';
+import { DiscoveryShell } from '@/components/discovery/DiscoveryShell';
 import { useAnalysisRun } from '@/hooks/useAnalysisRun';
 import { isValidRunId, decodeRunId } from '@/lib/analysis-run-id';
 import { useOrthogroupDiff } from '@/hooks/useOrthogroupDiff';
@@ -17,7 +17,7 @@ function isSortKey(v: string | null): v is DiffSortKey {
   return v !== null && (VALID_SORT as string[]).includes(v);
 }
 
-export function AnalysisStepOrthogroupsPage() {
+export function DiscoveryStepOrthogroupsPage() {
   const { runId } = useParams<{ runId: string }>();
   const validRunId = runId && isValidRunId(runId) ? runId : null;
   const parts = validRunId ? decodeRunId(validRunId) : null;
@@ -121,7 +121,7 @@ export function AnalysisStepOrthogroupsPage() {
     );
   }, [loading, doc, entriesState, isStale, page, sortKey, query, category, ogCategories, alleleFreq, onPageChange, onSortChange, onQueryChange, onCategoryChange, onSelectOg]);
 
-  if (!validRunId) return <Navigate to="/analysis" replace />;
+  if (!validRunId) return <Navigate to="/discovery" replace />;
   if (error || !run) {
     return (
       <div className="py-10 text-center text-sm text-gray-500">
@@ -131,7 +131,7 @@ export function AnalysisStepOrthogroupsPage() {
   }
 
   return (
-    <AnalysisShell runId={validRunId} stepAvailability={run.stepAvailability}>
+    <DiscoveryShell runId={validRunId} stepAvailability={run.stepAvailability}>
       <div className="space-y-4">
         <header>
           <h1 className="text-xl font-semibold text-gray-900">Step 2 — Orthogroups</h1>
@@ -143,6 +143,6 @@ export function AnalysisStepOrthogroupsPage() {
         </header>
         {content}
       </div>
-    </AnalysisShell>
+    </DiscoveryShell>
   );
 }

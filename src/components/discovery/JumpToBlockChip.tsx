@@ -30,7 +30,7 @@ export function JumpToBlockChip({ runId, blockId }: Props) {
     : blockId.replace(/^bin_/, '');
   return (
     <Link
-      to={`/analysis/${runId}/block/${encodeURIComponent(blockId)}`}
+      to={`/discovery/${runId}/block/${encodeURIComponent(blockId)}`}
       title={`Jump to block ${blockId}`}
       onClick={(e) => e.stopPropagation()}
       className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded border border-green-200 bg-green-50 text-[10px] text-green-700 font-mono hover:bg-green-100"

@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom';
 import { Card, CardContent } from '@/components/ui/card';
-import { BlockTypeBadge } from '@/components/analysis/BlockTypeBadge';
+import { BlockTypeBadge } from '@/components/discovery/BlockTypeBadge';
 import type { CandidateBlock } from '@/types/candidate-block';
 
 interface Props {
@@ -140,13 +140,13 @@ export function ConvergentEvidenceCard({ block, firstSvEventId, firstOgId }: Pro
           </span>
           <span className="ml-auto flex gap-3">
             <Link
-              to={`/analysis/${block.runId}/candidates`}
+              to={`/discovery/${block.runId}/candidates`}
               className="text-green-700 hover:underline"
             >
               Candidates →
             </Link>
             <Link
-              to={`/analysis/${block.runId}/variants`}
+              to={`/discovery/${block.runId}/variants`}
               className="text-green-700 hover:underline"
             >
               SV browser →

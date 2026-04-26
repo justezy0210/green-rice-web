@@ -13,15 +13,16 @@ import { GeneDetailPage } from '@/pages/GeneDetailPage';
 import { OgDetailPage } from '@/pages/OgDetailPage';
 import { OrthogroupIndexPage } from '@/pages/OrthogroupIndexPage';
 import { RegionPage } from '@/pages/RegionPage';
-import { AnalysisHomePage } from '@/pages/AnalysisHomePage';
-import { AnalysisRunPage } from '@/pages/AnalysisRunPage';
-import { AnalysisStepIntersectionsPage } from '@/pages/AnalysisStepIntersectionsPage';
-import { AnalysisStepPhenotypePage } from '@/pages/AnalysisStepPhenotypePage';
-import { AnalysisStepOrthogroupsPage } from '@/pages/AnalysisStepOrthogroupsPage';
-import { AnalysisStepVariantsPage } from '@/pages/AnalysisStepVariantsPage';
-import { AnalysisStepCandidatesPage } from '@/pages/AnalysisStepCandidatesPage';
-import { AnalysisBlockDetailPage } from '@/pages/AnalysisBlockDetailPage';
-import { AnalysisBlockListPage } from '@/pages/AnalysisBlockListPage';
+import { DiscoveryHomePage } from '@/pages/DiscoveryHomePage';
+import { DiscoveryLocusPage } from '@/pages/DiscoveryLocusPage';
+import { DiscoveryRunPage } from '@/pages/DiscoveryRunPage';
+import { DiscoveryStepIntersectionsPage } from '@/pages/DiscoveryStepIntersectionsPage';
+import { DiscoveryStepPhenotypePage } from '@/pages/DiscoveryStepPhenotypePage';
+import { DiscoveryStepOrthogroupsPage } from '@/pages/DiscoveryStepOrthogroupsPage';
+import { DiscoveryStepVariantsPage } from '@/pages/DiscoveryStepVariantsPage';
+import { DiscoveryStepCandidatesPage } from '@/pages/DiscoveryStepCandidatesPage';
+import { DiscoveryBlockDetailPage } from '@/pages/DiscoveryBlockDetailPage';
+import { DiscoveryBlockListPage } from '@/pages/DiscoveryBlockListPage';
 import { CandidateDetailPage } from '@/pages/CandidateDetailPage';
 import { ProtectedRoute } from '@/components/auth/ProtectedRoute';
 
@@ -33,19 +34,20 @@ export default function App() {
           <Routes>
             <Route path="/" element={<DashboardPage />} />
 
-            <Route path="/analysis" element={<AnalysisHomePage />} />
-            <Route path="/analysis/:runId" element={<AnalysisRunPage />} />
-            <Route path="/analysis/:runId/phenotype" element={<AnalysisStepPhenotypePage />} />
-            <Route path="/analysis/:runId/orthogroups" element={<AnalysisStepOrthogroupsPage />} />
-            <Route path="/analysis/:runId/variants" element={<AnalysisStepVariantsPage />} />
-            <Route path="/analysis/:runId/intersections" element={<AnalysisStepIntersectionsPage />} />
-            <Route path="/analysis/:runId/candidates" element={<AnalysisStepCandidatesPage />} />
-            <Route path="/analysis/:runId/candidate/:candidateId" element={<CandidateDetailPage />} />
-            <Route path="/analysis/:runId/blocks" element={<AnalysisBlockListPage />} />
-            <Route path="/analysis/:runId/block/:blockId" element={<AnalysisBlockDetailPage />} />
+            <Route path="/discovery" element={<DiscoveryHomePage />} />
+            <Route path="/discovery/locus/:locusSlug" element={<DiscoveryLocusPage />} />
+            <Route path="/discovery/:runId" element={<DiscoveryRunPage />} />
+            <Route path="/discovery/:runId/phenotype" element={<DiscoveryStepPhenotypePage />} />
+            <Route path="/discovery/:runId/orthogroups" element={<DiscoveryStepOrthogroupsPage />} />
+            <Route path="/discovery/:runId/variants" element={<DiscoveryStepVariantsPage />} />
+            <Route path="/discovery/:runId/intersections" element={<DiscoveryStepIntersectionsPage />} />
+            <Route path="/discovery/:runId/candidates" element={<DiscoveryStepCandidatesPage />} />
+            <Route path="/discovery/:runId/candidate/:candidateId" element={<CandidateDetailPage />} />
+            <Route path="/discovery/:runId/blocks" element={<DiscoveryBlockListPage />} />
+            <Route path="/discovery/:runId/block/:blockId" element={<DiscoveryBlockDetailPage />} />
 
-            {/* Legacy /explore retained temporarily for OG drilldown links; root redirects to /analysis. */}
-            <Route path="/explore" element={<Navigate to="/analysis" replace />} />
+            {/* Legacy /explore retained temporarily for OG drilldown links; root redirects to /discovery. */}
+            <Route path="/explore" element={<Navigate to="/discovery" replace />} />
             <Route path="/explore/og/:ogId" element={<OgDetailPage />} />
             <Route path="/explore/*" element={<ExplorePage />} />
 

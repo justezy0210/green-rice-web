@@ -11,13 +11,20 @@ import {
 } from '@/components/ui/table';
 import { ScopeStrip } from '@/components/common/ScopeStrip';
 import { GroupingSummaryCard } from '@/components/explore/GroupingSummaryCard';
-import { AnalysisShell } from '@/components/analysis/AnalysisShell';
+import { DiscoveryShell } from '@/components/discovery/DiscoveryShell';
+import {
+  discoveryTableCellClass,
+  discoveryTableClass,
+  discoveryTableHeaderClass,
+  discoveryTableHeadRowClass,
+  discoveryTableRowClass,
+} from '@/components/discovery/DiscoveryTableStyles';
 import { useAnalysisRun } from '@/hooks/useAnalysisRun';
 import { useOrthogroupDiff } from '@/hooks/useOrthogroupDiff';
 import { useCultivars } from '@/hooks/useCultivars';
 import { isValidRunId, decodeRunId } from '@/lib/analysis-run-id';
 
-export function AnalysisStepPhenotypePage() {
+export function DiscoveryStepPhenotypePage() {
   const { runId } = useParams<{ runId: string }>();
   const validRunId = runId && isValidRunId(runId) ? runId : null;
   const parts = validRunId ? decodeRunId(validRunId) : null;
@@ -46,7 +53,7 @@ export function AnalysisStepPhenotypePage() {
     return byLabel;
   }, [groupingDoc]);
 
-  if (!validRunId) return <Navigate to="/analysis" replace />;
+  if (!validRunId) return <Navigate to="/discovery" replace />;
   if (error || !run) {
     return (
       <div className="py-10 text-center text-sm text-gray-500">
@@ -56,7 +63,7 @@ export function AnalysisStepPhenotypePage() {
   }
 
   return (
-    <AnalysisShell runId={validRunId} stepAvailability={run.stepAvailability}>
+    <DiscoveryShell runId={validRunId} stepAvailability={run.stepAvailability}>
       <div className="space-y-4">
         <header>
           <h1 className="text-xl font-semibold text-gray-900">
@@ -87,9 +94,9 @@ export function AnalysisStepPhenotypePage() {
               <h3 className="text-xs uppercase tracking-wide text-gray-500 mb-2">
                 Group balance
               </h3>
-              <Table density="dense">
-                <TableHeader>
-                  <TableRow className="text-[10px] uppercase tracking-wide text-gray-500">
+              <Table density="dense" className={discoveryTableClass}>
+                <TableHeader className={discoveryTableHeaderClass}>
+                  <TableRow className={discoveryTableHeadRowClass}>
                     <TableHead className="px-2">Group</TableHead>
                     <TableHead className="px-2 text-right">Cultivars</TableHead>
                     <TableHead className="px-2 text-right">High confidence</TableHead>
@@ -98,11 +105,37 @@ export function AnalysisStepPhenotypePage() {
                 </TableHeader>
                 <TableBody>
                   {Object.entries(balance).map(([label, b]) => (
-                    <TableRow key={label}>
-                      <TableCell className="px-2 font-medium text-gray-800">{label}</TableCell>
-                      <TableCell className="px-2 text-right tabular-nums">{b.total}</TableCell>
-                      <TableCell className="px-2 text-right tabular-nums">{b.high}</TableCell>
-                      <TableCell className="px-2 text-right tabular-nums text-amber-700">{b.borderline}</TableCell>
+                    <TableRow key={label} className={discoveryTableRowClass}>
+                      <TableCell
+                        className={discoveryTableCellClass({
+                          position: 'first',
+                          className: 'px-2 font-medium text-gray-800',
+                        })}
+                      >
+                        {label}
+                      </TableCell>
+                      <TableCell
+                        className={discoveryTableCellClass({
+                          className: 'px-2 text-right tabular-nums',
+                        })}
+                      >
+                        {b.total}
+                      </TableCell>
+                      <TableCell
+                        className={discoveryTableCellClass({
+                          className: 'px-2 text-right tabular-nums',
+                        })}
+                      >
+                        {b.high}
+                      </TableCell>
+                      <TableCell
+                        className={discoveryTableCellClass({
+                          position: 'last',
+                          className: 'px-2 text-right tabular-nums text-amber-700',
+                        })}
+                      >
+                        {b.borderline}
+                      </TableCell>
                     </TableRow>
                   ))}
                 </TableBody>
@@ -111,6 +144,6 @@ export function AnalysisStepPhenotypePage() {
           </Card>
         )}
       </div>
-    </AnalysisShell>
+    </DiscoveryShell>
   );
 }

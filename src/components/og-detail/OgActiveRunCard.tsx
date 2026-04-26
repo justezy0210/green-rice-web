@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom';
 import { Card, CardContent } from '@/components/ui/card';
-import { JumpToBlockChip } from '@/components/analysis/JumpToBlockChip';
+import { JumpToBlockChip } from '@/components/discovery/JumpToBlockChip';
 import type { Candidate } from '@/types/candidate';
 import type { RunId } from '@/types/analysis-run';
 
@@ -72,7 +72,7 @@ export function OgActiveRunCard({ runId, candidate, loading }: Props) {
             <span className="ml-auto flex items-center gap-2">
               <JumpToBlockChip runId={runId} blockId={candidate.blockId} />
               <Link
-                to={`/analysis/${runId}/candidate/${candidate.candidateId}`}
+                to={`/discovery/${runId}/candidate/${candidate.candidateId}`}
                 className="text-[11px] text-green-700 hover:underline"
               >
                 Candidate detail →

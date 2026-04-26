@@ -9,8 +9,15 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { AnalysisShell } from '@/components/analysis/AnalysisShell';
-import { JumpToBlockChip } from '@/components/analysis/JumpToBlockChip';
+import { DiscoveryShell } from '@/components/discovery/DiscoveryShell';
+import { JumpToBlockChip } from '@/components/discovery/JumpToBlockChip';
+import {
+  discoveryTableCellClass,
+  discoveryTableClass,
+  discoveryTableHeaderClass,
+  discoveryTableHeadRowClass,
+  discoveryTableRowClass,
+} from '@/components/discovery/DiscoveryTableStyles';
 import { useAnalysisRun } from '@/hooks/useAnalysisRun';
 import { useBlocks } from '@/hooks/useBlock';
 import { useCandidates } from '@/hooks/useCandidates';
@@ -21,7 +28,7 @@ import { isValidRunId } from '@/lib/analysis-run-id';
  * detail (SV × impact class) stays on the block detail page so the
  * convergence rendering lives in exactly one place.
  */
-export function AnalysisStepIntersectionsPage() {
+export function DiscoveryStepIntersectionsPage() {
   const { runId } = useParams<{ runId: string }>();
   const validRunId = runId && isValidRunId(runId) ? runId : null;
   const { run, error } = useAnalysisRun(validRunId);
@@ -66,7 +73,7 @@ export function AnalysisStepIntersectionsPage() {
     });
   }, [blocks, candidates]);
 
-  if (!validRunId) return <Navigate to="/analysis" replace />;
+  if (!validRunId) return <Navigate to="/discovery" replace />;
   if (error || !run) {
     return (
       <div className="py-10 text-center text-sm text-gray-500">
@@ -78,7 +85,7 @@ export function AnalysisStepIntersectionsPage() {
   const loading = blocksLoading || candsLoading;
 
   return (
-    <AnalysisShell runId={validRunId} stepAvailability={run.stepAvailability}>
+    <DiscoveryShell runId={validRunId} stepAvailability={run.stepAvailability}>
       <div className="space-y-4">
         <header>
           <h1 className="text-xl font-semibold text-gray-900">
@@ -100,7 +107,7 @@ export function AnalysisStepIntersectionsPage() {
                 No blocks materialised for this run.
               </p>
             ) : (
-              <Table density="dense" className="table-fixed">
+              <Table density="dense" className={discoveryTableClass}>
                 <colgroup>
                   <col className="w-28" />
                   <col />
@@ -109,8 +116,8 @@ export function AnalysisStepIntersectionsPage() {
                   <col className="w-24" />
                   <col className="w-32" />
                 </colgroup>
-                <TableHeader>
-                  <TableRow className="text-[10px] uppercase tracking-wide text-gray-500">
+                <TableHeader className={discoveryTableHeaderClass}>
+                  <TableRow className={discoveryTableHeadRowClass}>
                     <TableHead className="pl-3">Region</TableHead>
                     <TableHead className="px-3">Annotations</TableHead>
                     <TableHead className="px-3 text-right">Candidates</TableHead>
@@ -123,30 +130,56 @@ export function AnalysisStepIntersectionsPage() {
                   {rows.map((r) => {
                     const region = `${r.chr}:${(r.start / 1_000_000).toFixed(1)}–${(r.end / 1_000_000).toFixed(1)} Mb`;
                     return (
-                      <TableRow key={r.blockId} className="hover:bg-green-50 transition-colors">
-                        <TableCell className="pl-3 font-mono text-[11px]">
+                      <TableRow key={r.blockId} className={discoveryTableRowClass}>
+                        <TableCell
+                          className={discoveryTableCellClass({
+                            position: 'first',
+                            className: 'pl-3 font-mono text-[11px]',
+                          })}
+                        >
                           <Link
-                            to={`/analysis/${validRunId}/block/${encodeURIComponent(r.blockId)}`}
+                            to={`/discovery/${validRunId}/block/${encodeURIComponent(r.blockId)}`}
                             className="text-gray-800 hover:text-green-700"
                           >
                             {region}
                           </Link>
                         </TableCell>
-                        <TableCell className="px-3 text-[11px] text-gray-600 truncate">
+                        <TableCell
+                          className={discoveryTableCellClass({
+                            className: 'px-3 text-[11px] text-gray-600 truncate',
+                          })}
+                        >
                           {r.representativeAnnotations.length > 0
                             ? r.representativeAnnotations.join(' · ')
                             : <span className="text-gray-400">none</span>}
                         </TableCell>
-                        <TableCell className="px-3 text-right tabular-nums text-[11px]">
+                        <TableCell
+                          className={discoveryTableCellClass({
+                            className: 'px-3 text-right tabular-nums text-[11px]',
+                          })}
+                        >
                           {r.candidateCount}
                         </TableCell>
-                        <TableCell className="px-3 text-right tabular-nums text-[11px]">
+                        <TableCell
+                          className={discoveryTableCellClass({
+                            className: 'px-3 text-right tabular-nums text-[11px]',
+                          })}
+                        >
                           {r.withSv}
                         </TableCell>
-                        <TableCell className="px-3 text-right tabular-nums font-medium text-gray-900">
+                        <TableCell
+                          className={discoveryTableCellClass({
+                            className: 'px-3 text-right tabular-nums font-medium text-gray-900',
+                          })}
+                        >
                           {r.intersectionCount}
                         </TableCell>
-                        <TableCell className="pl-3 pr-4">
+                        <TableCell
+                          className={discoveryTableCellClass({
+                            position: 'last',
+                            className: 'pl-3 pr-4',
+                          })}
+                        >
                           <JumpToBlockChip runId={validRunId} blockId={r.blockId} />
                         </TableCell>
                       </TableRow>
@@ -158,6 +191,6 @@ export function AnalysisStepIntersectionsPage() {
           </CardContent>
         </Card>
       </div>
-    </AnalysisShell>
+    </DiscoveryShell>
   );
 }

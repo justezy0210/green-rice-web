@@ -164,7 +164,7 @@ export function RegionOverviewMap({
                   onClick={(e) => {
                     e.stopPropagation();
                     navigate(
-                      `/analysis/${b.runId}/block/${encodeURIComponent(b.blockId)}`,
+                      `/discovery/${b.runId}/block/${encodeURIComponent(b.blockId)}`,
                     );
                   }}
                 >

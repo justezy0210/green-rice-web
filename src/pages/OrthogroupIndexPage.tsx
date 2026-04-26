@@ -50,7 +50,7 @@ const PAGE_SIZE = 100;
  * Neutral entity-first OG link. Trait context is intentionally NOT
  * injected here so that entity browsing on `/og` does not leak a
  * specific trait into the detail page. Trait context is preserved on
- * links coming from analysis surfaces (Analysis home, Step 2, etc.).
+ * links coming from discovery surfaces (Discovery home, Step 2, etc.).
  */
 function ogHref(row: OgIndexRowData): string {
   return `/og/${encodeURIComponent(row.ogId)}`;
@@ -105,7 +105,7 @@ export function OrthogroupIndexPage() {
     }
     // Entity-first sort: rarity asc (most variable first), then ogId.
     // Trait p-value intentionally NOT used as a tie-break — trait
-    // ranking lives in /analysis. Stable secondary on ogId keeps the
+    // ranking lives in /discovery. Stable secondary on ogId keeps the
     // listing reproducible across reloads.
     return [...rows].sort((a, b) => {
       if (a.presentCount !== b.presentCount) return a.presentCount - b.presentCount;
@@ -136,8 +136,8 @@ export function OrthogroupIndexPage() {
           Cross-panel orthogroup inventory. Conservation tier and IRGSP
           status are intrinsic axes; trait association is shown as a side
           badge. For phenotype-group ranking go to{' '}
-          <Link to="/analysis" className="text-green-700 hover:underline">
-            /analysis
+          <Link to="/discovery" className="text-green-700 hover:underline">
+            /discovery
           </Link>
           .
         </p>
@@ -197,8 +197,8 @@ export function OrthogroupIndexPage() {
             then OG id
           </p>
           <Card>
-            <CardContent className="py-2">
-              <Table density="dense" className="table-fixed">
+            <CardContent className="py-3">
+              <Table density="dense" className="table-fixed border-separate border-spacing-y-1">
                 <colgroup>
                   <col className="w-36" />
                   <col className="w-28" />
@@ -207,14 +207,14 @@ export function OrthogroupIndexPage() {
                   <col className="w-20" />
                   <col />
                 </colgroup>
-                <TableHeader>
-                  <TableRow className="text-[10px] uppercase tracking-wide text-gray-500">
-                    <TableHead className="pl-3">OG</TableHead>
-                    <TableHead>Tier</TableHead>
-                    <TableHead className="text-right">Panel</TableHead>
-                    <TableHead className="text-right">IRGSP</TableHead>
-                    <TableHead className="text-right">Members</TableHead>
-                    <TableHead>Traits</TableHead>
+                <TableHeader className="[&_tr]:border-0">
+                  <TableRow className="border-0 text-[10px] uppercase tracking-wide text-gray-500 hover:bg-transparent">
+                    <TableHead className="pl-3 text-gray-500">OG</TableHead>
+                    <TableHead className="text-gray-500">Tier</TableHead>
+                    <TableHead className="text-right text-gray-500">Panel</TableHead>
+                    <TableHead className="text-right text-gray-500">IRGSP</TableHead>
+                    <TableHead className="text-right text-gray-500">Members</TableHead>
+                    <TableHead className="text-gray-500">Traits</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -228,8 +228,11 @@ export function OrthogroupIndexPage() {
                     />
                   ))}
                   {pageRows.length === 0 && (
-                    <TableRow>
-                      <TableCell colSpan={6} className="text-center py-6 text-[12px] text-gray-500">
+                    <TableRow className="border-0 hover:bg-transparent">
+                      <TableCell
+                        colSpan={6}
+                        className="rounded-md border border-gray-100 bg-white py-6 text-center text-[12px] text-gray-500"
+                      >
                         No OGs match the current filter.
                       </TableCell>
                     </TableRow>

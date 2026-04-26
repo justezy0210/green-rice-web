@@ -8,6 +8,13 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
+import {
+  discoveryTableCellClass,
+  discoveryTableClass,
+  discoveryTableHeaderClass,
+  discoveryTableHeadRowClass,
+  discoveryTableRowClass,
+} from '@/components/discovery/DiscoveryTableStyles';
 import type { SvEvent } from '@/types/sv-event';
 
 export interface RankedSvRow {
@@ -24,9 +31,9 @@ interface Props {
   cultivar: string;
 }
 
-export function AnalysisStepSvTable({ rows }: Props) {
+export function DiscoveryStepSvTable({ rows }: Props) {
   return (
-    <Table density="dense" className="table-fixed">
+    <Table density="dense" className={discoveryTableClass}>
       <colgroup>
         <col className="w-20" />
         <col className="w-16" />
@@ -36,8 +43,8 @@ export function AnalysisStepSvTable({ rows }: Props) {
         <col />
         <col className="w-20" />
       </colgroup>
-      <TableHeader>
-        <TableRow className="text-[10px] uppercase tracking-wide text-gray-500">
+      <TableHeader className={discoveryTableHeaderClass}>
+        <TableRow className={discoveryTableHeadRowClass}>
           <TableHead className="pl-3">Chr</TableHead>
           <TableHead className="px-3">Type</TableHead>
           <TableHead className="px-3 text-right">Pos</TableHead>
@@ -53,24 +60,41 @@ export function AnalysisStepSvTable({ rows }: Props) {
           const regionEnd = event.pos + Math.max(event.refLen, event.altLen) + 2000;
           const regionLink = `/region/baegilmi/${event.chr}/${regionStart}-${regionEnd}`;
           return (
-            <TableRow key={event.eventId} className="hover:bg-green-50 transition-colors">
-              <TableCell className="pl-3 text-gray-700 font-mono text-[11px]">
+            <TableRow key={event.eventId} className={discoveryTableRowClass}>
+              <TableCell
+                className={discoveryTableCellClass({
+                  position: 'first',
+                  className: 'pl-3 text-gray-700 font-mono text-[11px]',
+                })}
+              >
                 <Link to={regionLink} className="hover:underline hover:text-green-700">
                   {event.chr}
                 </Link>
               </TableCell>
-              <TableCell className="px-3">
+              <TableCell className={discoveryTableCellClass({ className: 'px-3' })}>
                 <Badge variant="secondary" className="text-[10px] font-mono px-1.5 py-0.5 h-auto">
                   {event.svType}
                 </Badge>
               </TableCell>
-              <TableCell className="px-3 text-right tabular-nums text-[11px] text-gray-600">
+              <TableCell
+                className={discoveryTableCellClass({
+                  className: 'px-3 text-right tabular-nums text-[11px] text-gray-600',
+                })}
+              >
                 {event.pos.toLocaleString()}
               </TableCell>
-              <TableCell className="px-3 text-right tabular-nums text-[11px] text-gray-600">
+              <TableCell
+                className={discoveryTableCellClass({
+                  className: 'px-3 text-right tabular-nums text-[11px] text-gray-600',
+                })}
+              >
                 {event.svLenAbs.toLocaleString()}
               </TableCell>
-              <TableCell className="px-3 text-[11px] text-gray-600">
+              <TableCell
+                className={discoveryTableCellClass({
+                  className: 'px-3 text-[11px] text-gray-600',
+                })}
+              >
                 {groupALabel && freqA !== null ? (
                   <>
                     <span className="text-gray-400">{groupALabel}: </span>
@@ -80,7 +104,11 @@ export function AnalysisStepSvTable({ rows }: Props) {
                   <span className="text-gray-300">—</span>
                 )}
               </TableCell>
-              <TableCell className="px-3 text-[11px] text-gray-600">
+              <TableCell
+                className={discoveryTableCellClass({
+                  className: 'px-3 text-[11px] text-gray-600',
+                })}
+              >
                 {groupBLabel && freqB !== null ? (
                   <>
                     <span className="text-gray-400">{groupBLabel}: </span>
@@ -90,7 +118,12 @@ export function AnalysisStepSvTable({ rows }: Props) {
                   <span className="text-gray-300">—</span>
                 )}
               </TableCell>
-              <TableCell className="pl-3 pr-4 text-right tabular-nums font-medium text-gray-900">
+              <TableCell
+                className={discoveryTableCellClass({
+                  position: 'last',
+                  className: 'pl-3 pr-4 text-right tabular-nums font-medium text-gray-900',
+                })}
+              >
                 {freqA !== null && freqB !== null ? absDeltaAf.toFixed(2) : '—'}
               </TableCell>
             </TableRow>

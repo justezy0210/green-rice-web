@@ -43,7 +43,7 @@ export function OverlappingBlocksPanel({ chr, start, end }: Props) {
               return (
                 <li key={`${b.runId}:${b.blockId}`}>
                   <Link
-                    to={`/analysis/${b.runId}/block/${encodeURIComponent(b.blockId)}`}
+                    to={`/discovery/${b.runId}/block/${encodeURIComponent(b.blockId)}`}
                     className="flex items-center justify-between gap-3 py-2 px-1 rounded hover:bg-green-50"
                   >
                     <span className="min-w-0">
