@@ -73,6 +73,9 @@ _CANDIDATE_TYPES = {
     "og_only", "og_plus_sv", "sv_regulatory", "cnv_dosage", "haplotype_block"
 }
 _IMPACT_CLASSES = {
+    "coding_or_splice", "utr", "intron", "promoter_2kb",
+    "upstream_2_10kb", "downstream_2kb", "intergenic",
+    # Legacy values from older analysis artifacts.
     "gene_body", "cds_disruption", "promoter", "upstream",
     "cluster_enclosure", "cnv_support", "inversion_boundary", "te_associated",
 }
@@ -899,7 +902,7 @@ def main() -> int:
         "svReleaseId": args.sv_release_id,
         "geneModelVersion": args.gene_model_version,
         "promoterWindowBp": 2000,
-        "enclosurePolicy": "gene_body",
+        "enclosurePolicy": "primary_impact_intervals",
         "rowCount": total_rows_intersections,
         "status": "ready",
         "createdAt": now_iso,

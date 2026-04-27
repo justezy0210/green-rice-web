@@ -18,6 +18,9 @@ export function TrackHeader({
   focusedOgId,
   focusedGeneCount,
   onClearFocusedOg,
+  focusedSvId,
+  focusedSvVisible,
+  onClearFocusedSv,
   onBack,
   zoom,
   onZoomChange,
@@ -36,6 +39,9 @@ export function TrackHeader({
   focusedOgId?: string | null;
   focusedGeneCount: number;
   onClearFocusedOg?: () => void;
+  focusedSvId?: string | null;
+  focusedSvVisible?: boolean;
+  onClearFocusedSv?: () => void;
   onBack: () => void;
   zoom: number;
   onZoomChange: (z: number) => void;
@@ -83,6 +89,23 @@ export function TrackHeader({
                 className="ml-0.5 text-indigo-500 hover:text-indigo-900"
                 title="Clear focus"
                 aria-label="Clear focused OG"
+              >
+                ×
+              </button>
+            )}
+          </span>
+        )}
+        {focusedSvId && (
+          <span className="text-[10px] font-mono inline-flex items-center gap-1 text-green-800 bg-green-50 border border-green-200 rounded px-1.5 py-[1px]">
+            SV focus: {focusedSvId} · {focusedSvVisible ? 'highlighted' : 'not in window'}
+            {onClearFocusedSv && (
+              /* raw: inline × clear glyph adjacent to a chip — see allowed-raw rule. */
+              <button
+                type="button"
+                onClick={onClearFocusedSv}
+                className="ml-0.5 text-green-500 hover:text-green-900"
+                title="Clear SV focus"
+                aria-label="Clear focused SV"
               >
                 ×
               </button>

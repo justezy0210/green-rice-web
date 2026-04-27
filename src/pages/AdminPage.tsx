@@ -4,6 +4,7 @@ import { useGenomeSummary } from '@/hooks/useGenomeSummary';
 import { addCultivar, updateCultivar, deleteCultivar } from '@/lib/cultivar-service';
 import { CultivarTable } from '@/components/admin/CultivarTable';
 import { CultivarForm } from '@/components/admin/CultivarForm';
+import { AdminDataReadinessPanel } from '@/components/admin/AdminDataReadinessPanel';
 import { GenomeUploadPanel } from '@/components/admin/GenomeUploadPanel';
 import { OrthofinderUploadPanel } from '@/components/admin/OrthofinderUploadPanel';
 import { Button } from '@/components/ui/button';
@@ -35,6 +36,8 @@ export function AdminPage() {
 
   return (
     <div className="space-y-6">
+      {view.mode === 'list' && <AdminDataReadinessPanel />}
+
       {view.mode === 'list' && <OrthofinderUploadPanel />}
 
       <div className="flex items-center justify-between">

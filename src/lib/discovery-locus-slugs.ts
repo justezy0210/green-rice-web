@@ -4,6 +4,14 @@ import {
 } from '@/lib/discovery-block-groups';
 import type { BlockRegion } from '@/types/candidate-block';
 
+interface DiscoveryBlockSlugInput {
+  blockId: string;
+  region?: BlockRegion;
+  chr?: string;
+  start?: number;
+  end?: number;
+}
+
 const CURATED_LOCI: Record<string, { slug: string; label: string }> = {
   curated_shared_chr11_dev_block: {
     slug: 'chr11-21-25mb-development',
@@ -23,6 +31,21 @@ export function slugForDiscoveryBlockGroup(group: DiscoveryBlockGroup): string {
   const curated = CURATED_LOCI[group.blockId];
   if (curated) return curated.slug;
   return slugForRegion(group.region);
+}
+
+export function slugForDiscoveryBlock(block: DiscoveryBlockSlugInput): string | null {
+  const curated = CURATED_LOCI[block.blockId];
+  if (curated) return curated.slug;
+  if (block.region) return slugForRegion(block.region);
+  if (block.chr && block.start !== undefined && block.end !== undefined) {
+    return slugForRegion({ chr: block.chr, start: block.start, end: block.end });
+  }
+  return null;
+}
+
+export function discoveryLocusUrlForBlock(block: DiscoveryBlockSlugInput): string | null {
+  const slug = slugForDiscoveryBlock(block);
+  return slug ? `/discovery/locus/${slug}` : null;
 }
 
 export function resolveDiscoveryLocusSlug(

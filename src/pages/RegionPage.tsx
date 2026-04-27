@@ -26,6 +26,7 @@ import {
   buildTraitCellsFromBlocks,
   representativeBlockPerTrait,
 } from '@/lib/trait-ribbon-data';
+import { discoveryLocusUrlForBlock } from '@/lib/discovery-locus-slugs';
 
 export function RegionPage() {
   const { cultivar, chr, range } = useParams<{
@@ -52,24 +53,23 @@ export function RegionPage() {
   }, [cultivar, cultivars]);
 
   const [functionQuery, setFunctionQuery] = useState('');
-  // Keep the input field snappy while deferring the expensive filter /
-  // list render behind React 19's concurrent scheduler.
   const deferredQuery = useDeferredValue(functionQuery);
 
   const [highlightedGeneId, setHighlightedGeneId] = useState<string | null>(null);
 
-  // `?og=<ogId>` narrows the track viz so genes of an "arrived-from"
-  // orthogroup pop (indigo marker), preserving the narrative from the
-  // originating block/OG page. Clearing the chip simply drops the param.
-  // `?svScope=all` expands the SV lane to the full pangenome view;
-  // default is cultivar-scoped to match the URL contract.
   const [searchParams, setSearchParams] = useSearchParams();
   const focusedOgId = searchParams.get('og');
+  const focusedSvId = searchParams.get('sv');
   const svScope: 'cultivar' | 'all' =
     searchParams.get('svScope') === 'all' ? 'all' : 'cultivar';
   const clearFocusedOg = () => {
     const next = new URLSearchParams(searchParams);
     next.delete('og');
+    setSearchParams(next, { replace: true });
+  };
+  const clearFocusedSv = () => {
+    const next = new URLSearchParams(searchParams);
+    next.delete('sv');
     setSearchParams(next, { replace: true });
   };
   const toggleSvScope = () => {
@@ -115,9 +115,6 @@ export function RegionPage() {
     start: rangeValid ? start : null,
     end: rangeValid ? end : null,
   });
-  // Overview needs every curated block on the chr, independent of
-  // the current window — otherwise navigating inside the chromosome
-  // makes far-away curated bars blink out.
   const { blocks: chrBlocks } = useChrBlocks(chr ?? null);
   const traitCells = useMemo(
     () => buildTraitCellsFromBlocks(overlappingBlocks),
@@ -142,10 +139,6 @@ export function RegionPage() {
     cultivar: cultivar ?? null,
     scope: svScope,
   });
-  // Sample count for the "all N cultivars" scope label. Reads the
-  // active SV release manifest so the number tracks the pipeline
-  // state, not a UI literal. Falls back to null while loading so the
-  // header can say "all cultivars" without committing to a count.
   const { manifest: svManifest } = useSvManifest(SV_RELEASE_ID);
   const svSampleCount = svManifest?.sampleCount ?? null;
 
@@ -217,7 +210,7 @@ export function RegionPage() {
               linkFor={(traitId) => {
                 const rep = traitRepresentatives[traitId];
                 if (!rep) return null;
-                return `/discovery/${rep.runId}/block/${encodeURIComponent(rep.blockId)}`;
+                return discoveryLocusUrlForBlock(rep);
               }}
               title="Discovery runs with a block overlapping this window"
             />
@@ -256,6 +249,8 @@ export function RegionPage() {
           highlightedGeneId={highlightedGeneId}
           focusedOgId={focusedOgId}
           onClearFocusedOg={clearFocusedOg}
+          focusedSvId={focusedSvId}
+          onClearFocusedSv={clearFocusedSv}
           svScope={svScope}
           onToggleSvScope={toggleSvScope}
           svSampleCount={svSampleCount}

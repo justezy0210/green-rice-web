@@ -1,6 +1,7 @@
 import { useMemo } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { Card, CardContent } from '@/components/ui/card';
+import { discoveryLocusUrlForBlock } from '@/lib/discovery-locus-slugs';
 import { buildRegionBins, type RegionGene } from '@/lib/region-helpers';
 import type { CandidateBlock } from '@/types/candidate-block';
 
@@ -163,16 +164,11 @@ export function RegionOverviewMap({
                   style={{ cursor: 'pointer' }}
                   onClick={(e) => {
                     e.stopPropagation();
-                    navigate(
-                      `/discovery/${b.runId}/block/${encodeURIComponent(b.blockId)}`,
-                    );
+                    const locusUrl = discoveryLocusUrlForBlock(b);
+                    if (locusUrl) navigate(locusUrl);
                   }}
                 >
-                  <title>
-                    {b.blockId} · {b.traitId} · curated review ·{' '}
-                    {b.candidateOgCount} OG · {b.intersectionCount} int
-                    (click to open)
-                  </title>
+                  <title>Discovery review locus (click to open)</title>
                 </rect>
               );
             })}

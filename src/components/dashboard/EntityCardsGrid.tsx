@@ -10,6 +10,12 @@ interface Card {
 
 const CARDS: Card[] = [
   {
+    key: 'cultivars',
+    title: 'Cultivars',
+    summary: 'Per-cultivar assembly and annotation stats, phenotype profile.',
+    href: '/cultivars',
+  },
+  {
     key: 'genes',
     title: 'Genes',
     summary: 'Lookup by gene ID across panel cultivars, orthogroup membership.',
@@ -18,19 +24,25 @@ const CARDS: Card[] = [
   {
     key: 'orthogroups',
     title: 'Orthogroups',
-    summary: 'Conservation tiers (universal / common / rare PAV / private) + trait-discriminating OGs across the panel.',
+    summary: 'Conservation tiers, function, and trait-linked OG evidence across the panel.',
     href: '/og',
   },
   {
-    key: 'cultivars',
-    title: 'Cultivars',
-    summary: 'Per-cultivar assembly and annotation stats, phenotype profile.',
-    href: '/cultivars',
+    key: 'pangenome',
+    title: 'Pangenome',
+    summary: 'Core/accessory orthogroup catalog, function summary, and SV release counts.',
+    href: '/pangenome',
+  },
+  {
+    key: 'sv',
+    title: 'Structural variants',
+    summary: 'Browse event-normalized SVs by type, chromosome, size, and carrier count.',
+    href: '/sv',
   },
   {
     key: 'discovery',
     title: 'Discovery',
-    summary: 'Candidate runs, review loci, and evidence readiness across traits.',
+    summary: 'Candidate loci, selected SVs to review, and trait evidence across current runs.',
     href: '/discovery',
   },
 ];

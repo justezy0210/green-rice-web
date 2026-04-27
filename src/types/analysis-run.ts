@@ -64,7 +64,7 @@ export interface IntersectionRelease {
   svReleaseId: string;
   geneModelVersion: number;
   promoterWindowBp: number;
-  enclosurePolicy: 'gene_body' | 'cluster_span' | 'synteny_block';
+  enclosurePolicy: 'primary_impact_intervals' | 'gene_body' | 'cluster_span' | 'synteny_block';
   outputManifestPath: string;
   status: 'building' | 'ready' | 'error';
   createdAt: string;

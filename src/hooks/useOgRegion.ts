@@ -58,8 +58,7 @@ type ManifestState = 'idle' | 'loaded';
 /**
  * v2-only manifest loader. Fetches the og_region v2 pointer, then the
  * graph manifest it points to, and projects the result into the legacy
- * `OgRegionManifest` shape for existing consumers (OgDrawer,
- * OgDetailGraphTab, OgDetailAlleleFreqTab). Legacy v1 fallback was
+ * `OgRegionManifest` shape for historical OG-region consumers. Legacy v1 fallback was
  * removed after the v6_g4 promote.
  */
 export function useOgRegionManifest(): {

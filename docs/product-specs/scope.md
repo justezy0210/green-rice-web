@@ -42,7 +42,7 @@ Exposed as a dedicated module at `/discovery/:runId/*`. Not a replacement for th
 - **Step 1 Phenotype** — proposed group definition, group balance, QC placeholders (PCA/kinship when available)
 - **Step 2 Orthogroups** — OG ranking by copy-count contrast between proposed phenotype groups
 - **Step 3 Variants** (available when SV matrix released) — event-normalized SV table with per-group frequency
-- **Step 4 Intersections** (available after Step 3) — OG × SV impact classes (gene body / CDS / promoter / upstream / cluster enclosure / CNV / inversion boundary / TE)
+- **Step 4 Intersections** (available after Step 3) — OG × SV primary impact classes only (CDS/splice, UTR, intron, promoter 2 kb, upstream 2-10 kb, downstream 2 kb, intergenic when a bounded nearby policy exists)
 - **Step 5 Candidates** — ranked candidate list with evidence on up to 7 axes (Group specificity, Function, OG pattern, SV impact, Synteny, Expression, QTL); each axis labelled `ready` / `pending` / `external-future` / `partial`
 - Per-cluster AF at the anchor locus for a given trait — **only when anchor representativeness warrants** (see tier gating)
 

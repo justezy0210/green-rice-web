@@ -1,12 +1,16 @@
 import { Link } from 'react-router-dom';
 import { Card, CardContent } from '@/components/ui/card';
+import { TRAITS } from '@/config/traits';
 import { useOverlappingBlocks } from '@/hooks/useOverlappingBlocks';
+import { discoveryLocusUrlForBlock } from '@/lib/discovery-locus-slugs';
 
 interface Props {
   chr: string;
   start: number;
   end: number;
 }
+
+const traitLabel = new Map<string, string>(TRAITS.map((trait) => [trait.id, trait.label]));
 
 /**
  * Region-page surface. Lists every CandidateBlock whose (chr, start, end)
@@ -20,7 +24,7 @@ export function OverlappingBlocksPanel({ chr, start, end }: Props) {
       <CardContent className="py-4">
         <div className="flex items-baseline justify-between mb-2">
           <h3 className="text-xs uppercase tracking-wide text-gray-500">
-            Overlapping analysis blocks
+            Discovery review loci
           </h3>
           <span className="text-[10px] font-mono text-gray-400">
             {chr}:{start.toLocaleString()}-{end.toLocaleString()}
@@ -40,30 +44,38 @@ export function OverlappingBlocksPanel({ chr, start, end }: Props) {
           <ul className="divide-y divide-gray-100 text-[12px]">
             {blocks.map((b) => {
               const region = `${b.region.chr}:${(b.region.start / 1_000_000).toFixed(1)}–${(b.region.end / 1_000_000).toFixed(1)} Mb`;
+              const locusUrl = discoveryLocusUrlForBlock(b);
+              const content = (
+                <>
+                  <span className="min-w-0">
+                    <span className="text-gray-800">{region}</span>
+                    <span className="ml-2 text-[10px] text-gray-500">
+                      {traitLabel.get(b.traitId) ?? b.traitId}
+                    </span>
+                  </span>
+                  {b.curated && (
+                    <span className="flex shrink-0 items-center gap-2 text-[10px] text-gray-500">
+                      <span className="text-amber-700 bg-amber-50 border border-amber-200 rounded px-1 py-[1px]">
+                        curated
+                      </span>
+                    </span>
+                  )}
+                </>
+              );
               return (
                 <li key={`${b.runId}:${b.blockId}`}>
-                  <Link
-                    to={`/discovery/${b.runId}/block/${encodeURIComponent(b.blockId)}`}
-                    className="flex items-center justify-between gap-3 py-2 px-1 rounded hover:bg-green-50"
-                  >
-                    <span className="min-w-0">
-                      <span className="text-gray-800">{region}</span>
-                      <span className="ml-2 text-[10px] font-mono text-gray-400">
-                        {b.traitId}
-                      </span>
-                    </span>
-                    <span className="flex items-center gap-2 text-[10px] text-gray-500 shrink-0">
-                      {b.curated && (
-                        <span className="text-amber-700 bg-amber-50 border border-amber-200 rounded px-1 py-[1px]">
-                          curated
-                        </span>
-                      )}
-                      <span className="tabular-nums text-gray-600">
-                        {b.candidateOgCount} OG · {b.intersectionCount} int
-                      </span>
-                      <span className="font-mono">{b.blockId}</span>
-                    </span>
-                  </Link>
+                  {locusUrl ? (
+                    <Link
+                      to={locusUrl}
+                      className="flex items-center justify-between gap-3 py-2 px-1 rounded hover:bg-green-50"
+                    >
+                      {content}
+                    </Link>
+                  ) : (
+                    <div className="flex items-center justify-between gap-3 py-2 px-1">
+                      {content}
+                    </div>
+                  )}
                 </li>
               );
             })}

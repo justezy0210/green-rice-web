@@ -5,9 +5,12 @@ import {
   BLOCK_TOP,
   MARGIN_LEFT,
 } from '@/lib/region-track-layout';
+import { TRAITS } from '@/config/traits';
+import { discoveryLocusUrlForBlock } from '@/lib/discovery-locus-slugs';
 import type { CandidateBlock } from '@/types/candidate-block';
 
 const CURATED_FILL = '#d97706'; // amber-600
+const traitLabel = new Map<string, string>(TRAITS.map((trait) => [trait.id, trait.label]));
 
 /**
  * Track lane that overlays each **curated** candidate block as a
@@ -97,14 +100,13 @@ function BlockBar({
   const width = Math.max(2, x2 - x1);
   const y = BLOCK_TOP + 1 + row * BLOCK_ROW_H;
   const onClick = () => {
-    navigate(
-      `/discovery/${block.runId}/block/${encodeURIComponent(block.blockId)}`,
-    );
+    const locusUrl = discoveryLocusUrlForBlock(block);
+    if (locusUrl) navigate(locusUrl);
   };
   const traitSummary =
     traits.length > 1
-      ? `${traits.length} traits (${traits.join(', ')})`
-      : traits[0];
+      ? `${traits.length} traits (${traits.map((traitId) => traitLabel.get(traitId) ?? traitId).join(', ')})`
+      : traitLabel.get(traits[0]) ?? traits[0];
   return (
     <g style={{ cursor: 'pointer' }} onClick={onClick}>
       <rect
@@ -116,11 +118,7 @@ function BlockBar({
         opacity={0.85}
         rx={1}
       >
-        <title>
-          {block.blockId} · {traitSummary} · curated review ·{' '}
-          {block.candidateOgCount} OG · {block.intersectionCount} int
-          (click to open block detail)
-        </title>
+        <title>{traitSummary} · Discovery review locus (click to open)</title>
       </rect>
     </g>
   );

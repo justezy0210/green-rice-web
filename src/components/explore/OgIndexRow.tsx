@@ -15,10 +15,19 @@ interface Props {
   panelTotal: number;
   href: string;
   onClick: () => void;
+  activeTrait?: string | null;
+  activeTraitP?: number;
 }
 
-export function OgIndexRow({ row, panelTotal, href, onClick }: Props) {
+export function OgIndexRow({
+  row, panelTotal, href, onClick, activeTrait, activeTraitP,
+}: Props) {
   const tier = row.tier as ConservationTier;
+  const traits = row.traits ?? [];
+  const visibleTraits = activeTrait && traits.includes(activeTrait)
+    ? [activeTrait, ...traits.filter((t) => t !== activeTrait)].slice(0, 5)
+    : traits.slice(0, 5);
+  const pValue = activeTrait ? activeTraitP : row.bestTraitP;
   return (
     <TableRow
       onClick={onClick}
@@ -46,23 +55,30 @@ export function OgIndexRow({ row, panelTotal, href, onClick }: Props) {
         {row.memberCount}
       </TableCell>
       <TableCell className="rounded-r-md border-y border-r border-gray-100 bg-white group-hover:bg-green-50/50">
-        {row.traits && row.traits.length > 0 ? (
+        {traits.length > 0 ? (
           <span className="inline-flex flex-wrap gap-1">
-            {row.traits.slice(0, 5).map((t) => (
+            {visibleTraits.map((t) => (
               <span
                 key={t}
-                className="text-[10px] font-mono border border-amber-200 bg-amber-50 text-amber-800 rounded px-1 py-[1px]"
+                className={`text-[10px] font-mono border rounded px-1 py-[1px] ${
+                  t === activeTrait
+                    ? 'border-green-200 bg-green-50 text-green-800'
+                    : 'border-amber-200 bg-amber-50 text-amber-800'
+                }`}
                 title={t}
               >
                 {TRAIT_ABBR[t] ?? t.slice(0, 3).toUpperCase()}
               </span>
             ))}
-            {row.traits.length > 5 && (
-              <span className="text-[10px] text-gray-400">+{row.traits.length - 5}</span>
+            {traits.length > visibleTraits.length && (
+              <span className="text-[10px] text-gray-400">+{traits.length - visibleTraits.length}</span>
             )}
-            {row.bestTraitP !== undefined && (
-              <span className="text-[10px] text-gray-500 tabular-nums">
-                p={row.bestTraitP < 1e-4 ? row.bestTraitP.toExponential(1) : row.bestTraitP.toFixed(3)}
+            {pValue !== undefined && (
+              <span
+                className="text-[10px] text-gray-500 tabular-nums"
+                title={activeTrait ? `${activeTrait} p-value` : 'Best trait p-value'}
+              >
+                p={pValue < 1e-4 ? pValue.toExponential(1) : pValue.toFixed(3)}
               </span>
             )}
           </span>

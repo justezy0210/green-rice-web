@@ -2,6 +2,14 @@ import type { TraitId } from '@/types/traits';
 import type { RunId } from '@/types/analysis-run';
 
 export type ImpactClass =
+  | 'coding_or_splice'
+  | 'utr'
+  | 'intron'
+  | 'promoter_2kb'
+  | 'upstream_2_10kb'
+  | 'downstream_2kb'
+  | 'intergenic'
+  // Legacy values from older promoted analysis artifacts.
   | 'gene_body'
   | 'cds_disruption'
   | 'promoter'
@@ -45,7 +53,7 @@ export interface IntersectionRelease {
   svReleaseId: string;
   geneModelVersion: number;
   promoterWindowBp: number;
-  enclosurePolicy: 'gene_body' | 'cluster_span' | 'synteny_block';
+  enclosurePolicy: 'primary_impact_intervals' | 'gene_body' | 'cluster_span' | 'synteny_block';
   rowCount: number;
   status: 'building' | 'ready' | 'error';
   createdAt: string;

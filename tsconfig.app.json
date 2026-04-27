@@ -36,6 +36,7 @@
   "include": [
     "src",
     "data/cultivars.json",
+    "data/analysis_groupings_v4.json",
     "data/traits.json",
     "data/reference.json"
   ]

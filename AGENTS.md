@@ -115,6 +115,7 @@ Examples:
 - `docs/references/dependency-layers.md`: layer rules
 - `docs/exec-plans/`: active/completed implementation plans
 - `docs/runbooks/`: operational release playbooks
+  - `docs/runbooks/data-loading.md`: end-to-end data loading workflow
 - `docs/generated/`: generated references
 
 ## Working Notes For Codex

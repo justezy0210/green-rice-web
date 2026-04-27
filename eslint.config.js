@@ -77,6 +77,7 @@ export default defineConfig([
     files: [
       'src/config/panel.ts',
       'src/config/traits.ts',
+      'src/lib/trait-grouping.ts',
       'src/lib/irgsp-constants.ts',
     ],
     rules: {

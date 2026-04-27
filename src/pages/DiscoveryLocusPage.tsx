@@ -1,12 +1,11 @@
-import { useMemo, type ReactNode } from 'react';
+import { useMemo, useState, type ReactNode } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { Card, CardContent } from '@/components/ui/card';
-import { BlockExportPanel } from '@/components/discovery/BlockExportPanel';
 import { DiscoveryLocusSummaryCard } from '@/components/discovery/DiscoveryLocusSummaryCard';
-import { LocusCandidateTable } from '@/components/discovery/LocusCandidateTable';
 import { LocusCaveatStrip } from '@/components/discovery/LocusCaveatStrip';
-import { LocusCuratorNotes } from '@/components/discovery/LocusCuratorNotes';
 import { LocusEvidenceMatrix } from '@/components/discovery/LocusEvidenceMatrix';
+import { LocusTraitFilterBar } from '@/components/discovery/LocusTraitFilterBar';
+import { SvPatternByGroup } from '@/components/discovery/SvPatternByGroup';
 import { useAnalysisRuns } from '@/hooks/useAnalysisRuns';
 import { useDiscoveryBlocks } from '@/hooks/useDiscoveryBlocks';
 import { useDiscoveryLocusCandidates } from '@/hooks/useDiscoveryLocusCandidates';
@@ -16,9 +15,11 @@ import {
   resolveDiscoveryLocusSlug,
 } from '@/lib/discovery-locus-slugs';
 import { selectRepresentativeDiscoveryRuns } from '@/lib/discovery-runs';
+import type { TraitId } from '@/types/traits';
 
 export function DiscoveryLocusPage() {
   const { locusSlug } = useParams<{ locusSlug: string }>();
+  const [selectedTraitId, setSelectedTraitId] = useState<TraitId | null>(null);
   const { runs, loading: runsLoading, error: runsError } = useAnalysisRuns();
   const representativeRuns = useMemo(
     () => selectRepresentativeDiscoveryRuns(runs),
@@ -34,7 +35,6 @@ export function DiscoveryLocusPage() {
     () => resolveDiscoveryLocusSlug(locusSlug, groups),
     [locusSlug, groups],
   );
-  const block = group?.representative ?? null;
   const {
     candidates,
     loading: candidatesLoading,
@@ -50,7 +50,7 @@ export function DiscoveryLocusPage() {
     return <MessageCard tone="error">{error.message}</MessageCard>;
   }
 
-  if (!group || !block) {
+  if (!group) {
     return (
       <MessageCard tone="muted">
         Discovery locus not found. <Link to="/discovery" className="text-green-700 hover:underline">Back to Discovery</Link>
@@ -59,10 +59,17 @@ export function DiscoveryLocusPage() {
   }
 
   const title = displayNameForDiscoveryBlockGroup(group);
-  const representativeCandidates = candidates.filter(
-    (candidate) => candidate.runId === block.runId && candidate.blockId === block.blockId,
-  );
-  const exactBlockUrl = `/discovery/${block.runId}/block/${encodeURIComponent(block.blockId)}`;
+  const activeTraitId =
+    selectedTraitId && group.traitIds.includes(selectedTraitId) ? selectedTraitId : null;
+  const filteredBlocks = activeTraitId
+    ? group.blocks.filter((block) => block.traitId === activeTraitId)
+    : group.blocks;
+  const filteredCandidates = activeTraitId
+    ? candidates.filter((candidate) => candidate.traitId === activeTraitId)
+    : candidates;
+  const toggleTraitFilter = (traitId: TraitId) => {
+    setSelectedTraitId((current) => (current === traitId ? null : traitId));
+  };
 
   return (
     <div className="space-y-4">
@@ -77,54 +84,52 @@ export function DiscoveryLocusPage() {
       <DiscoveryLocusSummaryCard
         group={group}
         title={title}
-        exactBlockUrl={exactBlockUrl}
-        candidates={candidates}
-        candidatesLoading={candidatesLoading}
       />
 
       <LocusCaveatStrip />
 
-      <Card>
-        <CardContent className="py-4">
-          <div className="mb-2 flex items-baseline justify-between gap-2">
-            <h2 className="text-xs uppercase tracking-wide text-gray-500">
-              Priority leads
-            </h2>
-            <span className="text-[10px] text-gray-400">
-              start with OG, gene, or region links
-            </span>
-          </div>
-          <LocusCandidateTable
-            candidates={candidates}
-            blocks={group.blocks}
-            loading={candidatesLoading}
-            error={candidatesError}
-          />
-        </CardContent>
-      </Card>
+      <LocusTraitFilterBar
+        group={group}
+        selectedTraitId={activeTraitId}
+        onSelectTrait={toggleTraitFilter}
+        onClear={() => setSelectedTraitId(null)}
+      />
+
+      <SvPatternByGroup
+        candidates={filteredCandidates}
+        blocks={filteredBlocks}
+        candidatesLoading={candidatesLoading}
+        candidatesError={candidatesError}
+      />
 
       <Card>
         <CardContent className="space-y-3 py-4">
           <div className="flex items-baseline justify-between gap-2">
-            <h2 className="text-xs uppercase tracking-wide text-gray-500">
-              Trait comparison
-            </h2>
-            <span className="text-[10px] text-gray-400">
-              source block per trait; representative highlighted
-            </span>
+            <div>
+              <h2 className="text-xs uppercase tracking-wide text-gray-500">
+                Supporting trait evidence
+              </h2>
+              <p className="mt-1 text-xs text-gray-500">
+                Trait comparisons that brought this locus into review.
+              </p>
+            </div>
+            {activeTraitId && (
+              <button
+                type="button"
+                className="rounded border border-green-200 bg-green-50 px-2 py-1 text-[10px] font-medium text-green-800 hover:bg-green-100"
+                onClick={() => setSelectedTraitId(null)}
+              >
+                Clear trait filter
+              </button>
+            )}
           </div>
-          <LocusEvidenceMatrix group={group} />
+          <LocusEvidenceMatrix
+            group={group}
+            selectedTraitId={activeTraitId}
+            onSelectTrait={toggleTraitFilter}
+          />
         </CardContent>
       </Card>
-
-      <LocusCuratorNotes block={block} />
-
-      <BlockExportPanel
-        block={block}
-        candidates={representativeCandidates}
-        title="Representative block export"
-        description="Block-scoped candidate-discovery export for the representative row in this locus. The locus table above may include candidates from additional trait blocks."
-      />
     </div>
   );
 }

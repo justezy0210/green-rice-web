@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { Card, CardContent } from '@/components/ui/card';
 import {
   Table,
@@ -13,72 +13,95 @@ import { Input } from '@/components/ui/input';
 import { OrthogroupDiffPagination } from '@/components/explore/OrthogroupDiffPagination';
 import { OgCategoryStrip } from '@/components/explore/OgCategoryStrip';
 import { OgIndexRow } from '@/components/explore/OgIndexRow';
+import { OgPresetButton } from '@/components/explore/OgPresetButton';
+import { OgTraitEvidenceFilter } from '@/components/explore/OgTraitEvidenceFilter';
 import { useOgIndex } from '@/hooks/useOgIndex';
 import { useOgCategories } from '@/hooks/useOgCategories';
 import { useOrthogroupDiff } from '@/hooks/useOrthogroupDiff';
-import { DEFAULT_TRAIT_ID } from '@/config/traits';
-import type { CategoryId } from '@/lib/og-functional-categories';
+import { useTraitHits } from '@/hooks/useTraitHits';
+import { DEFAULT_TRAIT_ID, isTraitId } from '@/config/traits';
+import { isCategoryId, type CategoryId } from '@/lib/og-functional-categories';
 import type { OgIndexRow as OgIndexRowData } from '@/lib/og-index-service';
+import { traitPValues } from '@/lib/og-trait-sort';
+import type { TraitId } from '@/types/traits';
 
 type Preset =
   | 'rare+private'   // default — the PAV inventory
+  | 'variable'
+  | 'common'
   | 'rare'
   | 'private'
+  | 'panel-absent'
   | 'irgsp-absent'
+  | 'multi-copy-like'
   | 'universal'
   | 'all'
   | 'trait-linked';  // overlay — kept last and visually grouped on the right
 
 const PRESET_LABELS: Record<Preset, string> = {
   'rare+private': 'Rare + Private (PAV)',
+  'variable': 'Variable',
+  'common': 'Common variable',
   'rare': 'Rare PAV',
   'private': 'Private',
+  'panel-absent': 'Panel-absent ref',
   'irgsp-absent': 'Absent in IRGSP',
+  'multi-copy-like': 'Multi-copy-like',
   'universal': 'Universal',
   'all': 'All OGs',
   'trait-linked': 'Has trait p<0.05 (overlay)',
 };
 
 const INTRINSIC_PRESETS: Preset[] = [
-  'rare+private', 'rare', 'private', 'irgsp-absent', 'universal', 'all',
+  'variable', 'common', 'rare+private', 'rare', 'private', 'panel-absent', 'irgsp-absent', 'multi-copy-like', 'universal', 'all',
 ];
 const OVERLAY_PRESETS: Preset[] = ['trait-linked'];
 
 const PAGE_SIZE = 100;
 
-/**
- * Neutral entity-first OG link. Trait context is intentionally NOT
- * injected here so that entity browsing on `/og` does not leak a
- * specific trait into the detail page. Trait context is preserved on
- * links coming from discovery surfaces (Discovery home, Step 2, etc.).
- */
 function ogHref(row: OgIndexRowData): string {
   return `/og/${encodeURIComponent(row.ogId)}`;
 }
 
+function readPreset(value: string | null): Preset {
+  return value && value in PRESET_LABELS ? (value as Preset) : 'rare+private';
+}
+
+function readCategory(value: string | null): CategoryId | null { return isCategoryId(value) ? value : null; }
+function readTrait(value: string | null): TraitId | null { return isTraitId(value) ? value : null; }
+
 export function OrthogroupIndexPage() {
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const preset = readPreset(searchParams.get('preset'));
+  const category = readCategory(searchParams.get('category'));
+  const trait = readTrait(searchParams.get('trait'));
+  const query = searchParams.get('q') ?? '';
   const { doc } = useOrthogroupDiff(DEFAULT_TRAIT_ID);
   const version = doc?.orthofinderVersion ?? null;
   const { bundle, loading, error } = useOgIndex(version);
   const ogCategories = useOgCategories(version);
-
-  const [preset, setPreset] = useState<Preset>('rare+private');
-  const [category, setCategory] = useState<CategoryId | null>(null);
-  const [query, setQuery] = useState('');
+  const { index: traitHitsIndex } = useTraitHits();
+  const traitP = useMemo(() => (
+    trait ? traitPValues(traitHitsIndex, trait) : null
+  ), [traitHitsIndex, trait]);
   const [page, setPage] = useState(0);
 
-  // Apply preset (intrinsic + overlay) BEFORE the category filter so the
-  // category strip counts reflect the active preset cohort.
   const presetRows = useMemo<OgIndexRowData[]>(() => {
     if (!bundle) return [];
     switch (preset) {
+      case 'variable':
+        return bundle.ogs.filter((o) => o.tier === 'common' || o.tier === 'rare' || o.tier === 'private');
+      case 'common': return bundle.ogs.filter((o) => o.tier === 'common');
       case 'rare': return bundle.ogs.filter((o) => o.tier === 'rare');
       case 'private': return bundle.ogs.filter((o) => o.tier === 'private');
+      case 'panel-absent': return bundle.ogs.filter((o) => o.tier === 'absent');
       case 'rare+private':
         return bundle.ogs.filter((o) => o.tier === 'rare' || o.tier === 'private');
       case 'irgsp-absent':
         return bundle.ogs.filter((o) => o.irgspCopyCount === 0 && o.tier !== 'absent');
+      case 'multi-copy-like':
+        return bundle.ogs.filter((o) => o.memberCount > o.presentCount);
       case 'trait-linked':
         return bundle.ogs.filter((o) => o.traits && o.traits.length > 0);
       case 'universal':
@@ -88,13 +111,19 @@ export function OrthogroupIndexPage() {
     }
   }, [bundle, preset]);
 
-  const filtered = useMemo<OgIndexRowData[]>(() => {
+  const categoryRows = useMemo<OgIndexRowData[]>(() => {
     let rows = presetRows;
     if (category) {
       rows = rows.filter(
         (o) => (ogCategories?.categories[o.ogId]?.p ?? 'no_annotation') === category,
       );
     }
+    return rows;
+  }, [presetRows, category, ogCategories]);
+
+  const filtered = useMemo<OgIndexRowData[]>(() => {
+    let rows = categoryRows;
+    if (trait) rows = rows.filter((o) => (o.traits ?? []).includes(trait));
     const q = query.trim().toLowerCase();
     const qOg = q.startsWith('og') ? q.toUpperCase() : '';
     if (q) {
@@ -103,28 +132,32 @@ export function OrthogroupIndexPage() {
         return (o.traits ?? []).some((t) => t.toLowerCase().includes(q));
       });
     }
-    // Entity-first sort: rarity asc (most variable first), then ogId.
-    // Trait p-value intentionally NOT used as a tie-break — trait
-    // ranking lives in /discovery. Stable secondary on ogId keeps the
-    // listing reproducible across reloads.
     return [...rows].sort((a, b) => {
+      if (traitP) {
+        const pa = traitP.get(a.ogId) ?? Number.POSITIVE_INFINITY;
+        const pb = traitP.get(b.ogId) ?? Number.POSITIVE_INFINITY;
+        if (pa !== pb) return pa - pb;
+      }
       if (a.presentCount !== b.presentCount) return a.presentCount - b.presentCount;
       return a.ogId.localeCompare(b.ogId);
     });
-  }, [presetRows, category, ogCategories, query]);
+  }, [categoryRows, trait, traitP, query]);
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   const safePage = Math.min(page, totalPages - 1);
   const pageRows = filtered.slice(safePage * PAGE_SIZE, (safePage + 1) * PAGE_SIZE);
 
-  // Clearing the category alongside the preset prevents the strip
-  // from becoming a hidden filter when the new preset cohort doesn't
-  // contain the previously-selected category (count→0 buckets aren't
-  // rendered, so the active state would otherwise disappear from the
-  // UI while still constraining results).
-  const resetAndSetPreset = (p: Preset) => {
-    setPreset(p);
-    setCategory(null);
+  const updateFilters = (next: { preset?: Preset; category?: CategoryId | null; trait?: TraitId | null; q?: string }) => {
+    const nextPreset = next.preset ?? preset;
+    const nextCategory = Object.hasOwn(next, 'category') ? next.category ?? null : category;
+    const nextTrait = Object.hasOwn(next, 'trait') ? next.trait ?? null : trait;
+    const nextQuery = Object.hasOwn(next, 'q') ? next.q ?? '' : query;
+    const params = new URLSearchParams();
+    if (nextPreset !== 'rare+private') params.set('preset', nextPreset);
+    if (nextCategory) params.set('category', nextCategory);
+    if (nextTrait) params.set('trait', nextTrait);
+    if (nextQuery.trim()) params.set('q', nextQuery.trim());
+    setSearchParams(params, { replace: true });
     setPage(0);
   };
 
@@ -149,28 +182,35 @@ export function OrthogroupIndexPage() {
           categories={ogCategories}
           selected={category}
           onSelect={(id) => {
-            setCategory(id);
-            setPage(0);
+            updateFilters({ category: id });
           }}
+        />
+      )}
+
+      {bundle && (
+        <OgTraitEvidenceFilter
+          rows={categoryRows}
+          selected={trait}
+          onSelect={(id) => updateFilters({ trait: id })}
         />
       )}
 
       <div className="flex flex-wrap items-center gap-2">
         {INTRINSIC_PRESETS.map((p) => (
-          <PresetButton
+          <OgPresetButton
             key={p}
-            id={p}
+            label={PRESET_LABELS[p]}
             active={preset === p}
-            onClick={() => resetAndSetPreset(p)}
+            onClick={() => updateFilters({ preset: p, category: null })}
           />
         ))}
         <span className="mx-1 h-5 w-px bg-gray-200" aria-hidden />
         {OVERLAY_PRESETS.map((p) => (
-          <PresetButton
+          <OgPresetButton
             key={p}
-            id={p}
+            label={PRESET_LABELS[p]}
             active={preset === p}
-            onClick={() => resetAndSetPreset(p)}
+            onClick={() => updateFilters({ preset: p, category: null })}
             overlay
           />
         ))}
@@ -178,8 +218,7 @@ export function OrthogroupIndexPage() {
           type="search"
           value={query}
           onChange={(e) => {
-            setQuery(e.target.value);
-            setPage(0);
+            updateFilters({ q: e.target.value });
           }}
           placeholder="Search OG id (e.g. OG0000871) or trait"
           className="ml-auto w-72"
@@ -193,8 +232,8 @@ export function OrthogroupIndexPage() {
         <>
           <p className="text-[11px] text-gray-500">
             {filtered.length.toLocaleString()} / {bundle.count.toLocaleString()} OGs ·{' '}
-            {bundle.panelTotalCount} panel cultivars · sort: rarity (present count asc),
-            then OG id
+            {bundle.panelTotalCount} panel cultivars · sort:{' '}
+            {trait ? `${trait} p-value asc, then rarity` : 'rarity (present count asc), then OG id'}
           </p>
           <Card>
             <CardContent className="py-3">
@@ -225,6 +264,8 @@ export function OrthogroupIndexPage() {
                       panelTotal={bundle.panelTotalCount}
                       href={ogHref(o)}
                       onClick={() => navigate(ogHref(o))}
+                      activeTrait={trait}
+                      activeTraitP={traitP?.get(o.ogId)}
                     />
                   ))}
                   {pageRows.length === 0 && (
@@ -252,32 +293,5 @@ export function OrthogroupIndexPage() {
         </>
       )}
     </div>
-  );
-}
-
-function PresetButton({
-  id, active, onClick, overlay,
-}: {
-  id: Preset;
-  active: boolean;
-  onClick: () => void;
-  overlay?: boolean;
-}) {
-  const baseColor = overlay
-    ? 'border-amber-200 bg-amber-50 text-amber-800 hover:bg-amber-100'
-    : 'border-gray-200 bg-white text-gray-600 hover:bg-gray-50';
-  const activeColor = overlay
-    ? 'border-amber-400 bg-amber-100 text-amber-900 font-medium'
-    : 'border-green-400 bg-green-50 text-green-800 font-medium';
-  return (
-    /* raw: 11px preset toggle chip with intrinsic-vs-overlay color swap — Button primitive
-       would over-pad and lose the divider grouping in a single nav row. */
-    <button
-      type="button"
-      onClick={onClick}
-      className={`text-[11px] px-2 py-1 rounded border ${active ? activeColor : baseColor}`}
-    >
-      {PRESET_LABELS[id]}
-    </button>
   );
 }

@@ -107,9 +107,11 @@ export function SvBaseline() {
 export function SvGlyph({
   ev,
   xOf,
+  focused,
 }: {
   ev: SvEvent;
   xOf: (pos: number) => number;
+  focused?: boolean;
 }) {
   const baseline = SV_TOP + SV_H_DETAIL / 2;
   const x = xOf(ev.pos);
@@ -126,7 +128,7 @@ export function SvGlyph({
           height={SV_H_DETAIL}
           fill="url(#del-hatch)"
           stroke={SV_COLOR.DEL}
-          strokeWidth={1}
+          strokeWidth={focused ? 2.2 : 1}
           strokeDasharray="2,1.5"
         >
           <title>
@@ -134,6 +136,7 @@ export function SvGlyph({
             {formatBp(ev.refLen)} deleted
           </title>
         </rect>
+        {focused && <FocusedSvLabel x={x} label={ev.eventId} />}
       </g>
     );
   }
@@ -143,12 +146,21 @@ export function SvGlyph({
     const apex = baseline - h;
     const path = `M ${x - INS_HALF_WIDTH},${baseline} L ${x + INS_HALF_WIDTH},${baseline} L ${x},${apex} Z`;
     return (
-      <path d={path} fill={SV_COLOR.INS} opacity={0.85}>
-        <title>
-          {ev.eventId} · INS · {ev.chr}:{ev.pos.toLocaleString()} · ~
-          {formatBp(ev.altLen)} inserted
-        </title>
-      </path>
+      <g>
+        <path
+          d={path}
+          fill={SV_COLOR.INS}
+          opacity={focused ? 1 : 0.85}
+          stroke={focused ? '#166534' : undefined}
+          strokeWidth={focused ? 1.4 : undefined}
+        >
+          <title>
+            {ev.eventId} · INS · {ev.chr}:{ev.pos.toLocaleString()} · ~
+            {formatBp(ev.altLen)} inserted
+          </title>
+        </path>
+        {focused && <FocusedSvLabel x={x} label={ev.eventId} />}
+      </g>
     );
   }
 
@@ -157,26 +169,54 @@ export function SvGlyph({
     const x2 = xOf(ev.pos + footprint);
     const w = Math.max(GLYPH_MIN_WIDTH, x2 - x);
     return (
-      <rect
-        x={x}
-        y={SV_TOP}
-        width={w}
-        height={SV_H_DETAIL}
-        fill="url(#complex-hatch)"
-        stroke={SV_COLOR.COMPLEX}
-        strokeWidth={0.8}
-        opacity={0.9}
-      >
-        <title>
-          {ev.eventId} · COMPLEX · {ev.chr}:{ev.pos.toLocaleString()} · ref{' '}
-          {formatBp(ev.refLen)} → alt {formatBp(ev.altLen)} (ref replaced with
-          different sequence)
-        </title>
-      </rect>
+      <g>
+        <rect
+          x={x}
+          y={SV_TOP}
+          width={w}
+          height={SV_H_DETAIL}
+          fill="url(#complex-hatch)"
+          stroke={SV_COLOR.COMPLEX}
+          strokeWidth={focused ? 2.2 : 0.8}
+          opacity={focused ? 1 : 0.9}
+        >
+          <title>
+            {ev.eventId} · COMPLEX · {ev.chr}:{ev.pos.toLocaleString()} · ref{' '}
+            {formatBp(ev.refLen)} → alt {formatBp(ev.altLen)} (ref replaced with
+            different sequence)
+          </title>
+        </rect>
+        {focused && <FocusedSvLabel x={x} label={ev.eventId} />}
+      </g>
     );
   }
 
   return null;
+}
+
+function FocusedSvLabel({ x, label }: { x: number; label: string }) {
+  return (
+    <g>
+      <line
+        x1={x}
+        x2={x}
+        y1={SV_TOP - 11}
+        y2={SV_TOP + SV_H_DETAIL}
+        stroke="#166534"
+        strokeWidth={0.8}
+        opacity={0.8}
+      />
+      <text
+        x={x + 3}
+        y={SV_TOP - 4}
+        fontSize={8}
+        fill="#166534"
+        fontFamily="monospace"
+      >
+        {label}
+      </text>
+    </g>
+  );
 }
 
 /**

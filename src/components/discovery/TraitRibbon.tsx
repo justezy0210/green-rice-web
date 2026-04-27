@@ -13,8 +13,8 @@ interface Props {
   /** traitId → { minP, count }. Consumers compute this from candidate sets. */
   perTrait: Record<string, TraitCellData>;
   /**
-   * Given a traitId, return the URL to jump to — usually the matching
-   * run overview or block detail. `null` to render a disabled cell.
+   * Given a traitId, return the public URL to jump to. `null` renders
+   * a disabled cell.
    */
   linkFor?: (traitId: string) => string | null;
   title?: string;

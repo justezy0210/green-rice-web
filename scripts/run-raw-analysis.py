@@ -53,6 +53,9 @@ MIN_EFFECT = 0.5
 FALLBACK_MIN_HITS = 5
 FALLBACK_TOP_N = 10
 PROMOTER_BP_DEFAULT = 2000
+UPSTREAM_BP_DEFAULT = 10000
+DOWNSTREAM_BP_DEFAULT = 2000
+SPLICE_SITE_BP_DEFAULT = 2
 SV_MIN_LEN_BP = 50
 GROUP_SPECIFICITY_MAX = 20.0
 FUNCTION_MAX = 1.0
@@ -61,7 +64,29 @@ WEIGHT_GROUP_SPECIFICITY = 0.5
 WEIGHT_FUNCTION = 0.25
 WEIGHT_OG_PATTERN = 0.25
 TOP_SV_EVENTS_PER_TRAIT = 100
-TOP_SV_HITS_PER_OG = 8
+
+PRIMARY_IMPACT_PRIORITY = {
+    "coding_or_splice": 6,
+    "utr": 5,
+    "intron": 4,
+    "promoter_2kb": 3,
+    "upstream_2_10kb": 2,
+    "downstream_2kb": 2,
+    "intergenic": 1,
+}
+PRIMARY_IMPACT_WEIGHT = {
+    "coding_or_splice": 1.0,
+    "utr": 0.9,
+    "intron": 0.75,
+    "promoter_2kb": 0.7,
+    "upstream_2_10kb": 0.45,
+    "downstream_2kb": 0.45,
+    "intergenic": 0.25,
+    # Legacy artifacts, retained for old promoted runs.
+    "gene_body": 0.75,
+    "promoter": 0.7,
+}
+REGULATORY_IMPACT_CLASSES = {"promoter_2kb", "upstream_2_10kb", "promoter", "upstream"}
 
 
 @dataclass
@@ -154,6 +179,22 @@ def parse_args() -> argparse.Namespace:
         "--promoter-bp",
         type=int,
         default=PROMOTER_BP_DEFAULT,
+    )
+    ap.add_argument(
+        "--upstream-bp",
+        type=int,
+        default=UPSTREAM_BP_DEFAULT,
+        help="Total strand-aware upstream window. The promoter window is excluded from this class.",
+    )
+    ap.add_argument(
+        "--downstream-bp",
+        type=int,
+        default=DOWNSTREAM_BP_DEFAULT,
+    )
+    ap.add_argument(
+        "--splice-site-bp",
+        type=int,
+        default=SPLICE_SITE_BP_DEFAULT,
     )
     ap.add_argument(
         "--traits",
@@ -476,38 +517,238 @@ def score_base_candidate(entry: DiffEntry) -> tuple[float, str | None, str, str]
     return total, primary_description, gs_summary, og_summary
 
 
-def parse_gff_gene_index(path: Path) -> dict[str, dict[str, Any]]:
+def parse_gff_attrs(field: str) -> dict[str, str]:
+    attrs: dict[str, str] = {}
+    for pair in field.rstrip(";").split(";"):
+        if "=" not in pair:
+            continue
+        key, value = pair.split("=", 1)
+        attrs[key.strip()] = unquote(value.strip())
+    return attrs
+
+
+def normalise_gff_gene_id(value: str) -> str:
+    return strip_transcript_suffix(strip_longest_suffix(value))
+
+
+def merge_ranges(ranges: list[tuple[int, int]]) -> list[tuple[int, int]]:
+    clean = sorted((max(1, s), e) for s, e in ranges if e >= s)
+    if not clean:
+        return []
+    merged: list[tuple[int, int]] = [clean[0]]
+    for start, end in clean[1:]:
+        last_start, last_end = merged[-1]
+        if start <= last_end + 1:
+            merged[-1] = (last_start, max(last_end, end))
+        else:
+            merged.append((start, end))
+    return merged
+
+
+def subtract_ranges(
+    bases: list[tuple[int, int]],
+    subtracts: list[tuple[int, int]],
+) -> list[tuple[int, int]]:
+    remaining = merge_ranges(bases)
+    for sub_start, sub_end in merge_ranges(subtracts):
+        next_remaining: list[tuple[int, int]] = []
+        for start, end in remaining:
+            if sub_end < start or sub_start > end:
+                next_remaining.append((start, end))
+                continue
+            if start < sub_start:
+                next_remaining.append((start, sub_start - 1))
+            if sub_end < end:
+                next_remaining.append((sub_end + 1, end))
+        remaining = next_remaining
+        if not remaining:
+            break
+    return remaining
+
+
+def canonical_splice_site_ranges(
+    cds_ranges: list[tuple[int, int]],
+    splice_site_bp: int,
+) -> list[tuple[int, int]]:
+    if splice_site_bp <= 0:
+        return []
+    sites: list[tuple[int, int]] = []
+    sorted_cds = merge_ranges(cds_ranges)
+    for i in range(len(sorted_cds) - 1):
+        intron_start = sorted_cds[i][1] + 1
+        intron_end = sorted_cds[i + 1][0] - 1
+        if intron_end < intron_start:
+            continue
+        sites.append((intron_start, min(intron_start + splice_site_bp - 1, intron_end)))
+        sites.append((max(intron_end - splice_site_bp + 1, intron_start), intron_end))
+    return merge_ranges(sites)
+
+
+def parse_gff_gene_index(path: Path, splice_site_bp: int) -> dict[str, dict[str, Any]]:
     genes: dict[str, dict[str, Any]] = {}
+    transcript_to_gene: dict[str, str] = {}
+    features_by_gene: dict[str, dict[str, list[tuple[int, int]]]] = defaultdict(
+        lambda: {"exon": [], "CDS": []}
+    )
     with path.open() as handle:
         for line in handle:
             if line.startswith("#"):
                 continue
             cols = line.rstrip().split("\t")
-            if len(cols) < 9 or cols[2] != "gene":
+            if len(cols) < 9:
                 continue
-            attrs: dict[str, str] = {}
-            for pair in cols[8].split(";"):
-                if "=" not in pair:
+            feature_type = cols[2]
+            start = int(cols[3])
+            end = int(cols[4])
+            attrs = parse_gff_attrs(cols[8])
+            if feature_type == "gene":
+                gene_id = attrs.get("ID")
+                if not gene_id:
                     continue
-                key, value = pair.split("=", 1)
-                attrs[key.strip()] = unquote(value.strip())
-            gene_id = attrs.get("ID")
-            if gene_id:
+                gene_key = normalise_gff_gene_id(gene_id)
                 genes[gene_id] = {
                     "chr": cols[0],
-                    "start": int(cols[3]),
-                    "end": int(cols[4]),
+                    "start": start,
+                    "end": end,
                     "strand": cols[6],
                 }
+                genes[gene_key] = genes[gene_id]
+                continue
+
+            if feature_type in {"mRNA", "transcript"}:
+                transcript_id = attrs.get("ID")
+                parent = (attrs.get("Parent") or "").split(",")[0]
+                if transcript_id and parent:
+                    transcript_to_gene[transcript_id] = normalise_gff_gene_id(parent)
+                    transcript_to_gene[normalise_gff_gene_id(transcript_id)] = normalise_gff_gene_id(parent)
+                continue
+
+            if feature_type not in {"exon", "CDS"}:
+                continue
+            for parent in (attrs.get("Parent") or "").split(","):
+                if not parent:
+                    continue
+                gene_key = transcript_to_gene.get(parent)
+                if gene_key is None:
+                    gene_key = transcript_to_gene.get(normalise_gff_gene_id(parent))
+                if gene_key is None:
+                    gene_key = normalise_gff_gene_id(parent)
+                features_by_gene[gene_key][feature_type].append((start, end))
+
+    for gene_id, feature_sets in features_by_gene.items():
+        gene = genes.get(gene_id)
+        if gene is None:
+            continue
+        exons = merge_ranges(feature_sets["exon"])
+        cds = merge_ranges(feature_sets["CDS"])
+        utr = subtract_ranges(exons, cds)
+        introns = subtract_ranges([(gene["start"], gene["end"])], exons) if exons else []
+        coding_or_splice = merge_ranges(cds + canonical_splice_site_ranges(cds, splice_site_bp))
+        gene["exons"] = exons
+        gene["cds"] = cds
+        gene["codingOrSplice"] = coding_or_splice
+        gene["utr"] = utr
+        gene["introns"] = introns
     return genes
 
 
-def build_gene_coord_index(gff_dir: Path, cultivars: list[str]) -> dict[str, dict[str, dict[str, Any]]]:
+def build_gene_coord_index(
+    gff_dir: Path,
+    cultivars: list[str],
+    splice_site_bp: int,
+) -> dict[str, dict[str, dict[str, Any]]]:
     out: dict[str, dict[str, dict[str, Any]]] = {}
     for cultivar in cultivars:
         gff_path = gff_dir / f"{cultivar}_longest.gff3"
-        out[cultivar] = parse_gff_gene_index(gff_path)
+        out[cultivar] = parse_gff_gene_index(gff_path, splice_site_bp)
     return out
+
+
+def add_primary_interval(
+    intervals_by_chrom: dict[str, list[dict[str, Any]]],
+    gene_row: dict[str, Any],
+    start: int,
+    end: int,
+    impact_class: str,
+) -> None:
+    start = max(1, start)
+    if end < start:
+        return
+    intervals_by_chrom[gene_row["chrom"]].append(
+        {
+            **gene_row,
+            "intervalStart": start,
+            "intervalEnd": end,
+            "impactClass": impact_class,
+            "impactPriority": PRIMARY_IMPACT_PRIORITY[impact_class],
+        }
+    )
+
+
+def add_primary_impact_intervals(
+    intervals_by_chrom: dict[str, list[dict[str, Any]]],
+    gene_row: dict[str, Any],
+    coord: dict[str, Any],
+    promoter_bp: int,
+    upstream_bp: int,
+    downstream_bp: int,
+) -> None:
+    for start, end in coord.get("codingOrSplice", []):
+        add_primary_interval(intervals_by_chrom, gene_row, start, end, "coding_or_splice")
+    for start, end in coord.get("utr", []):
+        add_primary_interval(intervals_by_chrom, gene_row, start, end, "utr")
+    for start, end in coord.get("introns", []):
+        add_primary_interval(intervals_by_chrom, gene_row, start, end, "intron")
+
+    gene_start = coord["start"]
+    gene_end = coord["end"]
+    strand = coord["strand"]
+    if strand == "-":
+        add_primary_interval(
+            intervals_by_chrom,
+            gene_row,
+            gene_end + 1,
+            gene_end + promoter_bp,
+            "promoter_2kb",
+        )
+        if upstream_bp > promoter_bp:
+            add_primary_interval(
+                intervals_by_chrom,
+                gene_row,
+                gene_end + promoter_bp + 1,
+                gene_end + upstream_bp,
+                "upstream_2_10kb",
+            )
+        add_primary_interval(
+            intervals_by_chrom,
+            gene_row,
+            gene_start - downstream_bp,
+            gene_start - 1,
+            "downstream_2kb",
+        )
+    else:
+        add_primary_interval(
+            intervals_by_chrom,
+            gene_row,
+            gene_start - promoter_bp,
+            gene_start - 1,
+            "promoter_2kb",
+        )
+        if upstream_bp > promoter_bp:
+            add_primary_interval(
+                intervals_by_chrom,
+                gene_row,
+                gene_start - upstream_bp,
+                gene_start - promoter_bp - 1,
+                "upstream_2_10kb",
+            )
+        add_primary_interval(
+            intervals_by_chrom,
+            gene_row,
+            gene_end + 1,
+            gene_end + downstream_bp,
+            "downstream_2kb",
+        )
 
 
 def classify_event(record: pysam.VariantRecord) -> tuple[str, int] | None:
@@ -565,6 +806,16 @@ def push_top(heap: list[tuple[float, int, dict[str, Any]]], score: float, counte
         return
     if score > heap[0][0]:
         heapreplace(heap, item)
+
+
+def support_hit_sort_key(payload: dict[str, Any]) -> tuple[float, str, str, str, str]:
+    return (
+        -float(payload["score"]),
+        str(payload["eventId"]),
+        str(payload["impactClass"]),
+        str(payload["cultivar"]),
+        str(payload["geneId"]),
+    )
 
 
 def tsv_write(path: Path, rows: list[dict[str, Any]], fieldnames: list[str]) -> None:
@@ -643,7 +894,7 @@ def main() -> int:
             ],
         )
 
-    gene_coords = build_gene_coord_index(args.gff_dir, cultivar_ids)
+    gene_coords = build_gene_coord_index(args.gff_dir, cultivar_ids, args.splice_site_bp)
     og_members = load_selected_og_members(args.og_members_tsv, selected_ogs_union)
 
     intervals_by_chrom: dict[str, list[dict[str, Any]]] = defaultdict(list)
@@ -668,31 +919,14 @@ def main() -> int:
                         "strand": coord["strand"],
                     }
                     og_gene_rows[(trait_id, og_id)].append(gene_row)
-                    intervals_by_chrom[coord["chr"]].append(
-                        {
-                            **gene_row,
-                            "intervalStart": coord["start"],
-                            "intervalEnd": coord["end"],
-                            "impactClass": "gene_body",
-                            "impactPriority": 2,
-                        }
+                    add_primary_impact_intervals(
+                        intervals_by_chrom,
+                        gene_row,
+                        coord,
+                        args.promoter_bp,
+                        args.upstream_bp,
+                        args.downstream_bp,
                     )
-                    if coord["strand"] == "-":
-                        promoter_start = coord["end"] + 1
-                        promoter_end = coord["end"] + args.promoter_bp
-                    else:
-                        promoter_start = max(1, coord["start"] - args.promoter_bp)
-                        promoter_end = coord["start"] - 1
-                    if promoter_end >= promoter_start:
-                        intervals_by_chrom[coord["chr"]].append(
-                            {
-                                **gene_row,
-                                "intervalStart": promoter_start,
-                                "intervalEnd": promoter_end,
-                                "impactClass": "promoter",
-                                "impactPriority": 1,
-                            }
-                        )
 
     for chrom in intervals_by_chrom:
         intervals_by_chrom[chrom].sort(key=lambda x: (x["intervalStart"], x["intervalEnd"]))
@@ -714,7 +948,7 @@ def main() -> int:
         raise ValueError(f"VCF samples do not match cultivar IDs: {vcf_samples} != {cultivar_ids}")
 
     top_sv_heaps: dict[str, list[tuple[float, int, dict[str, Any]]]] = defaultdict(list)
-    support_heaps: dict[tuple[str, str], list[tuple[float, int, dict[str, Any]]]] = defaultdict(list)
+    support_hits: dict[tuple[str, str], list[dict[str, Any]]] = defaultdict(list)
     sv_type_counts: dict[str, int] = defaultdict(int)
     total_sv_events = 0
     current_chrom = None
@@ -791,7 +1025,7 @@ def main() -> int:
             gap = float(freq_payload["gap"])
             if gap <= 0:
                 continue
-            impact_weight = 1.0 if interval["impactClass"] == "gene_body" else 0.8
+            impact_weight = PRIMARY_IMPACT_WEIGHT.get(interval["impactClass"], 0.5)
             hit_score = gap * impact_weight
             hit_payload = {
                 "eventId": event_id,
@@ -810,12 +1044,11 @@ def main() -> int:
                     if label != "gap"
                 },
             }
-            push_sequence += 1
-            push_top(support_heaps[(trait_id, og_id)], hit_score, push_sequence, hit_payload, TOP_SV_HITS_PER_OG)
+            support_hits[(trait_id, og_id)].append(hit_payload)
 
     step4_rows: dict[str, list[dict[str, Any]]] = defaultdict(list)
-    for (trait_id, og_id), heap in support_heaps.items():
-        for score, _, payload in sorted(heap, key=lambda item: (-item[0], item[2]["eventId"])):
+    for (trait_id, og_id), hits in support_hits.items():
+        for payload in sorted(hits, key=support_hit_sort_key):
             row = {
                 "orthogroup": og_id,
                 "event_id": payload["eventId"],
@@ -879,8 +1112,7 @@ def main() -> int:
         scored_entries.sort(key=lambda item: item[0], reverse=True)
 
         for rank, (_, function_summary, gs_summary, og_summary, entry) in enumerate(scored_entries, start=1):
-            support_heap = support_heaps.get((trait_id, entry.orthogroup), [])
-            support_rows = [payload for _, _, payload in sorted(support_heap, key=lambda item: (-item[0], item[2]["eventId"]))]
+            support_rows = sorted(support_hits.get((trait_id, entry.orthogroup), []), key=support_hit_sort_key)
             best_hit = support_rows[0] if support_rows else None
             presence_values = list(entry.presenceByGroup.values())
             presence_gap = max(presence_values) - min(presence_values) if presence_values else 0.0
@@ -888,9 +1120,9 @@ def main() -> int:
             candidate_type = "og_only"
             sv_bonus = 0.0
             if best_hit:
-                impact_weight = 1.0 if best_hit["impactClass"] == "gene_body" else 0.8
+                impact_weight = PRIMARY_IMPACT_WEIGHT.get(best_hit["impactClass"], 0.5)
                 sv_bonus = min(0.25, best_hit["gap"] * impact_weight * 0.25)
-                if best_hit["impactClass"] == "promoter" and min(presence_values) >= 0.8 and presence_gap < 0.25:
+                if best_hit["impactClass"] in REGULATORY_IMPACT_CLASSES and min(presence_values) >= 0.8 and presence_gap < 0.25:
                     candidate_type = "sv_regulatory"
                 elif (entry.log2FoldChange is not None and abs(entry.log2FoldChange) >= 1.0 and entry.meanDiff >= 1.0):
                     candidate_type = "cnv_dosage"
@@ -1013,6 +1245,11 @@ def main() -> int:
         },
         "policy": {
             "promoterBp": args.promoter_bp,
+            "upstreamBp": args.upstream_bp,
+            "downstreamBp": args.downstream_bp,
+            "spliceSiteBp": args.splice_site_bp,
+            "impactClasses": list(PRIMARY_IMPACT_PRIORITY.keys()),
+            "ogSvIntersectionStorage": "all qualifying hits; no per-OG top-N cap",
             "svFilter": "LV=0 and SV-like by REF/ALT length (>=50 bp)",
             "candidateLanguage": "candidate / proposed grouping / discovery only",
         },
@@ -1038,6 +1275,11 @@ def main() -> int:
         "",
         "## Policy",
         f"- Promoter window: `{args.promoter_bp} bp`",
+        f"- Upstream context window: `{args.upstream_bp} bp` total, excluding promoter",
+        f"- Downstream context window: `{args.downstream_bp} bp`",
+        f"- Splice-site window: `{args.splice_site_bp} bp`",
+        f"- Impact classes: `{', '.join(PRIMARY_IMPACT_PRIORITY.keys())}`",
+        "- OG × SV intersections: all qualifying hits are stored; Step 5 picks one best SV for summary",
         "- SV filter: `LV=0` and `|len(REF)-len(ALT0)| >= 50 bp` or long-complex records",
         "- Result framing: `candidate` / `proposed grouping` / discovery only",
         "- Not attempted in this run: genome-wide synteny blocks, explicit inversion caller, QTL integration, expression validation",

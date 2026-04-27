@@ -21,6 +21,8 @@ const BROWSE_ITEMS: BrowseItem[] = [
   { path: '/cultivars', label: 'Cultivars', hint: 'Per-cultivar assembly + phenotype' },
   { path: '/genes', label: 'Genes', hint: 'Gene id, Pfam / InterPro / GO, product' },
   { path: '/og', label: 'Orthogroups', hint: 'Conservation tier, function, OG inventory' },
+  { path: '/pangenome', label: 'Pangenome', hint: 'Core/accessory catalog and SV summary' },
+  { path: '/sv', label: 'Structural variants', hint: 'SV event matrix and carrier states' },
 ];
 
 const navLinkClass = (active: boolean) =>
@@ -95,7 +97,6 @@ export function Header() {
               })}
             </DropdownMenuContent>
           </DropdownMenu>
-
           <Link to="/discovery" className={navLinkClass(pathname.startsWith('/discovery'))}>
             Discovery
           </Link>

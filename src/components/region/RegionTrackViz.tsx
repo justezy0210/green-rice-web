@@ -32,47 +32,21 @@ interface Props {
   genes: RegionGene[];
   svEvents: SvEvent[];
   svLoading?: boolean;
-  /**
-   * Optional gene id the caller wants visually pinned — the gene's
-   * span is painted as a full-height amber overlay across both lanes.
-   * Typically wired from the Overlapping-genes row click.
-   */
   highlightedGeneId?: string | null;
-  /**
-   * Optional orthogroup id from the URL `?og=` param — genes belonging
-   * to this OG are tinted indigo in detail mode and stacked as an
-   * indigo segment on top of the per-bin gene histogram in summary
-   * mode, so an arrived-from OG pops against the rest of the region.
-   */
   focusedOgId?: string | null;
-  /** Clear the focused OG (removes `?og=` from the URL). */
   onClearFocusedOg?: () => void;
-  /** 'cultivar' = only SVs the URL cultivar carries; 'all' = pangenome view. */
+  focusedSvId?: string | null;
+  onClearFocusedSv?: () => void;
   svScope?: 'cultivar' | 'all';
-  /** Toggle the SV scope via the URL `?svScope=` param. */
   onToggleSvScope?: () => void;
-  /** Total samples in the active SV release — drives the "all N" pill. */
   svSampleCount?: number | null;
-  /** Candidate blocks whose region window overlaps the viewport. */
   overlappingBlocks?: CandidateBlock[];
 }
 
 /**
  * Adaptive region track.
- *
- * Detail mode (<=200 genes AND <=2 Mb span for the gene lane,
- * <=150 SVs AND <=1 Mb for the SV lane): per-gene bars + per-SV ticks,
- * matching the original layout. Summary mode (anything wider):
- * 120-bin histograms with sqrt(count) height, OG-assigned stacked on
- * top of orphan in the gene lane, SV type-stacked in the SV lane.
- *
- * Gene and SV detail thresholds are independent, so a short window
- * with many SVs still renders bar+tick for genes, and a wide window
- * with few SVs still gets tick rendering in the SV lane.
- *
- * Interactions: hover a gene (detail) or bin (summary) to update the
- * aria-live status row. Click a bin to rewrite the region URL to that
- * bin span — the URL stays the single source of truth for the viewport.
+ * Detail mode renders per-gene and per-SV glyphs; summary mode bins them.
+ * The URL remains the source of truth for viewport, OG focus, and SV focus.
  */
 export function RegionTrackViz({
   cultivar,
@@ -86,6 +60,8 @@ export function RegionTrackViz({
   highlightedGeneId,
   focusedOgId,
   onClearFocusedOg,
+  focusedSvId,
+  onClearFocusedSv,
   svScope = 'cultivar',
   onToggleSvScope,
   svSampleCount,
@@ -143,6 +119,10 @@ export function RegionTrackViz({
     () => (highlightedGeneId ? genes.find((g) => g.id === highlightedGeneId) ?? null : null),
     [highlightedGeneId, genes],
   );
+  const focusedSv = useMemo(
+    () => (focusedSvId ? svEvents.find((ev) => ev.eventId === focusedSvId) ?? null : null),
+    [focusedSvId, svEvents],
+  );
 
   const [hoveredBin, setHoveredBin] = useState<number | null>(null);
   const [hoveredGene, setHoveredGene] = useState<RegionGene | null>(null);
@@ -186,6 +166,9 @@ export function RegionTrackViz({
           focusedOgId={focusedOgId}
           focusedGeneCount={focusedGeneCount}
           onClearFocusedOg={onClearFocusedOg}
+          focusedSvId={focusedSvId}
+          focusedSvVisible={focusedSv !== null}
+          onClearFocusedSv={onClearFocusedSv}
           onBack={() => navigate(-1)}
           zoom={zoom}
           onZoomChange={setZoom}
@@ -254,7 +237,12 @@ export function RegionTrackViz({
           {svDetail && <SvBaseline />}
           {svDetail
             ? svEvents.map((ev) => (
-                <SvGlyph key={ev.eventId} ev={ev} xOf={xOf} />
+                <SvGlyph
+                  key={ev.eventId}
+                  ev={ev}
+                  xOf={xOf}
+                  focused={focusedSvId === ev.eventId}
+                />
               ))
             : bins.map((b) => (
                 <SvBin

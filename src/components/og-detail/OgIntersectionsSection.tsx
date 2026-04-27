@@ -18,6 +18,7 @@ import {
   ogDetailTableRowClass,
 } from '@/components/og-detail/OgDetailTableStyles';
 import { useOgIntersectionBundle } from '@/hooks/useBlock';
+import { impactClassLabel } from '@/lib/impact-class-label';
 import type { IntersectionRow, ImpactClass } from '@/types/intersection';
 
 interface Props {
@@ -83,11 +84,11 @@ export function OgIntersectionsSection({ ogId, intersectionReleaseId }: Props) {
             {bundle?.runs.length === 1 ? '' : 's'}
           </span>
         </div>
-        <Table density="dense" className={`${ogDetailTableClass} min-w-[760px]`}>
+        <Table density="dense" className={`${ogDetailTableClass} min-w-[820px]`}>
           <colgroup>
             <col className="w-28" />
             <col className="w-20" />
-            <col className="w-24" />
+            <col className="w-36" />
             <col className="w-24" />
             <col />
             <col className="w-16" />
@@ -178,21 +179,13 @@ export function OgIntersectionsSection({ ogId, intersectionReleaseId }: Props) {
   );
 }
 
-const IMPACT_LABEL: Record<ImpactClass, string> = {
-  gene_body: 'gene body',
-  cds_disruption: 'CDS',
-  promoter: 'promoter',
-  upstream: 'upstream',
-  cluster_enclosure: 'cluster',
-  cnv_support: 'CNV',
-  inversion_boundary: 'inv bdy',
-  te_associated: 'TE',
-};
-
 function ImpactBadge({ impactClass }: { impactClass: ImpactClass }) {
   return (
-    <span className="text-[10px] font-mono text-indigo-700 bg-indigo-50 border border-indigo-200 px-1 py-[1px] rounded">
-      {IMPACT_LABEL[impactClass] ?? impactClass}
+    <span
+      className="inline-flex max-w-full whitespace-normal break-words rounded border border-indigo-200 bg-indigo-50 px-1.5 py-[1px] text-[10px] leading-tight text-indigo-700"
+      title={impactClassLabel(impactClass)}
+    >
+      {impactClassLabel(impactClass)}
     </span>
   );
 }

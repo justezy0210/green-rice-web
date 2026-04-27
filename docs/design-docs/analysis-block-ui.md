@@ -7,6 +7,7 @@ Companion docs:
 
 - `docs/product-specs/scope.md`
 - `docs/product-specs/discovery-idea.md`
+- `docs/design-docs/candidate-discovery-selection-plan.md`
 - `docs/exec-plans/active/2026-04-21-site-rebuild-analysis-workflow.md`
 - `docs/exec-plans/active/2026-04-22-candidate-block-rollout.md` — implementation plan
 
@@ -179,8 +180,8 @@ alongside each block doc.
 
 ### Step 4. OG × SV intersection
 
-- gene body / promoter / upstream / local neighborhood 기준으로
-  SV와 candidate OG 연결
+- primary genomic interval 기준으로 SV와 candidate OG 연결:
+  CDS/splice, UTR, intron, promoter 2 kb, upstream 2-10 kb, downstream 2 kb
 
 ### Step 5. Evidence collapse into blocks
 
@@ -440,8 +441,8 @@ block context:
   (runId, chr, start, end) → blockId.
 - `Trait ribbon` strip on OG / block / candidate surfaces, showing
   the 9-trait p-value heatmap plus the currently active run.
-- `Pattern chips`: `OG shift`, `SV gap`, `promoter overlap`,
-  `gene_body overlap`, `WAK-like`, `NLR-like`, `shared across runs`,
+- `Pattern chips`: `OG shift`, `SV gap`, `CDS/splice overlap`,
+  `promoter 2 kb overlap`, `WAK-like`, `NLR-like`, `shared across runs`,
   `curated`, `repeated family cluster`.
 - `Scope strip` on any surface that presents candidate evidence.
 - `Provenance bar` on block detail: `runId`, `blockSetVersion`,

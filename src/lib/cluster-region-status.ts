@@ -1,7 +1,7 @@
 /**
- * Single source of truth for per-cluster region status + display copy.
- * Consumed by OgDetailAlleleFreqTab and OgDetailGraphTab so both tabs
- * present liftover state identically.
+ * Legacy helper for per-cluster OG-region status + display copy. Kept
+ * for release-script and historical compatibility until the OG-region
+ * pipeline is retired.
  */
 
 import type {

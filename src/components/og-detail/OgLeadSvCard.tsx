@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom';
 import { Card, CardContent } from '@/components/ui/card';
+import { impactClassLabel } from '@/lib/impact-class-label';
 import type { CandidateBestSv } from '@/types/candidate';
 
 interface Props {
@@ -48,16 +49,19 @@ export function OgLeadSvCard({
           )}
         </div>
         <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1 text-sm text-gray-700">
-          <span className="font-mono text-[13px]">
+          <Link
+            to={`/sv/${encodeURIComponent(bestSv.eventId)}`}
+            className="font-mono text-[13px] text-green-700 hover:underline"
+          >
             {bestSv.eventId}
-          </span>
+          </Link>
           <span className="text-[10px] font-mono font-medium text-gray-600 bg-gray-100 px-1.5 py-0.5 rounded">
             {bestSv.svType}
           </span>
           <span className="text-[12px] font-mono text-gray-600">{region}</span>
           {bestSv.impactClass && (
             <span className="text-[10px] font-mono text-indigo-700 bg-indigo-50 border border-indigo-200 px-1 py-[1px] rounded">
-              {bestSv.impactClass}
+              {impactClassLabel(bestSv.impactClass)}
             </span>
           )}
           {typeof bestSv.absDeltaAf === 'number' && (
@@ -77,7 +81,7 @@ export function OgLeadSvCard({
               <>
                 {' · '}
                 <Link
-                  to={`/genes/${encodeURIComponent(bestSv.geneId)}`}
+                  to={`/genes/${encodeURIComponent(bestSv.geneId)}?sv=${encodeURIComponent(bestSv.eventId)}`}
                   className="text-green-700 hover:underline font-mono text-[11px]"
                 >
                   {bestSv.geneId}
@@ -99,7 +103,13 @@ export function OgLeadSvCard({
           format={(v) => `${(v * 100).toFixed(0)}%`}
         />
         {regionHref && (
-          <div className="pt-1">
+          <div className="flex flex-wrap gap-3 pt-1">
+            <Link
+              to={`/sv/${encodeURIComponent(bestSv.eventId)}`}
+              className="text-[11px] text-green-700 hover:underline"
+            >
+              SV detail →
+            </Link>
             <Link
               to={regionHref}
               className="text-[11px] text-green-700 hover:underline"

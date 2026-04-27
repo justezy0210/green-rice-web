@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { Link, useParams } from 'react-router-dom';
+import { Link, useParams, useSearchParams } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ScopeStrip } from '@/components/common/ScopeStrip';
 import { ConservationSummary } from '@/components/entity/ConservationSummary';
@@ -8,6 +8,7 @@ import {
   GeneAnnotationCard,
   LegendSwatch,
 } from '@/components/gene/GeneAnnotationCard';
+import { LinkedSvContext } from '@/components/gene/LinkedSvContext';
 import { useGeneLookup } from '@/hooks/useGeneIndex';
 import { useGeneModel } from '@/hooks/useGeneModel';
 import { useOgGeneCoords } from '@/hooks/useOgGeneCoords';
@@ -17,14 +18,19 @@ import { useOgConservation } from '@/hooks/useOgConservation';
 import { useTraitHits } from '@/hooks/useTraitHits';
 import { useSvEventsForRegion } from '@/hooks/useSvEventsForRegion';
 import { useSvCultivarCoords } from '@/hooks/useSvCultivarCoords';
+import { useSvEvent } from '@/hooks/useSvEvent';
 import { SV_RELEASE_ID } from '@/lib/releases';
+import { canonicalizeSvEventId } from '@/lib/sv-event-helpers';
 import type { GeneSvOverlay } from '@/components/gene/GeneModelSvg';
 
 export function GeneDetailPage() {
   const { geneId: rawGeneId } = useParams<{ geneId: string }>();
+  const [searchParams] = useSearchParams();
   const geneId = rawGeneId ? decodeURIComponent(rawGeneId) : null;
+  const linkedSvId = canonicalizeSvEventId(searchParams.get('sv'));
   const lookup = useGeneLookup(geneId);
   const model = useGeneModel(geneId);
+  const linkedSv = useSvEvent(SV_RELEASE_ID, linkedSvId);
   const { data: ogCoords } = useOgGeneCoords(lookup.entry?.og ?? null);
   const { members } = useOgDrilldown(lookup.entry?.og ?? null, lookup.version);
   const { cultivars } = useCultivars();
@@ -180,6 +186,17 @@ export function GeneDetailPage() {
           </CardHeader>
           <CardContent className="space-y-3">
             <GeneModelSvg gene={model.entry} svEvents={svOverlay} />
+            {linkedSvId && (
+              <LinkedSvContext
+                eventId={linkedSvId}
+                event={linkedSv.event}
+                loading={linkedSv.loading}
+                error={linkedSv.error}
+                cultivarId={cultivarId}
+                cultivarName={cultivarId ? cultivarNameMap[cultivarId] ?? cultivarId : null}
+                overlayCount={svOverlay.length}
+              />
+            )}
             <div className="flex flex-wrap gap-3 text-[11px] text-gray-500">
               <LegendSwatch color="rgba(22, 163, 74, 0.9)" label="CDS" />
               <LegendSwatch color="rgba(156, 163, 175, 0.55)" label="UTR" />
@@ -248,4 +265,3 @@ export function GeneDetailPage() {
     </div>
   );
 }
-

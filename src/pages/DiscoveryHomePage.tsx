@@ -1,7 +1,6 @@
 import { useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { Card, CardContent } from '@/components/ui/card';
-import { DiscoveryRunRow } from '@/components/discovery/DiscoveryRunRow';
 import { LocusTraitMatrix } from '@/components/discovery/LocusTraitMatrix';
 import { TRAITS } from '@/config/traits';
 import { useAnalysisRuns } from '@/hooks/useAnalysisRuns';
@@ -64,27 +63,6 @@ export function DiscoveryHomePage() {
             traitLabel={labelForTrait}
           />
 
-          <Card>
-            <CardContent className="py-4">
-              <div className="mb-3 flex items-baseline justify-between">
-                <h2 className="text-xs uppercase tracking-wide text-gray-500">
-                  Trait run overview
-                </h2>
-                <span className="text-[10px] text-gray-400">
-                  current promoted run per trait
-                </span>
-              </div>
-              <ul className="divide-y divide-gray-100">
-                {representativeRuns.map((run) => (
-                  <DiscoveryRunRow
-                    key={run.runId}
-                    run={run}
-                    traitLabel={labelForTrait(run.traitId)}
-                  />
-                ))}
-              </ul>
-            </CardContent>
-          </Card>
         </>
       )}
     </div>
