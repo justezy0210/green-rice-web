@@ -116,6 +116,7 @@ Examples:
 - `docs/exec-plans/`: active/completed implementation plans
 - `docs/runbooks/`: operational release playbooks
   - `docs/runbooks/data-loading.md`: end-to-end data loading workflow
+  - `docs/runbooks/firebase-hosting.md`: Hosting deploy and Storage CORS
 - `docs/generated/`: generated references
 
 ## Working Notes For Codex
