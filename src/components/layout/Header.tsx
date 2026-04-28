@@ -49,7 +49,7 @@ export function Header() {
           <span className="text-2xl">🌾</span>
           <span className="flex flex-col leading-tight">
             <span className="text-base">Green Rice DB</span>
-            <span className="text-[10px] font-normal text-gray-500 tracking-wide">
+            <span className="hidden text-[10px] font-normal text-gray-500 tracking-wide lg:block">
               Comparative pangenome resource · Korean temperate japonica
             </span>
           </span>
@@ -103,7 +103,9 @@ export function Header() {
           <Link to="/download" className={navLinkClass(pathname === '/download')}>
             Downloads
           </Link>
-
+          <Link to="/about" className={navLinkClass(pathname === '/about')}>
+            About
+          </Link>
           {isAdmin && (
             <Link to="/admin" className={navLinkClass(pathname === '/admin')}>
               Admin

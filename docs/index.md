@@ -22,6 +22,9 @@
 ## Product Specs
 - [idea.md](product-specs/idea.md) — Project vision: phenotype → genome exploration DB
 
+## Presentation
+- [green-rice-db-presentation-outline.md](presentation/green-rice-db-presentation-outline.md) — Talk structure, user-question framing, demo flow, and safe terminology
+
 ## Generated
 - [db-schema.md](generated/db-schema.md) — Firestore schema (from TypeScript types)
 - [phenotype-groups.md](generated/phenotype-groups.md) — Current 11-cultivar grouping snapshot

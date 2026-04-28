@@ -1,0 +1,69 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 920 460" role="img" aria-label="World map of rice accessions by country of origin">
+  <rect width="920" height="460" fill="#f8fafc"/>
+  <image href="https://upload.wikimedia.org/wikipedia/commons/5/51/BlankMap-Equirectangular.svg" x="0" y="0" width="920" height="460" preserveAspectRatio="none" opacity="0.72"/>
+  <g stroke="#e2e8f0" stroke-width="1">
+    <line x1="60" x2="60" y1="12" y2="448"/>
+    <line x1="120" x2="120" y1="12" y2="448"/>
+    <line x1="180" x2="180" y1="12" y2="448"/>
+    <line x1="240" x2="240" y1="12" y2="448"/>
+    <line x1="300" x2="300" y1="12" y2="448"/>
+    <line x1="360" x2="360" y1="12" y2="448"/>
+    <line x1="18" x2="902" y1="86" y2="86"/>
+    <line x1="18" x2="902" y1="172" y2="172"/>
+    <line x1="18" x2="902" y1="258" y2="258"/>
+    <line x1="18" x2="902" y1="344" y2="344"/>
+  </g>
+  <g>
+    <circle cx="726.3" cy="138.3" r="28.0" fill="#0f766e" fill-opacity="0.58" stroke="#134e4a" stroke-width="1"><title>China: 219 accessions by origin</title></circle>
+    <text x="726.3" y="105.3" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="10" font-weight="500" fill="#374151">China</text>
+    <circle cx="661.6" cy="171.7" r="16.7" fill="#0f766e" fill-opacity="0.58" stroke="#134e4a" stroke-width="1"><title>India: 61 accessions by origin</title></circle>
+    <text x="661.6" y="150.0" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="10" font-weight="500" fill="#374151">India</text>
+    <circle cx="718.1" cy="189.4" r="13.7" fill="#0f766e" fill-opacity="0.58" stroke="#134e4a" stroke-width="1"><title>Thailand: 36 accessions by origin</title></circle>
+    <circle cx="773.6" cy="197.0" r="11.4" fill="#0f766e" fill-opacity="0.58" stroke="#134e4a" stroke-width="1"><title>Philippines: 21 accessions by origin</title></circle>
+    <circle cx="813.2" cy="133.7" r="10.7" fill="#0f766e" fill-opacity="0.58" stroke="#134e4a" stroke-width="1"><title>Japan: 17 accessions by origin</title></circle>
+    <circle cx="691.0" cy="169.4" r="10.3" fill="#0f766e" fill-opacity="0.58" stroke="#134e4a" stroke-width="1"><title>Bangladesh: 15 accessions by origin</title></circle>
+    <circle cx="759.8" cy="236.1" r="10.1" fill="#0f766e" fill-opacity="0.58" stroke="#134e4a" stroke-width="1"><title>Indonesia: 14 accessions by origin</title></circle>
+    <circle cx="736.8" cy="189.4" r="10.1" fill="#0f766e" fill-opacity="0.58" stroke="#134e4a" stroke-width="1"><title>Vietnam: 14 accessions by origin</title></circle>
+    <circle cx="721.9" cy="179.1" r="9.6" fill="#0f766e" fill-opacity="0.58" stroke="#134e4a" stroke-width="1"><title>Laos: 12 accessions by origin</title></circle>
+    <circle cx="666.2" cy="209.8" r="9.6" fill="#0f766e" fill-opacity="0.58" stroke="#134e4a" stroke-width="1"><title>Sri Lanka: 12 accessions by origin</title></circle>
+    <circle cx="705.3" cy="175.8" r="9.1" fill="#0f766e" fill-opacity="0.58" stroke="#134e4a" stroke-width="1"><title>Myanmar: 10 accessions by origin</title></circle>
+    <circle cx="720.7" cy="219.3" r="8.6" fill="#0f766e" fill-opacity="0.58" stroke="#134e4a" stroke-width="1"><title>Malaysia: 8 accessions by origin</title></circle>
+    <circle cx="208.0" cy="128.3" r="8.3" fill="#0f766e" fill-opacity="0.58" stroke="#134e4a" stroke-width="1"><title>United States: 7 accessions by origin</title></circle>
+    <circle cx="803.7" cy="295.7" r="8.0" fill="#0f766e" fill-opacity="0.58" stroke="#134e4a" stroke-width="1"><title>Australia: 6 accessions by origin</title></circle>
+    <circle cx="674.9" cy="157.4" r="7.6" fill="#0f766e" fill-opacity="0.58" stroke="#134e4a" stroke-width="1"><title>Nepal: 5 accessions by origin</title></circle>
+    <circle cx="579.9" cy="278.6" r="6.8" fill="#0f766e" fill-opacity="0.58" stroke="#134e4a" stroke-width="1"><title>Madagascar: 3 accessions by origin</title></circle>
+    <circle cx="785.8" cy="127.0" r="6.8" fill="#0f766e" fill-opacity="0.58" stroke="#134e4a" stroke-width="1"><title>North Korea: 3 accessions by origin</title></circle>
+    <circle cx="691.0" cy="159.7" r="6.3" fill="#0f766e" fill-opacity="0.58" stroke="#134e4a" stroke-width="1"><title>Bhutan: 2 accessions by origin</title></circle>
+    <circle cx="728.1" cy="197.8" r="6.3" fill="#0f766e" fill-opacity="0.58" stroke="#134e4a" stroke-width="1"><title>Cambodia: 2 accessions by origin</title></circle>
+    <circle cx="270.1" cy="218.2" r="6.3" fill="#0f766e" fill-opacity="0.58" stroke="#134e4a" stroke-width="1"><title>Colombia: 2 accessions by origin</title></circle>
+    <circle cx="256.8" cy="175.1" r="6.3" fill="#0f766e" fill-opacity="0.58" stroke="#134e4a" stroke-width="1"><title>Cuba: 2 accessions by origin</title></circle>
+    <circle cx="538.7" cy="161.5" r="6.3" fill="#0f766e" fill-opacity="0.58" stroke="#134e4a" stroke-width="1"><title>Egypt: 2 accessions by origin</title></circle>
+    <circle cx="597.2" cy="147.2" r="6.3" fill="#0f766e" fill-opacity="0.58" stroke="#134e4a" stroke-width="1"><title>Iran: 2 accessions by origin</title></circle>
+    <circle cx="482.2" cy="206.7" r="6.3" fill="#0f766e" fill-opacity="0.58" stroke="#134e4a" stroke-width="1"><title>Nigeria: 2 accessions by origin</title></circle>
+    <circle cx="637.1" cy="152.3" r="6.3" fill="#0f766e" fill-opacity="0.58" stroke="#134e4a" stroke-width="1"><title>Pakistan: 2 accessions by origin</title></circle>
+    <circle cx="523.9" cy="112.7" r="6.3" fill="#0f766e" fill-opacity="0.58" stroke="#134e4a" stroke-width="1"><title>Romania: 2 accessions by origin</title></circle>
+    <circle cx="769.2" cy="169.4" r="6.3" fill="#0f766e" fill-opacity="0.58" stroke="#134e4a" stroke-width="1"><title>Taiwan: 2 accessions by origin</title></circle>
+    <circle cx="511.6" cy="124.7" r="5.6" fill="#0f766e" fill-opacity="0.58" stroke="#134e4a" stroke-width="1"><title>Albania: 1 accession by origin</title></circle>
+    <circle cx="297.5" cy="328.1" r="5.6" fill="#0f766e" fill-opacity="0.58" stroke="#134e4a" stroke-width="1"><title>Argentina: 1 accession by origin</title></circle>
+    <circle cx="465.9" cy="206.2" r="5.6" fill="#0f766e" fill-opacity="0.58" stroke="#134e4a" stroke-width="1"><title>Benin: 1 accession by origin</title></circle>
+    <circle cx="523.1" cy="287.0" r="5.6" fill="#0f766e" fill-opacity="0.58" stroke="#134e4a" stroke-width="1"><title>Botswana: 1 accession by origin</title></circle>
+    <circle cx="327.4" cy="266.3" r="5.6" fill="#0f766e" fill-opacity="0.58" stroke="#134e4a" stroke-width="1"><title>Brazil: 1 accession by origin</title></circle>
+    <circle cx="753.1" cy="218.5" r="5.6" fill="#0f766e" fill-opacity="0.58" stroke="#134e4a" stroke-width="1"><title>Brunei: 1 accession by origin</title></circle>
+    <circle cx="525.2" cy="120.9" r="5.6" fill="#0f766e" fill-opacity="0.58" stroke="#134e4a" stroke-width="1"><title>Bulgaria: 1 accession by origin</title></circle>
+    <circle cx="445.9" cy="210.8" r="5.6" fill="#0f766e" fill-opacity="0.58" stroke="#134e4a" stroke-width="1"><title>Cote d'Ivoire: 1 accession by origin</title></circle>
+    <circle cx="915.1" cy="275.2" r="5.6" fill="#0f766e" fill-opacity="0.58" stroke="#134e4a" stroke-width="1"><title>Fiji: 1 accession by origin</title></circle>
+    <circle cx="465.6" cy="111.9" r="5.6" fill="#0f766e" fill-opacity="0.58" stroke="#134e4a" stroke-width="1"><title>France: 1 accession by origin</title></circle>
+    <circle cx="309.5" cy="217.5" r="5.6" fill="#0f766e" fill-opacity="0.58" stroke="#134e4a" stroke-width="1"><title>Guyana: 1 accession by origin</title></circle>
+    <circle cx="492.2" cy="120.6" r="5.6" fill="#0f766e" fill-opacity="0.58" stroke="#134e4a" stroke-width="1"><title>Italy: 1 accession by origin</title></circle>
+    <circle cx="449.8" cy="185.0" r="5.6" fill="#0f766e" fill-opacity="0.58" stroke="#134e4a" stroke-width="1"><title>Mali: 1 accession by origin</title></circle>
+    <circle cx="197.8" cy="169.7" r="5.6" fill="#0f766e" fill-opacity="0.58" stroke="#134e4a" stroke-width="1"><title>Mexico: 1 accession by origin</title></circle>
+    <circle cx="827.7" cy="246.1" r="5.6" fill="#0f766e" fill-opacity="0.58" stroke="#134e4a" stroke-width="1"><title>Papua New Guinea: 1 accession by origin</title></circle>
+    <circle cx="729.1" cy="72.8" r="5.6" fill="#0f766e" fill-opacity="0.58" stroke="#134e4a" stroke-width="1"><title>Russia: 1 accession by origin</title></circle>
+    <circle cx="422.9" cy="192.9" r="5.6" fill="#0f766e" fill-opacity="0.58" stroke="#134e4a" stroke-width="1"><title>Senegal: 1 accession by origin</title></circle>
+    <circle cx="429.8" cy="208.3" r="5.6" fill="#0f766e" fill-opacity="0.58" stroke="#134e4a" stroke-width="1"><title>Sierra Leone: 1 accession by origin</title></circle>
+    <circle cx="869.4" cy="254.5" r="5.6" fill="#0f766e" fill-opacity="0.58" stroke="#134e4a" stroke-width="1"><title>Solomon Islands: 1 accession by origin</title></circle>
+    <circle cx="786.6" cy="137.0" r="5.6" fill="#16a34a" fill-opacity="0.88" stroke="#14532d" stroke-width="2"><title>South Korea: 1 accession by origin</title></circle>
+    <text x="786.6" y="126.4" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="10" font-weight="500" fill="#374151">South Korea</text>
+    <circle cx="542.5" cy="226.4" r="5.6" fill="#0f766e" fill-opacity="0.58" stroke="#134e4a" stroke-width="1"><title>Uganda: 1 accession by origin</title></circle>
+  </g>
+</svg>

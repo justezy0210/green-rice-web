@@ -12,6 +12,7 @@ import { Layout } from '@/components/layout/Layout';
 import { ProtectedRoute } from '@/components/auth/ProtectedRoute';
 
 const AdminPage = lazyPage(() => import('@/pages/AdminPage'), 'AdminPage');
+const AboutPage = lazyPage(() => import('@/pages/AboutPage'), 'AboutPage');
 const CultivarDetailPage = lazyPage(() => import('@/pages/CultivarDetailPage'), 'CultivarDetailPage');
 const CultivarsListPage = lazyPage(() => import('@/pages/CultivarsListPage'), 'CultivarsListPage');
 const DashboardPage = lazyPage(() => import('@/pages/DashboardPage'), 'DashboardPage');
@@ -37,7 +38,7 @@ export default function App() {
           <Suspense fallback={<PageLoading />}>
             <Routes>
               <Route path="/" element={<DashboardPage />} />
-
+              <Route path="/about" element={<AboutPage />} />
               <Route path="/discovery" element={<DiscoveryHomePage />} />
               <Route path="/discovery/locus/:locusSlug" element={<DiscoveryLocusPage />} />
               <Route path="/discovery/:runId/*" element={<Navigate to="/discovery" replace />} />
