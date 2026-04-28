@@ -1,11 +1,13 @@
 import {
   summarizeSvGenotypes,
+  svHasAlt,
   svFootprintEnd,
 } from '@/lib/sv-event-helpers';
 import type { SvEvent, SvType } from '@/types/sv-event';
 
 export type SvSizeFilter = 'all' | '50-99' | '100-999' | '1k-9k' | '10k-plus';
 export type SvCarrierFilter = 'all' | 'any-alt' | 'private-alt' | 'shared-alt';
+export type SvCultivarFilterMode = 'any-selected' | 'shared-selected' | 'specific-selected';
 
 export interface SvBrowseRow {
   event: SvEvent;
@@ -21,6 +23,9 @@ export interface SvBrowseFilters {
   chr: string;
   size: SvSizeFilter;
   carrier: SvCarrierFilter;
+  selectedSamples?: readonly string[];
+  sampleUniverse?: readonly string[];
+  cultivarMode?: SvCultivarFilterMode;
 }
 
 export function buildSvBrowseRows(
@@ -55,6 +60,14 @@ export function filterSvBrowseRows(
     if (filters.chr !== 'all' && event.chr !== filters.chr) return false;
     if (!matchesSize(event.svLenAbs, filters.size)) return false;
     if (!matchesCarrier(row.altCount, filters.carrier)) return false;
+    if (!matchesSelectedCultivars(
+      event,
+      filters.selectedSamples ?? [],
+      filters.sampleUniverse ?? [],
+      filters.cultivarMode ?? 'specific-selected',
+    )) {
+      return false;
+    }
     if (query) {
       const haystack = `${event.eventId} ${event.originalId} ${event.chr}`.toLowerCase();
       if (!haystack.includes(query)) return false;
@@ -109,5 +122,27 @@ function matchesCarrier(altCount: number, filter: SvCarrierFilter): boolean {
       return altCount > 1;
     case 'all':
       return true;
+  }
+}
+
+function matchesSelectedCultivars(
+  event: SvEvent,
+  selectedSamples: readonly string[],
+  sampleUniverse: readonly string[],
+  mode: SvCultivarFilterMode,
+): boolean {
+  if (selectedSamples.length === 0) return true;
+
+  const selectedSet = new Set(selectedSamples);
+  switch (mode) {
+    case 'any-selected':
+      return selectedSamples.some((sample) => svHasAlt(event.gts[sample]));
+    case 'shared-selected':
+      return selectedSamples.every((sample) => svHasAlt(event.gts[sample]));
+    case 'specific-selected':
+      if (!selectedSamples.every((sample) => svHasAlt(event.gts[sample]))) return false;
+      return sampleUniverse.every((sample) => (
+        selectedSet.has(sample) || !svHasAlt(event.gts[sample])
+      ));
   }
 }

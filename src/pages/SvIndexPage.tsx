@@ -14,11 +14,13 @@ import {
 } from '@/components/ui/table';
 import { OrthogroupDiffPagination } from '@/components/explore/OrthogroupDiffPagination';
 import { useAllSvEvents, useSvManifest } from '@/hooks/useSvMatrix';
+import { cn } from '@/lib/utils';
 import {
   buildSvBrowseRows,
   compareSvChr,
   filterSvBrowseRows,
   type SvCarrierFilter,
+  type SvCultivarFilterMode,
   type SvSizeFilter,
 } from '@/lib/sv-browse';
 import { SV_RELEASE_ID } from '@/lib/releases';
@@ -34,6 +36,23 @@ const SIZE_OPTIONS: Array<[SvSizeFilter, string]> = [
 const CARRIER_OPTIONS: Array<[SvCarrierFilter, string]> = [
   ['all', 'Any state'], ['any-alt', 'Has ALT'], ['private-alt', 'Private ALT'],
   ['shared-alt', 'Shared ALT'],
+];
+const CULTIVAR_MODE_OPTIONS: Array<[SvCultivarFilterMode, string, string]> = [
+  [
+    'specific-selected',
+    'Only selected',
+    'Shows variants carried by all selected cultivars and absent from unselected cultivars.',
+  ],
+  [
+    'shared-selected',
+    'All selected',
+    'Shows variants carried by every selected cultivar. Other cultivars may also carry them.',
+  ],
+  [
+    'any-selected',
+    'Any',
+    'Shows variants carried by at least one selected cultivar.',
+  ],
 ];
 const emptyRows = [['all', 'All chr']] as Array<[string, string]>;
 
@@ -51,6 +70,8 @@ export function SvIndexPage() {
   const [chr, setChr] = useState('all');
   const [size, setSize] = useState<SvSizeFilter>('all');
   const [carrier, setCarrier] = useState<SvCarrierFilter>('all');
+  const [cultivarMode, setCultivarMode] = useState<SvCultivarFilterMode>('specific-selected');
+  const [selectedSamples, setSelectedSamples] = useState<string[]>([]);
   const [page, setPage] = useState(0);
 
   const rows = useMemo(
@@ -59,14 +80,39 @@ export function SvIndexPage() {
   );
 
   const filtered = useMemo(
-    () => filterSvBrowseRows(rows, { query, type, chr, size, carrier }),
-    [rows, query, type, chr, size, carrier],
+    () => filterSvBrowseRows(rows, {
+      query,
+      type,
+      chr,
+      size,
+      carrier,
+      selectedSamples,
+      sampleUniverse: allEvents.samples,
+      cultivarMode,
+    }),
+    [rows, query, type, chr, size, carrier, selectedSamples, allEvents.samples, cultivarMode],
   );
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   const safePage = Math.min(page, totalPages - 1);
   const pageRows = filtered.slice(safePage * PAGE_SIZE, (safePage + 1) * PAGE_SIZE);
 
   const resetPage = () => setPage(0);
+  const toggleSample = (sample: string) => {
+    setSelectedSamples((current) => (
+      current.includes(sample)
+        ? current.filter((item) => item !== sample)
+        : [...current, sample]
+    ));
+    resetPage();
+  };
+  const clearSamples = () => {
+    setSelectedSamples([]);
+    resetPage();
+  };
+  const selectAllSamples = () => {
+    setSelectedSamples(allEvents.samples);
+    resetPage();
+  };
   const setTypeFilter = (nextType: SvType | typeof ALL_TYPE) => {
     const next = new URLSearchParams(searchParams);
     if (nextType === ALL_TYPE) next.delete('type');
@@ -151,6 +197,19 @@ export function SvIndexPage() {
             />
           </div>
 
+          <CultivarToggleFilter
+            samples={allEvents.samples}
+            selectedSamples={selectedSamples}
+            mode={cultivarMode}
+            onModeChange={(nextMode) => {
+              setCultivarMode(nextMode);
+              resetPage();
+            }}
+            onToggleSample={toggleSample}
+            onClear={clearSamples}
+            onSelectAll={selectAllSamples}
+          />
+
           {manifestState.loading || allEvents.loading ? (
             <p className="text-sm text-gray-400">Loading SV matrix...</p>
           ) : !manifest ? (
@@ -158,7 +217,12 @@ export function SvIndexPage() {
           ) : (
             <>
               <div className="flex items-center justify-between gap-3 text-[11px] text-gray-500">
-                <span>{filtered.length.toLocaleString()} / {rows.length.toLocaleString()} events</span>
+                <span>
+                  {filtered.length.toLocaleString()} / {rows.length.toLocaleString()} events
+                  {selectedSamples.length > 0 && (
+                    <> · {selectedSamples.length} selected cultivar{selectedSamples.length === 1 ? '' : 's'}</>
+                  )}
+                </span>
                 <span>{manifest.normalizationMethod}</span>
               </div>
 
@@ -210,6 +274,114 @@ export function SvIndexPage() {
         </CardContent>
       </Card>
     </div>
+  );
+}
+
+function CultivarToggleFilter({
+  samples,
+  selectedSamples,
+  mode,
+  onModeChange,
+  onToggleSample,
+  onClear,
+  onSelectAll,
+}: {
+  samples: readonly string[];
+  selectedSamples: readonly string[];
+  mode: SvCultivarFilterMode;
+  onModeChange: (mode: SvCultivarFilterMode) => void;
+  onToggleSample: (sample: string) => void;
+  onClear: () => void;
+  onSelectAll: () => void;
+}) {
+  const selectedSet = useMemo(() => new Set(selectedSamples), [selectedSamples]);
+  const activeMode = CULTIVAR_MODE_OPTIONS.find(([modeValue]) => modeValue === mode);
+
+  return (
+    <section className="rounded-md border border-gray-200 bg-gray-50 p-3">
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <h2 className="text-sm font-semibold text-gray-900">Cultivar carrier filter</h2>
+          <p className="mt-0.5 text-xs leading-relaxed text-gray-500">
+            Toggle cultivars, then choose how strictly that selection should match.
+          </p>
+        </div>
+        <div className="flex flex-wrap items-center gap-1">
+          {CULTIVAR_MODE_OPTIONS.map(([modeValue, label, title]) => (
+            <button
+              key={modeValue}
+              type="button"
+              title={title}
+              onClick={() => onModeChange(modeValue)}
+              className={cn(
+                'h-7 rounded border px-2 text-xs font-medium transition-colors',
+                mode === modeValue
+                  ? 'border-green-200 bg-white text-green-800 shadow-sm'
+                  : 'border-gray-200 bg-white text-gray-600 hover:text-gray-900',
+              )}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <div className="mt-3 flex flex-wrap gap-1.5">
+        {samples.map((sample) => {
+          const selected = selectedSet.has(sample);
+          return (
+            <button
+              key={sample}
+              type="button"
+              aria-pressed={selected}
+              onClick={() => onToggleSample(sample)}
+              className={cn(
+                'h-7 rounded border px-2 font-mono text-[11px] transition-colors',
+                selected
+                  ? 'border-green-300 bg-green-50 text-green-800 shadow-sm'
+                  : 'border-gray-200 bg-white text-gray-600 hover:border-gray-300 hover:text-gray-900',
+              )}
+            >
+              {sample}
+            </button>
+          );
+        })}
+        {samples.length === 0 && (
+          <span className="text-xs text-gray-400">Loading cultivar buttons...</span>
+        )}
+      </div>
+
+      <div className="mt-3 flex flex-wrap items-center justify-between gap-2 border-t border-gray-200 pt-2 text-xs">
+        <span className="text-gray-500">
+          {selectedSamples.length === 0 ? (
+            'No cultivar selection: showing all events.'
+          ) : (
+            <>
+              {selectedSamples.length} of {samples.length} cultivars selected ·{' '}
+              {activeMode?.[2] ?? 'Selected cultivar filter active'}
+            </>
+          )}
+        </span>
+        <span className="flex items-center gap-1">
+          <button
+            type="button"
+            onClick={onSelectAll}
+            disabled={samples.length === 0 || selectedSamples.length === samples.length}
+            className="rounded border border-gray-200 bg-white px-2 py-1 text-gray-600 disabled:cursor-not-allowed disabled:opacity-40"
+          >
+            Select all
+          </button>
+          <button
+            type="button"
+            onClick={onClear}
+            disabled={selectedSamples.length === 0}
+            className="rounded border border-gray-200 bg-white px-2 py-1 text-gray-600 disabled:cursor-not-allowed disabled:opacity-40"
+          >
+            Clear
+          </button>
+        </span>
+      </div>
+    </section>
   );
 }
 
