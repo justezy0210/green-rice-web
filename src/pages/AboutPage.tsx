@@ -4,7 +4,6 @@ import {
   DatabaseNeedFigure,
   EntityArchitectureFigure,
   PangenomeOverviewFigure,
-  ProjectObjectiveFigure,
   ReferenceBiasFigure,
 } from '@/components/about/AboutFigures';
 import { DiscoveryWorkflowFigure } from '@/components/about/DiscoveryWorkflowFigure';
@@ -76,11 +75,11 @@ export function AboutPage() {
       </AboutScene>
 
       <AboutScene
-        label="03 / Our DB"
-        title="Green Rice DB"
+        label="03 / Green Rice DB"
+        title="Green Rice DB Objective"
         subtitle={
           <>
-            A web database for exploring de novo assembly-based pan-genome
+            A connected web database for exploring assembly-based pan-genome
             information from Korean <em>Oryza sativa japonica</em> cultivars.
           </>
         }
@@ -93,37 +92,14 @@ export function AboutPage() {
           variant, and phenotype context.
         </p>
         <p>
-          The goal is to help researchers inspect evidence across layers rather
-          than treating any single table as final causal proof.
+          The objective is to turn separate genome analysis outputs into a
+          searchable and comparable interface for candidate review. It supports
+          hypothesis generation, not causal confirmation.
         </p>
       </AboutScene>
 
       <AboutScene
-        label="04 / Project Objective"
-        title="Project Objective"
-        subtitle={
-          <>
-            Make assembly-based comparative genome information for Korean{' '}
-            <em>Oryza sativa japonica</em> cultivars searchable and reviewable on
-            the web.
-          </>
-        }
-        figure={<ProjectObjectiveFigure />}
-      >
-        <p>
-          In practice, the objective is to turn separate genome analysis outputs
-          into a web resource that researchers can search and compare directly.
-        </p>
-        <p>
-          Users can inspect cultivar gene models, gene-family patterns,
-          structural variant context, phenotype overlays, and candidate discovery
-          evidence in one connected interface. The database supports hypothesis
-          generation, not causal confirmation.
-        </p>
-      </AboutScene>
-
-      <AboutScene
-        label="05 / Data Scope"
+        label="04 / Data Scope"
         title="Data Scope"
         subtitle="The current Green Rice DB frame was initially generated for 11 Korean rice cultivars."
         figure={<DataScopeFigure />}
@@ -140,7 +116,7 @@ export function AboutPage() {
       </AboutScene>
 
       <AboutScene
-        label="06 / Information Architecture"
+        label="05 / Information Architecture"
         title="Entity-Centered Information Architecture"
         subtitle="This is not an association portal that immediately presents the answer gene for a trait."
         figure={<EntityArchitectureFigure />}
@@ -158,7 +134,7 @@ export function AboutPage() {
       </AboutScene>
 
       <AboutScene
-        label="07 / Discovery Workflow"
+        label="06 / Discovery Workflow"
         title="How Discovery Evidence Is Built"
         subtitle="Discovery evidence links trait-group contrast, gene family patterns, and structural variant context into reviewable candidate records."
         figure={<DiscoveryWorkflowFigure />}
