@@ -1,16 +1,12 @@
 import { useMemo } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { Card, CardContent } from '@/components/ui/card';
-import { discoveryLocusUrlForBlock } from '@/lib/discovery-locus-slugs';
 import { buildRegionBins, type RegionGene } from '@/lib/region-helpers';
-import type { CandidateBlock } from '@/types/candidate-block';
 
 const W = 960;
 const H = 42;
 const MARGIN_L = 8;
 const MARGIN_R = 12;
-const CURATED_BAND_Y = 12;
-const CURATED_BAND_H = 3;
 const CHR_Y = 18;
 const CHR_H = 16;
 const DENSITY_BIN_COUNT = 240;
@@ -22,7 +18,6 @@ const DENSITY_BIN_COUNT = 240;
  * thin grey bar with:
  * - a grey gene-density strip derived from the loaded partition's
  *   genes on this chr (240 bins), so dense regions pop visually,
- * - amber ticks at each overlapping block's midpoint,
  * - a blue translucent window highlighting the current URL span.
  *
  * Clicking anywhere on the bar recenters the current window on that
@@ -37,7 +32,6 @@ export function RegionOverviewMap({
   end,
   chrLength,
   genes,
-  blocks,
 }: {
   cultivar: string;
   chr: string;
@@ -45,7 +39,6 @@ export function RegionOverviewMap({
   end: number;
   chrLength: number | undefined;
   genes: RegionGene[];
-  blocks: CandidateBlock[];
 }) {
   const navigate = useNavigate();
   const location = useLocation();
@@ -142,36 +135,6 @@ export function RegionOverviewMap({
               />
             );
           })}
-          {/* Curated blocks — always-visible extent bars above the
-              chromosome baseline. Auto 1 Mb bins are intentionally
-              omitted (systematic grid, not a reviewer signal). */}
-          {blocks
-            .filter((b) => b.curated)
-            .map((b) => {
-              const x1 = bpToPx(b.region.start);
-              const x2 = bpToPx(b.region.end);
-              const w = Math.max(3, x2 - x1);
-              return (
-                <rect
-                  key={`${b.runId}:${b.blockId}`}
-                  x={x1}
-                  y={CURATED_BAND_Y}
-                  width={w}
-                  height={CURATED_BAND_H}
-                  fill="#d97706"
-                  opacity={0.9}
-                  rx={1}
-                  style={{ cursor: 'pointer' }}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    const locusUrl = discoveryLocusUrlForBlock(b);
-                    if (locusUrl) navigate(locusUrl);
-                  }}
-                >
-                  <title>Discovery review locus (click to open)</title>
-                </rect>
-              );
-            })}
           {/* current window */}
           <rect
             x={winX1}

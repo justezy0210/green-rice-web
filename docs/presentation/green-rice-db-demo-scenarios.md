@@ -4,24 +4,102 @@ Last updated: 2026-04-29
 
 ## Purpose
 
-This document defines three concrete presentation scenarios for Green Rice DB.
+This document defines five concrete presentation scenarios for Green Rice DB.
 The goal is not to list every page, but to show how a researcher can move
 through the database from a real biological question.
 
 Use these as demo scripts. Each case should be presented as candidate evidence,
 not as validated causal proof.
 
-## Scenario 1: Known Resistance-Like Gene Family
+## Scenario 1: Pangenome Overview
 
 ### User Question
 
-> I know the functional class I care about, such as bacterial blight resistance
-> or NBS-LRR-like resistance genes. Which gene families in this Korean rice
-> panel match that function, and do any of them show a phenotype-group pattern?
+> Before I inspect one gene or SV, what is the scale and structure of this
+> pangenome database?
 
 ### Demo Entry
 
-- Page: `/og`
+- Page: `/pangenome`
+
+### Why This Is A Good Example
+
+- It orients new users before they drill into one entity.
+- It shows the panel scope, graph/SV coverage, orthogroup conservation tiers,
+  functional categories, and SV release counts.
+- It makes clear that later candidate examples are panel-scoped, not
+  population-wide frequency claims.
+
+### Click Flow
+
+1. Open `/pangenome`.
+2. Review panel cultivars, graph coverage, orthogroup count, and SV event count.
+3. Compare Orthogroup Conservation tiers.
+4. Check Functional Pangenome and SV Release summaries.
+5. Decide whether to continue into Orthogroups, Genes, SV, or Discovery.
+
+### Speaking Point
+
+This scenario sets the frame. Green Rice DB is not only a candidate table; it
+has a panel-level pangenome catalog that helps users understand the scale and
+limits of the database before they interpret detailed evidence.
+
+### Do Not Say
+
+- Do not describe catalog counts as Korean-rice-wide frequencies.
+- Say they are current-release, panel-scoped counts.
+
+## Scenario 2: Cultivar-To-Region Track
+
+### User Question
+
+> I am starting from a cultivar, not a known gene or SV. What genome evidence
+> can I inspect for Samgwang, and how do I move into a region track?
+
+### Demo Entry
+
+- Page: `/cultivar/Samgwang`
+- Example region: `/region/samgwang/chr06/10000000-10650000?svScope=cultivar`
+
+### Why This Is A Good Example
+
+- Many users will know a cultivar name before they know an OG or SV ID.
+- The cultivar page is the natural entry point for phenotype profile,
+  genome summary, chromosome browsing, and downloadable genome resources.
+- The region page shows the assembly-level view directly: gene models, nearby
+  SV events, discovery block overlap, and trait-context links in the same
+  coordinate window.
+
+### Click Flow
+
+1. Open `/cultivar/Samgwang`.
+2. Review the phenotype profile and genome summary.
+3. Use the chromosome browser to enter a region view.
+4. Open the example chr06 region if a live shortcut is needed.
+5. Point out gene models and cultivar-carried SVs on the same track.
+
+### Speaking Point
+
+This scenario is for a user who arrives with a cultivar-centered question. It
+shows that the database is not only a table of analysis results; it also lets
+users inspect assembly-level genome context by cultivar.
+
+### Do Not Say
+
+- Do not say the region track itself proves trait association.
+- Say it is a visual inspection layer for gene and SV context.
+
+## Scenario 3: Known Gene Or Resistance-Like Gene Family
+
+### User Question
+
+> I know either a gene ID or a functional class such as bacterial blight
+> resistance. Can I connect that entry point to gene family, phenotype-group,
+> and SV context?
+
+### Demo Entry
+
+- Page: `/genes` or `/og`
 - Search keyword: `bacterial blight`
 - Trait filter: `Bacterial Leaf Blight`
 - Example result to open: `OG0000297`
@@ -29,6 +107,8 @@ not as validated causal proof.
 
 ### Why This Is A Good Example
 
+- Gene search lets users start from a specific transcript or cultivar gene ID.
+- Function search lets users start from a biological phrase instead.
 - `OG0000297` contains the IRGSP transcript `Os11t0688832-01`.
 - Its annotation is resistance-like:
   `Coiled-coil NBS-LRR protein, Blast resistance, Resistance to bacterial blight`.
@@ -45,21 +125,22 @@ not as validated causal proof.
 
 ### Click Flow
 
-1. Open `/og`.
-2. Select the `Bacterial Leaf Blight` trait filter.
-3. Search `bacterial blight`.
-4. Open the `OG0000297` row from the filtered results.
-5. In the member table, point out the cultivar-level copy pattern.
-6. Use phenotype group badges to compare susceptible vs resistant cultivars.
-7. Open one member gene if needed to show the gene-level page.
+1. Open `/genes` if starting from a known gene ID; inspect annotation, OG,
+   trait badges, and SV badges in the result row.
+2. Open `/og` if starting from a function.
+3. Select the `Bacterial Leaf Blight` trait filter.
+4. Search `bacterial blight`.
+5. Open the `OG0000297` row from the filtered results.
+6. In the member table, point out the cultivar-level copy pattern.
+7. Use phenotype group badges to compare susceptible vs resistant cultivars.
+8. Open one member gene if needed to show the gene-level page.
 
 ### Speaking Point
 
-This is the type of question a researcher can ask when they know the function,
-not the database identifier. The user searches by a biological keyword first,
-then uses the OG detail page to see how the matched gene family is distributed
-across cultivars. In this case, the resistance-like annotation and the
-bacterial-leaf-blight copy pattern make it a useful manual-review example.
+This is the type of question a researcher can ask from either a gene or a
+function. The database connects a specific gene entry, functional annotation,
+orthogroup membership, phenotype-group badges, copy pattern, and linked SV
+context.
 
 ### Do Not Say
 
@@ -67,7 +148,7 @@ bacterial-leaf-blight copy pattern make it a useful manual-review example.
 - Say it is a resistance-like OG with a phenotype-group copy pattern worth
   follow-up validation.
 
-## Scenario 2: Heading-Date SV Carrier Pattern
+## Scenario 4: Heading-Date SV Carrier Pattern
 
 ### User Question
 
@@ -119,7 +200,7 @@ visually simple.
 - Do not say `EV0007248` is the heading-date causal variant.
 - Say it is a group-specific SV candidate inside a heading-date hotspot.
 
-## Scenario 3: Discovery Review Of A Heading-Date Block
+## Scenario 5: Discovery Review Of A Heading-Date Block
 
 ### User Question
 
@@ -194,18 +275,20 @@ block-level candidate review.
 
 ## Page Coverage
 
-These three scenarios cover the main user-facing pages:
+These five scenarios cover the main user-facing pages:
 
 | Scenario | Pages Used |
 | --- | --- |
-| Known resistance-like gene family | `/og`, `/og/:id`, `/genes/:id` |
+| Pangenome overview | `/pangenome` |
+| Cultivar-to-region track | `/cultivar/:name`, `/region/...` |
+| Known gene or resistance-like gene family | `/genes`, `/og`, `/og/:id`, `/genes/:id` |
 | Heading-date SV carrier pattern | `/sv`, `/sv/:eventId`, `/region/...` |
 | Discovery heading-date block | `/discovery`, `/discovery/locus/:slug`, `/og/:id`, `/sv/:eventId`, `/region/...` |
 
 ## Final Framing For Presentation
 
 Green Rice DB should be presented as an assembly-based pan-genome review
-database. It lets users start from a gene family, an SV, or a trait-linked
-discovery block, then move across cultivar, gene, orthogroup, SV, and region
-views. The database helps prioritize hypotheses; it does not replace
-experimental validation.
+database. It lets users start from a pangenome overview, cultivar, gene,
+function, SV, or trait-linked discovery block, then move across cultivar, gene,
+orthogroup, SV, and region views. The database helps prioritize hypotheses; it
+does not replace experimental validation.

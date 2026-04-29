@@ -10,7 +10,6 @@ import { TraitRibbon } from '@/components/discovery/TraitRibbon';
 import { useGeneModelsPartition } from '@/hooks/useGeneModel';
 import { useGeneIndexPartition } from '@/hooks/useGeneIndex';
 import { useCultivars } from '@/hooks/useCultivars';
-import { useChrBlocks } from '@/hooks/useChrBlocks';
 import { useOverlappingBlocks } from '@/hooks/useOverlappingBlocks';
 import { useSvEventsForRegion } from '@/hooks/useSvEventsForRegion';
 import { useSvManifest } from '@/hooks/useSvMatrix';
@@ -115,7 +114,6 @@ export function RegionPage() {
     start: rangeValid ? start : null,
     end: rangeValid ? end : null,
   });
-  const { blocks: chrBlocks } = useChrBlocks(chr ?? null);
   const traitCells = useMemo(
     () => buildTraitCellsFromBlocks(overlappingBlocks),
     [overlappingBlocks],
@@ -232,7 +230,6 @@ export function RegionPage() {
           end={end}
           chrLength={chrLength}
           genes={chrGenes}
-          blocks={chrBlocks}
         />
       )}
 
@@ -254,7 +251,6 @@ export function RegionPage() {
           svScope={svScope}
           onToggleSvScope={toggleSvScope}
           svSampleCount={svSampleCount}
-          overlappingBlocks={overlappingBlocks}
         />
       )}
 

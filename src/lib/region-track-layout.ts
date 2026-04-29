@@ -14,16 +14,7 @@ export const RULER_Y = 14;
 // 8-px label. Big enough that a label (text extent ≈ 8 px) never
 // collides with the rectangles below/above it.
 const LANE_GAP = 14;
-// Candidate-block annotation lane sits between the ruler and genes.
-// Blocks are deduped by blockId (the same curated region shared across
-// trait runs collapses to a single bar) so a single row suffices; rare
-// distinct-blockId overlaps visually stack in the same row but stay
-// individually discoverable through the Overlapping-blocks panel below.
-export const BLOCK_TOP = 26;
-export const BLOCK_ROW_H = 6;
-export const BLOCK_MAX_ROWS = 1;
-const BLOCK_H = BLOCK_ROW_H * BLOCK_MAX_ROWS + 2;
-export const GENE_TOP = BLOCK_TOP + BLOCK_H + LANE_GAP;
+export const GENE_TOP = RULER_Y + LANE_GAP;
 export const GENE_H_SUMMARY = 28;
 export const GENE_H_DETAIL = 10;
 export const SV_TOP =

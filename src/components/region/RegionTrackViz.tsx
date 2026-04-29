@@ -4,9 +4,6 @@ import { Card, CardContent } from '@/components/ui/card';
 import {
   GeneBin, HighlightOverlay, HoverBinOutline, TrackRuler,
 } from '@/components/region/RegionTrackBins';
-import {
-  RegionTrackBlockLane, RegionTrackBlockLaneLabel,
-} from '@/components/region/RegionTrackBlockLane';
 import { GeneModel } from '@/components/region/RegionTrackGeneModel';
 import {
   SvBaseline, SvBin, SvGlyph, SvGlyphDefs,
@@ -14,7 +11,6 @@ import {
 import { StatusLine, TrackLegend } from '@/components/region/RegionTrackStatusLine';
 import { TrackHeader } from '@/components/region/RegionTrackHeader';
 import { buildRegionBins, type RegionGene } from '@/lib/region-helpers';
-import type { CandidateBlock } from '@/types/candidate-block';
 import {
   BIN_COUNT, DETAIL_GENE_LIMIT, DETAIL_GENE_SPAN_LIMIT, DETAIL_SV_LIMIT,
   DETAIL_SV_SPAN_LIMIT, GENE_COLOR_FOCUSED, GENE_COLOR_OG, GENE_COLOR_ORPHAN,
@@ -40,7 +36,6 @@ interface Props {
   svScope?: 'cultivar' | 'all';
   onToggleSvScope?: () => void;
   svSampleCount?: number | null;
-  overlappingBlocks?: CandidateBlock[];
 }
 
 /**
@@ -65,7 +60,6 @@ export function RegionTrackViz({
   svScope = 'cultivar',
   onToggleSvScope,
   svSampleCount,
-  overlappingBlocks,
 }: Props) {
   const plotWidth = WIDTH - MARGIN_LEFT - MARGIN_RIGHT;
   const span = Math.max(1, end - start);
@@ -187,16 +181,6 @@ export function RegionTrackViz({
         >
           <SvGlyphDefs />
           <TrackRuler ticks={ticks} xOf={xOf} />
-
-          <RegionTrackBlockLaneLabel />
-          {overlappingBlocks && overlappingBlocks.length > 0 && (
-            <RegionTrackBlockLane
-              blocks={overlappingBlocks}
-              xOf={xOf}
-              windowStart={start}
-              windowEnd={end}
-            />
-          )}
 
           <text x={MARGIN_LEFT} y={GENE_TOP - 2} fontSize={8} fill="#6b7280">
             genes {geneDetail ? '' : '(binned)'}
