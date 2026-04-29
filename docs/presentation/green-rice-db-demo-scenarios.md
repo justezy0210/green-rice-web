@@ -200,78 +200,57 @@ visually simple.
 - Do not say `EV0007248` is the heading-date causal variant.
 - Say it is a group-specific SV candidate inside a heading-date hotspot.
 
-## Scenario 5: Discovery Review Of A Heading-Date Block
+## Scenario 5: Discovery Review Of A Culm-Length Locus
 
 ### User Question
 
-> Instead of starting from one gene or one SV, can I see whether heading-date
-> signals cluster into a genomic block?
+> Instead of starting from one gene or one SV, can I find a review locus where
+> both gene-family presence and SV carrier pattern split by culm-length group?
 
 ### Demo Entry
 
 - Page: `/discovery`
-- Detail URL: `/discovery/locus/chr06-9-11mb-heading-culm`
-- Example OG/SV records:
-  - `OG0001177` - `EV0007248` - `chr06:10,559,214`
-  - `OG0035336` - `EV0007256` - `chr06:10,585,589`
-  - `OG0041202` - `EV0007099` - `chr06:9,527,738`
-  - `OG0042410` - `EV0006854` - `chr06:8,272,561`
+- Detail URL: `/discovery/locus/chr11-21-25mb-development`
+- Example OG/SV record:
+  - `OG0039795` - `EV0016290` - `chr11:22,554,918`
 
 ### Why This Is A Good Example
 
-- The heading-date analysis produced 1,045 selected OGs from 53,539
-  orthogroups.
-- The strongest interpretation is block-level, especially:
-  - `chr06 9-11 Mb`
-  - `chr11 24-28 Mb`
-- The chr06 block contains repeated SVs such as `EV0007248`, `EV0007287`, and
-  `EV0007272` across multiple nearby OGs.
-- This makes the discovery page useful because it prevents the user from
-  overinterpreting many neighboring hits as independent genes.
+- The example is easy to explain because both evidence layers split perfectly
+  in the current 11-cultivar panel.
+- `OG0039795` presence pattern:
+  - tall: 100% present
+  - short: 0% present
+- `EV0016290` carrier pattern:
+  - tall: 8/8 ALT
+  - short: 0/3 ALT
+- This makes Discovery useful because the user can review a locus where OG
+  presence and SV carrier evidence point in the same phenotype-group direction.
 
 ### Click Flow
 
 1. Open `/discovery`.
-2. Click the row for the heading/culm shared locus.
-3. Open `/discovery/locus/chr06-9-11mb-heading-culm`.
-4. Filter the detail page to `Days to Heading`.
+2. Click the row for the shared chr11 development locus.
+3. Open `/discovery/locus/chr11-21-25mb-development`.
+4. Filter the detail page to `Culm Length`.
 5. Review `SV patterns across groups`.
-6. Open an SV such as `EV0007248`.
-7. Open a related OG such as `OG0001177`.
+6. Open `EV0016290`.
+7. Open the related OG `OG0039795`.
 8. Move to the region view to see the SV and gene models together.
 
 ### Speaking Point
 
 This is the main hypothesis-generating workflow. The user starts from a trait
 question, but the DB does not pretend that one table row is the answer. It
-shows that several OG/SV records cluster in the same genomic neighborhood, so
-the researcher can review the locus as a block and then drill down to specific
-genes, SVs, and regions.
+shows a review locus where one candidate OG and one SV both split the culm-
+length groups cleanly, so the researcher can drill down to the OG, SV, and
+local region for follow-up inspection.
 
 ### Do Not Say
 
-- Do not describe every OG-SV overlap as biologically meaningful.
-- Say that Discovery highlights a review locus where several pieces of
-  candidate evidence converge.
-
-## Optional Backup Example: Shared Development Locus
-
-If the chr06 heading locus is not the preferred live demo, use:
-
-- `/discovery/locus/chr11-21-25mb-development`
-- Related traits:
-  - Culm Length
-  - Days to Heading
-  - Spikelets / Panicle
-- Example records:
-  - `OG0044616`
-  - `EV0016287`
-  - `EV0016276`
-
-This is useful when the presentation needs to emphasize that a locus can be
-shared across multiple development-related traits. It is less clean than the
-heading-specific chr06 example, so use it after explaining that Discovery is
-block-level candidate review.
+- Do not say `EV0016290` determines culm length.
+- Say that `OG0039795` and `EV0016290` form a strong exploratory candidate
+  pattern in the current panel and need follow-up validation.
 
 ## Page Coverage
 
@@ -283,7 +262,7 @@ These five scenarios cover the main user-facing pages:
 | Cultivar-to-region track | `/cultivar/:name`, `/region/...` |
 | Known gene or resistance-like gene family | `/genes`, `/og`, `/og/:id`, `/genes/:id` |
 | Heading-date SV carrier pattern | `/sv`, `/sv/:eventId`, `/region/...` |
-| Discovery heading-date block | `/discovery`, `/discovery/locus/:slug`, `/og/:id`, `/sv/:eventId`, `/region/...` |
+| Discovery culm-length locus | `/discovery`, `/discovery/locus/:slug`, `/og/:id`, `/sv/:eventId`, `/region/...` |
 
 ## Final Framing For Presentation
 

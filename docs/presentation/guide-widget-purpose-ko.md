@@ -156,7 +156,7 @@ Gene page는 특정 gene ID에서 annotation, OG assignment, trait-hit badge, li
 
 다만 EV0007248이 heading date causal variant라는 뜻은 아니다. 이 SV는 early/late contrast와 잘 맞는 후보 SV로 보고, 추가 검증이 필요한 candidate evidence로 해석해야 한다.
 
-## 7. 사례 5: Heading-date signal이 chr06 review block에 모이는지 확인하기
+## 7. 사례 5: Culm length 후보가 chr11 review locus에서 함께 갈리는지 확인하기
 
 ### 목적
 
@@ -164,27 +164,30 @@ Gene page는 특정 gene ID에서 annotation, OG assignment, trait-hit badge, li
 
 Discovery는 하나의 gene이나 하나의 SV를 정답처럼 보여주는 페이지가 아니다. 여러 OG/SV evidence가 특정 genomic window에 모일 때, 이를 review locus로 묶어서 사용자가 block-level로 검토할 수 있도록 만든 페이지이다.
 
+대표 사례는 `culm_length` trait의 `OG0039795`와 `EV0016290`이다. 이 사례에서는 OG presence와 SV carrier pattern이 모두 tall/short group에서 완전히 갈라진다.
+
 ### 사용 흐름
 
 1. Discovery page를 연다.
-2. chr06 heading/culm locus row를 선택한다.
-3. detail page에서 Days to Heading trait을 선택한다.
-4. SV patterns across groups가 선택한 trait 중심으로 정리되는지 확인한다.
-5. related records에서 EV0007248 또는 관련 OG를 하나 선택한다.
+2. shared chr11 development locus row를 선택한다.
+3. detail page에서 Culm Length trait을 선택한다.
+4. SV patterns across groups가 Culm Length 중심으로 정리되는지 확인한다.
+5. `EV0016290` SV pattern과 `OG0039795` OG record를 확인한다.
 6. SV detail, OG member pattern, gene model, region track을 서로 비교한다.
 
 ### 사용자가 확인하는 정보
 
-- heading-date 관련 evidence가 chr06 region에 모이는지
+- Culm Length 관련 evidence가 chr11 review locus 안에서 어떻게 정리되는지
 - trait filter를 적용했을 때 SV pattern과 related records가 어떻게 좁혀지는지
-- 하나의 SV나 OG가 아니라, 여러 evidence가 같은 region을 가리키는지
+- `OG0039795`가 tall group에서 100% present, short group에서 0% present로 나타나는지
+- `EV0016290`이 tall group에서 8/8 ALT, short group에서 0/3 ALT로 나타나는지
 - block-level 후보 locus에서 어떤 개별 SV/OG를 더 검토할지
 
 ### 사용자가 얻는 결과
 
-사용자는 Discovery가 “정답 gene 목록”이 아니라 “후보 locus review 공간”이라는 점을 이해한다. 여러 OG-SV record가 서로 가까운 region에 몰려 있다면, 이를 독립적인 여러 원인으로 해석하기보다 하나의 regional signal 또는 review block으로 검토해야 한다.
+사용자는 Discovery가 “정답 gene 목록”이 아니라 “후보 locus review 공간”이라는 점을 이해한다. 이 사례에서는 OG presence와 SV carrier pattern이 같은 phenotype contrast 방향으로 완전히 갈리므로, 후보 locus를 우선 검토할 이유가 분명해진다.
 
-이 사례는 Green Rice DB의 핵심 차별점을 보여준다. trait-linked evidence를 gene, SV, region context로 연결해서 후보 locus를 우선순위화할 수 있기 때문이다.
+다만 이 사례도 causal proof가 아니다. `OG0039795`와 `EV0016290`은 11개 품종 panel에서 관찰된 강한 exploratory candidate evidence이며, 후속 검증이 필요한 후보로 설명해야 한다.
 
 ## 8. 다섯 가지 사례가 함께 보여주는 Green Rice DB의 가치
 
