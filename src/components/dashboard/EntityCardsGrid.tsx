@@ -10,6 +10,12 @@ interface Card {
 
 const CARDS: Card[] = [
   {
+    key: 'pangenome',
+    title: 'Pangenome',
+    summary: 'Core/accessory orthogroup catalog, function summary, and SV release counts.',
+    href: '/pangenome',
+  },
+  {
     key: 'cultivars',
     title: 'Cultivars',
     summary: 'Per-cultivar assembly and annotation stats, phenotype profile.',
@@ -26,12 +32,6 @@ const CARDS: Card[] = [
     title: 'Orthogroups',
     summary: 'Conservation tiers, function, and trait-linked OG evidence across the panel.',
     href: '/og',
-  },
-  {
-    key: 'pangenome',
-    title: 'Pangenome',
-    summary: 'Core/accessory orthogroup catalog, function summary, and SV release counts.',
-    href: '/pangenome',
   },
   {
     key: 'sv',
