@@ -9,7 +9,7 @@ interface Props {
   error: Error | null;
   cultivarId: string | null;
   cultivarName: string | null;
-  overlayCount: number;
+  drawnInContextView: boolean;
 }
 
 export function LinkedSvContext({
@@ -19,7 +19,7 @@ export function LinkedSvContext({
   error,
   cultivarId,
   cultivarName,
-  overlayCount,
+  drawnInContextView,
 }: Props) {
   const gt = cultivarId && event ? event.gts[cultivarId] ?? '.' : '.';
   const state = event ? svGenotypeState(gt) : null;
@@ -45,17 +45,17 @@ export function LinkedSvContext({
         <p className="mt-1">
           {cultivarName ?? cultivarId ?? 'This cultivar'} carries the ALT allele
           for this linked SV (GT <span className="font-mono">{gt}</span>).
-          {overlayCount === 0
-            ? ' It is not drawn here because its sample-frame coordinate does not overlap this representative transcript.'
-            : ' It is drawn below when the sample-frame coordinate overlaps this representative transcript.'}
+          {drawnInContextView
+            ? ' The event falls inside this gene-centered window and is highlighted below.'
+            : ' The event is linked to this record, but its cultivar coordinate is outside this gene-centered window.'}
         </p>
       ) : (
         <p className="mt-1">
           {cultivarName ?? cultivarId ?? 'This cultivar'} is{' '}
           {state === 'missing' ? 'missing' : 'REF'} for this linked SV
           (GT <span className="font-mono">{gt}</span>). A group-level AF or
-          |ΔAF| signal can therefore exist while this cultivar-specific gene
-          model shows no SV overlay.
+          |ΔAF| signal can therefore exist while this cultivar-specific context
+          view shows no ALT overlay.
         </p>
       )}
     </div>

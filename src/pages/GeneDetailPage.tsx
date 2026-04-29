@@ -19,6 +19,10 @@ import { useTraitHits } from '@/hooks/useTraitHits';
 import { useSvEventsForRegion } from '@/hooks/useSvEventsForRegion';
 import { useSvCultivarCoords } from '@/hooks/useSvCultivarCoords';
 import { useSvEvent } from '@/hooks/useSvEvent';
+import {
+  buildGeneContextWindow,
+  classifySvGeneContext,
+} from '@/lib/gene-context-window';
 import { SV_RELEASE_ID } from '@/lib/releases';
 import { canonicalizeSvEventId } from '@/lib/sv-event-helpers';
 import type { GeneSvOverlay } from '@/components/gene/GeneModelSvg';
@@ -54,11 +58,16 @@ export function GeneDetailPage() {
   }, [ogCoords, lookup.entry, geneId]);
 
   // Per-cultivar sample-frame SV overlay; side-table required.
-  // Chr is sourced from OG gene-coords first (lightweight) so SV fetches can
-  // run in parallel with the heavy gene-model partition load instead of being
-  // serialised behind it.
+  // Chr is sourced from OG gene-coords first (lightweight). We still fetch the
+  // chromosome-wide canonical event bundle and filter with sample-frame
+  // coordinates below, because reference-frame positions and cultivar-frame
+  // positions can differ around indels.
   const cultivarId = lookup.entry?.cultivar ?? model.entry?.cultivar ?? null;
   const geneChr = coord?.chr ?? model.entry?.chr ?? null;
+  const contextWindow = useMemo(
+    () => (model.entry ? buildGeneContextWindow(model.entry) : null),
+    [model.entry],
+  );
   const { events: chrSvEvents } = useSvEventsForRegion({
     svReleaseId: SV_RELEASE_ID, chr: geneChr, start: null, end: null,
     cultivar: cultivarId, scope: 'cultivar',
@@ -66,19 +75,34 @@ export function GeneDetailPage() {
   const { byEvent: cultivarCoords, available: coordsAvailable, error: coordsError } =
     useSvCultivarCoords({ svReleaseId: SV_RELEASE_ID, cultivar: cultivarId, chr: geneChr });
   const svOverlay = useMemo<GeneSvOverlay[]>(() => {
-    if (!model.entry || !coordsAvailable) return [];
+    if (!model.entry || !contextWindow || !coordsAvailable) return [];
     const gene = model.entry;
     const out: GeneSvOverlay[] = [];
     for (const ev of chrSvEvents) {
       const c = cultivarCoords.get(ev.eventId);
       if (!c) continue;
-      // Span intersection: a DEL/COMPLEX upstream of gene still counts if it extends in.
-      if (c.pos + Math.max(1, c.refLen) < gene.start || c.pos > gene.end) continue;
-      out.push({ eventId: ev.eventId, pos: c.pos, refLen: c.refLen, altLen: ev.altLen, svType: ev.svType });
+      const impactClass = classifySvGeneContext(gene, {
+        pos: c.pos,
+        refLen: c.refLen,
+        svType: ev.svType,
+      });
+      if (!impactClass) continue;
+      out.push({
+        eventId: ev.eventId,
+        pos: c.pos,
+        refLen: c.refLen,
+        altLen: ev.altLen,
+        svType: ev.svType,
+        impactClass,
+      });
     }
     return out;
-  }, [model.entry, chrSvEvents, cultivarCoords, coordsAvailable]);
+  }, [model.entry, contextWindow, chrSvEvents, cultivarCoords, coordsAvailable]);
 
+  const linkedSvDrawnInContextView = useMemo(
+    () => (linkedSvId ? svOverlay.some((sv) => sv.eventId === linkedSvId) : false),
+    [linkedSvId, svOverlay],
+  );
 
   if (!geneId) {
     return <div className="py-20 text-center text-gray-500">No gene specified.</div>;
@@ -178,14 +202,21 @@ export function GeneDetailPage() {
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-base">
-              Gene model
+              Gene-centered SV context
               <span className="ml-2 text-xs font-normal text-gray-500">
                 representative transcript · {model.entry.transcript.id}
               </span>
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
-            <GeneModelSvg gene={model.entry} svEvents={svOverlay} />
+            <GeneModelSvg
+              gene={model.entry}
+              viewStart={contextWindow?.start}
+              viewEnd={contextWindow?.end}
+              contextBands={contextWindow?.bands}
+              linkedEventId={linkedSvId}
+              svEvents={svOverlay}
+            />
             {linkedSvId && (
               <LinkedSvContext
                 eventId={linkedSvId}
@@ -194,19 +225,22 @@ export function GeneDetailPage() {
                 error={linkedSv.error}
                 cultivarId={cultivarId}
                 cultivarName={cultivarId ? cultivarNameMap[cultivarId] ?? cultivarId : null}
-                overlayCount={svOverlay.length}
+                drawnInContextView={linkedSvDrawnInContextView}
               />
             )}
             <div className="flex flex-wrap gap-3 text-[11px] text-gray-500">
               <LegendSwatch color="rgba(22, 163, 74, 0.9)" label="CDS" />
               <LegendSwatch color="rgba(156, 163, 175, 0.55)" label="UTR" />
               <LegendSwatch color="#d1d5db" label="intron" thin />
+              <LegendSwatch color="#fef3c7" label="promoter 2 kb" />
+              <LegendSwatch color="#ecfdf5" label="upstream 2-10 kb" />
+              <LegendSwatch color="#eff6ff" label="downstream 2 kb" />
               {coordsAvailable && <>
                 <LegendSwatch color="#0f766e" label="INS (sample carries extra)" />
                 <LegendSwatch color="#b91c1c" label="DEL (breakpoint)" />
                 <LegendSwatch color="#7c3aed" label="COMPLEX (rearranged)" />
               </>}
-              <span className="ml-auto">Only the longest-CDS representative transcript. Isoforms deferred.</span>
+              <span className="ml-auto">Gene body uses the longest-CDS representative transcript.</span>
             </div>
             {coordsError && (
               <p className="text-[11px] text-red-600 leading-snug">Could not load per-cultivar SV coordinates: {coordsError.message}</p>
@@ -241,9 +275,10 @@ export function GeneDetailPage() {
 
       <ScopeStrip>
         Gene detail resolves from the orthogroup membership index + funannotate
-        gene model. Variants, transcript isoforms, and cross-cultivar synteny
-        are deferred. Open the orthogroup for OG-wide context, or the region
-        page for the locus-level graph view.
+        gene model. SVs are shown only when this cultivar carries the ALT allele
+        and the sample-frame coordinate falls inside the gene-centered primary
+        impact window. Transcript isoforms and cross-cultivar synteny are
+        deferred.
       </ScopeStrip>
 
       {og && (

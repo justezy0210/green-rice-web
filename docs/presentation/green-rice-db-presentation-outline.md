@@ -228,7 +228,10 @@ Entity-centered 구조:
    - Candidate loci where OG/SV patterns and phenotype groups can be reviewed
 
 10. Demo Scenario
-    - Start from Discovery, then inspect SV, OG, gene, and region evidence.
+    - Use the three concrete demo scripts in
+      `docs/presentation/green-rice-db-demo-scenarios.md`.
+    - Cover one OG/copy-pattern case, one SV carrier-pattern case, and one
+      Discovery block-review case.
 
 11. Current Scope And Limitations
     - 11-cultivar SV coverage
@@ -292,4 +295,3 @@ Avoid:
 > 탐색할 수 있도록 구성한 resource입니다. 사용자는 cultivar, gene,
 > orthogroup, SV, region을 오가며 품종 간 유전적 다양성을 확인하고,
 > phenotype group과 함께 나타나는 후보 gene/SV evidence를 검토할 수 있습니다.
-

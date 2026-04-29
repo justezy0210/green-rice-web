@@ -17,10 +17,11 @@ interface Props {
   onClick: () => void;
   activeTrait?: string | null;
   activeTraitP?: number;
+  description?: string;
 }
 
 export function OgIndexRow({
-  row, panelTotal, href, onClick, activeTrait, activeTraitP,
+  row, panelTotal, href, onClick, activeTrait, activeTraitP, description,
 }: Props) {
   const tier = row.tier as ConservationTier;
   const traits = row.traits ?? [];
@@ -34,13 +35,20 @@ export function OgIndexRow({
       className="group cursor-pointer border-0 hover:bg-transparent"
     >
       <TableCell className="rounded-l-md border-y border-l border-gray-100 bg-white pl-3 group-hover:bg-green-50/50">
-        <Link
-          to={href}
-          onClick={(e) => e.stopPropagation()}
-          className="font-mono text-[12px] text-gray-900 hover:text-green-700 hover:underline"
-        >
-          {row.ogId}
-        </Link>
+        <div className="min-w-0">
+          <Link
+            to={href}
+            onClick={(e) => e.stopPropagation()}
+            className="font-mono text-[12px] text-gray-900 hover:text-green-700 hover:underline"
+          >
+            {row.ogId}
+          </Link>
+          {description && (
+            <div className="mt-0.5 max-w-[18rem] truncate text-[10px] text-gray-500" title={description}>
+              {description}
+            </div>
+          )}
+        </div>
       </TableCell>
       <TableCell className="border-y border-gray-100 bg-white group-hover:bg-green-50/50">
         <TierBadge tier={tier} />

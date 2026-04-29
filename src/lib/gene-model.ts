@@ -25,6 +25,8 @@ export interface GeneModelGeometry {
   strand: '+' | '-';
   geneStart: number;
   geneEnd: number;
+  viewStart: number;
+  viewEnd: number;
 }
 
 const UTR_HEIGHT = 8;
@@ -35,13 +37,17 @@ export function computeGeneModelGeometry(
   gene: GeneModelEntry,
   width: number,
   height: number = DEFAULT_HEIGHT,
+  viewStart: number = gene.start,
+  viewEnd: number = gene.end,
 ): GeneModelGeometry {
-  const span = Math.max(1, gene.end - gene.start);
+  const boundedViewStart = Math.max(1, Math.min(viewStart, gene.start));
+  const boundedViewEnd = Math.max(gene.end, viewEnd);
+  const span = Math.max(1, boundedViewEnd - boundedViewStart);
   const strand: '+' | '-' = gene.strand === '-' ? '-' : '+';
   const trackY = height / 2;
 
   const xOf = (pos: number) => {
-    const norm = (pos - gene.start) / span;
+    const norm = (pos - boundedViewStart) / span;
     // On '-' strand we flip so 5′ is on the left (matches typical browser)
     const frac = strand === '-' ? 1 - norm : norm;
     return frac * width;
@@ -97,6 +103,8 @@ export function computeGeneModelGeometry(
     strand,
     geneStart: gene.start,
     geneEnd: gene.end,
+    viewStart: boundedViewStart,
+    viewEnd: boundedViewEnd,
   };
 }
 

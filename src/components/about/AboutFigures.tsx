@@ -1,13 +1,3 @@
-const METADATA_ONLY_ROWS = [
-  ['Cultivar name', 'identity record'],
-  ['Basic description', 'static text'],
-  ['Trait value table', 'separate data'],
-] as const;
-const CONNECTED_REVIEW_ROWS = [
-  ['Genome context', 'assembly-level region and gene model view'],
-  ['Gene family context', 'gene family and copy-pattern review'],
-  ['Variant context', 'structural variant carrier review'],
-] as const;
 const DATA_SCOPE_CARDS = [
   ['Cultivar panel', '11 cultivars', 'Korean rice cultivar metadata'],
   ['Phenotype', '9 traits', 'Agronomic and disease-related trait values'],
@@ -32,57 +22,63 @@ const ENTITY_ROWS = [
   ['Discovery candidate', 'gene, variant, and trait evidence for review'],
 ] as const;
 
-export function PangenomeOverviewFigure() {
+export function DatabaseNeedFigure() {
   return (
     <figure className="rounded-lg border border-gray-200 bg-white p-3 md:p-4">
-      <div className="grid grid-cols-1 gap-4 md:grid-cols-[minmax(0,0.82fr)_minmax(0,1.18fr)]">
+      <div className="grid grid-cols-1 gap-3 md:grid-cols-[minmax(0,0.95fr)_minmax(0,1.05fr)]">
         <div className="rounded-md border border-gray-200 bg-gray-50 p-3 md:p-4">
-          <div className="text-[11px] font-medium uppercase text-gray-500">Not only</div>
-          <div className="mt-1 text-lg font-semibold text-gray-900">A static cultivar page</div>
-          <div className="mt-4 space-y-2">
-            {METADATA_ONLY_ROWS.map(([label, detail]) => (
-              <div key={label} className="rounded border border-gray-200 bg-white px-3 py-2">
-                <div className="text-sm font-medium text-gray-800">{label}</div>
-                <div className="mt-0.5 text-xs text-gray-500">{detail}</div>
-              </div>
-            ))}
-          </div>
-          <div className="mt-4 rounded border border-dashed border-gray-300 bg-white px-3 py-2 text-xs leading-relaxed text-gray-500">
-            Useful, but each information type remains isolated.
+          <FigureTitle label="Problem" title="Important crop, sparse assembly-level comparison" />
+          <p className="mt-3 text-xs leading-relaxed text-gray-600">
+            Korean rice has strong production value, but cultivar-specific gene
+            content and large structural differences remain hard to compare from
+            resequencing-style resources alone.
+          </p>
+          <div className="mt-4 grid grid-cols-2 gap-2">
+            <MiniMetric value="#19" label="production rank" />
+            <MiniMetric value="#16" label="yield rank" />
           </div>
         </div>
 
-        <div className="rounded-md border border-green-200 bg-green-50/70 p-3 md:p-4">
-          <div className="text-[11px] font-medium uppercase text-green-700">Green Rice DB</div>
-          <div className="mt-1 text-xl font-semibold text-gray-900">Connected pangenome review database</div>
-
-          <div className="mt-5 grid grid-cols-1 gap-2 sm:grid-cols-3">
-            {CONNECTED_REVIEW_ROWS.map(([label, detail]) => (
-              <div key={label} className="rounded border border-green-200 bg-white px-3 py-2">
-                <div className="text-sm font-semibold text-gray-900">{label}</div>
-                <div className="mt-1 text-xs leading-snug text-gray-600">{detail}</div>
-              </div>
-            ))}
-          </div>
-
-          <div className="mt-5 grid grid-cols-1 items-center gap-2 sm:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] sm:gap-3">
-            <div className="rounded border border-green-200 bg-white px-3 py-2 text-xs leading-relaxed text-gray-700">
-              cultivar-level diversity
-            </div>
-            <span className="hidden font-mono text-xs sm:block">→</span>
-            <div className="rounded border border-green-200 bg-white px-3 py-2 text-xs leading-relaxed text-gray-700">
-              candidate gene and variant evidence
-            </div>
-          </div>
-
-          <div className="mt-4 rounded border border-amber-200 bg-amber-50 px-3 py-2 text-xs leading-relaxed text-amber-900">
-            Evidence is connected for review; it is not presented as final causal proof.
+        <div className="rounded-md border border-green-200 bg-green-50/60 p-3 md:p-4">
+          <FigureTitle label="Database gap" title="Korean cultivar evidence is still fragmented" />
+          <div className="mt-4 space-y-2">
+            <GapRow label="Public comparison resources" value="limited" detail="few resources connect assemblies, genes, SVs, and traits" />
+            <GapRow label="Green Rice DB frame" value="11 cultivars" detail="assemblies connected to genes, SVs, and phenotypes" />
           </div>
         </div>
       </div>
       <figcaption className="mt-3 text-[11px] leading-relaxed text-gray-500">
-        Green Rice DB is designed as a connected review system, not as a simple
-        cultivar metadata page.
+        Rice ranks use FAOSTAT 2024 country-level records. Public Korean genome
+        resources were checked only as context, not as a long-read assembly count.
+      </figcaption>
+    </figure>
+  );
+}
+
+export function PangenomeOverviewFigure() {
+  return (
+    <figure className="rounded-lg border border-gray-200 bg-white p-3 md:p-4">
+      <div className="rounded-md border border-green-200 bg-green-50/60 p-3 md:p-4">
+        <FigureTitle label="Green Rice DB" title="Connected pangenome review database" />
+        <div className="mt-5 grid grid-cols-2 gap-2 sm:grid-cols-4">
+          <EvidenceNode label="Assembly" />
+          <EvidenceNode label="Gene family" />
+          <EvidenceNode label="SV" />
+          <EvidenceNode label="Phenotype" />
+        </div>
+        <div className="mt-4 grid grid-cols-1 items-center gap-2 sm:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] sm:gap-3">
+          <div className="rounded border border-green-200 bg-white px-3 py-2 text-xs leading-relaxed text-gray-700">
+            cultivar-level diversity
+          </div>
+          <span className="hidden font-mono text-xs text-green-700 sm:block">→</span>
+          <div className="rounded border border-green-200 bg-white px-3 py-2 text-xs leading-relaxed text-gray-700">
+            reviewable gene and SV evidence
+          </div>
+        </div>
+      </div>
+      <figcaption className="mt-3 text-[11px] leading-relaxed text-gray-500">
+        Evidence is connected for candidate review; it is not presented as final
+        causal proof.
       </figcaption>
     </figure>
   );
@@ -255,6 +251,43 @@ export function EntityArchitectureFigure() {
         trait-first answer portal.
       </figcaption>
     </figure>
+  );
+}
+
+function GapRow({
+  label,
+  value,
+  detail,
+}: {
+  label: string;
+  value: string;
+  detail: string;
+}) {
+  return (
+    <div className="rounded border border-green-200 bg-white px-3 py-2">
+      <div className="flex items-baseline justify-between gap-3">
+        <span className="text-xs font-medium text-gray-700">{label}</span>
+        <span className="shrink-0 font-mono text-[10px] text-green-700">{value}</span>
+      </div>
+      <p className="mt-1 text-xs leading-snug text-gray-500">{detail}</p>
+    </div>
+  );
+}
+
+function MiniMetric({ value, label }: { value: string; label: string }) {
+  return (
+    <div className="rounded border border-gray-200 bg-white px-3 py-2">
+      <div className="font-mono text-base font-semibold text-gray-900">{value}</div>
+      <div className="mt-0.5 text-[11px] leading-snug text-gray-500">{label}</div>
+    </div>
+  );
+}
+
+function EvidenceNode({ label }: { label: string }) {
+  return (
+    <div className="rounded border border-green-200 bg-white px-3 py-3 text-center text-xs font-semibold text-gray-800">
+      {label}
+    </div>
   );
 }
 

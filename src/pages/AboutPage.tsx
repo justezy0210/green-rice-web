@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import {
   DataScopeFigure,
+  DatabaseNeedFigure,
   EntityArchitectureFigure,
   PangenomeOverviewFigure,
   ProjectObjectiveFigure,
@@ -38,22 +39,19 @@ export function AboutPage() {
   return (
     <div className="space-y-12 pb-12">
       <AboutScene
-        label="01 / Our DB"
-        title="Green Rice DB"
-        subtitle={
-          <>
-            A web database for exploring de novo assembly-based pan-genome
-            information from Korean <em>Oryza sativa japonica</em> cultivars.
-          </>
-        }
-        figure={<PangenomeOverviewFigure />}
+        label="01 / Why This DB Is Needed"
+        title="Why does Korea need a rice pangenome database?"
+        subtitle="Korean rice is agriculturally important, but public assembly-level resources for Korean cultivars are still limited compared with resequencing-based variation data."
+        figure={<DatabaseNeedFigure />}
         primary
       >
         <p>
-          This is not a cultivar metadata site only. Green Rice DB connects de novo
-          assemblies, gene annotation, gene family groups, structural variation, and
-          phenotype information so users can review cultivar-level genetic diversity
-          and candidate gene and variant evidence in one place.
+          Korean rice has strong agronomic value, but cultivar diversity is still
+          difficult to inspect through connected assembly-level evidence.
+        </p>
+        <p>
+          Green Rice DB focuses on that gap: 11 Korean cultivar assemblies linked
+          with genes, structural variants, and phenotype context.
         </p>
       </AboutScene>
 
@@ -78,7 +76,26 @@ export function AboutPage() {
       </AboutScene>
 
       <AboutScene
-        label="03 / Project Objective"
+        label="03 / Our DB"
+        title="Green Rice DB"
+        subtitle={
+          <>
+            A web database for exploring de novo assembly-based pan-genome
+            information from Korean <em>Oryza sativa japonica</em> cultivars.
+          </>
+        }
+        figure={<PangenomeOverviewFigure />}
+        reverse
+      >
+        <p>
+          Green Rice DB is a review space for moving between cultivar assemblies,
+          gene families, structural variants, and phenotype context without treating
+          any single table as causal proof.
+        </p>
+      </AboutScene>
+
+      <AboutScene
+        label="04 / Project Objective"
         title="Project Objective"
         subtitle={
           <>
@@ -102,7 +119,7 @@ export function AboutPage() {
       </AboutScene>
 
       <AboutScene
-        label="04 / Data Scope"
+        label="05 / Data Scope"
         title="Data Scope"
         subtitle="The current Green Rice DB frame was initially generated for 11 Korean rice cultivars."
         figure={<DataScopeFigure />}
@@ -111,25 +128,6 @@ export function AboutPage() {
           The release includes cultivar phenotype information, assemblies, gene
           annotation, gene family groups, phenotype overlays, and structural variant
           results. Counts in the figure describe the current database scope.
-        </p>
-      </AboutScene>
-
-      <AboutScene
-        label="05 / Discovery Workflow"
-        title="How Discovery Evidence Is Built"
-        subtitle="Discovery evidence links trait-group contrast, gene family patterns, and structural variant context into reviewable candidate records."
-        figure={<DiscoveryWorkflowFigure />}
-        reverse
-      >
-        <p>
-          Cultivars are grouped by trait context, then gene family patterns and
-          structural variant carrier patterns are compared against those groups.
-          Candidate evidence is built where these layers point to the same locus.
-        </p>
-        <p>
-          Each candidate is classified by local impact context, such as gene-body
-          or nearby regulatory position, so users can decide which locus needs
-          deeper validation.
         </p>
       </AboutScene>
 
@@ -148,6 +146,25 @@ export function AboutPage() {
         <p>
           This structure lets users inspect candidate evidence directly and decide
           whether a locus, gene family, or structural variant is worth deeper validation.
+        </p>
+      </AboutScene>
+
+      <AboutScene
+        label="07 / Discovery Workflow"
+        title="How Discovery Evidence Is Built"
+        subtitle="Discovery evidence links trait-group contrast, gene family patterns, and structural variant context into reviewable candidate records."
+        figure={<DiscoveryWorkflowFigure />}
+        reverse
+      >
+        <p>
+          Cultivars are grouped by trait context, then gene family patterns and
+          structural variant carrier patterns are compared against those groups.
+          Candidate evidence is built where these layers point to the same locus.
+        </p>
+        <p>
+          Each candidate is classified by local impact context, such as gene-body
+          or nearby regulatory position, so users can decide which locus needs
+          deeper validation.
         </p>
       </AboutScene>
     </div>

@@ -5,6 +5,12 @@ import {
   exonHeight,
   exonY,
 } from '@/lib/gene-model';
+import { impactClassLabel } from '@/lib/impact-class-label';
+import {
+  DEL_BREAKPOINT_BP,
+  type GeneContextBand,
+  type GeneContextImpactClass,
+} from '@/lib/gene-context-window';
 import type { GeneModelEntry } from '@/types/gene-model';
 import type { SvType } from '@/types/sv-event';
 
@@ -17,6 +23,7 @@ export interface GeneSvOverlay {
   /** Canonical ALT length — used for INS caret height. */
   altLen: number;
   svType: SvType;
+  impactClass?: GeneContextImpactClass | null;
 }
 
 const SV_FILL: Record<SvType, string> = {
@@ -29,8 +36,12 @@ interface Props {
   gene: GeneModelEntry;
   width?: number;
   height?: number;
+  viewStart?: number;
+  viewEnd?: number;
+  contextBands?: GeneContextBand[];
+  linkedEventId?: string | null;
   variants?: { pos: number; label?: string }[];
-  /** SV events whose sample-frame `pos` falls within [gene.start, gene.end]. */
+  /** SV events whose sample-frame footprint falls within the displayed view. */
   svEvents?: GeneSvOverlay[];
 }
 
@@ -38,30 +49,37 @@ export function GeneModelSvg({
   gene,
   width = 720,
   height = 44,
+  viewStart = gene.start,
+  viewEnd = gene.end,
+  contextBands = [],
+  linkedEventId = null,
   variants = [],
   svEvents = [],
 }: Props) {
   const geom = useMemo(
-    () => computeGeneModelGeometry(gene, width, height),
-    [gene, width, height],
+    () => computeGeneModelGeometry(gene, width, height, viewStart, viewEnd),
+    [gene, width, height, viewStart, viewEnd],
   );
 
-  const span = gene.end - gene.start;
+  const span = geom.viewEnd - geom.viewStart;
   const bpToX = (pos: number): number => {
-    const clamped = Math.max(gene.start, Math.min(gene.end, pos));
-    const norm = (clamped - gene.start) / span;
+    const clamped = Math.max(geom.viewStart, Math.min(geom.viewEnd, pos));
+    const norm = (clamped - geom.viewStart) / span;
     const frac = geom.strand === '-' ? 1 - norm : norm;
     return frac * width;
   };
   const variantTicks = variants
-    .filter((v) => v.pos >= gene.start && v.pos <= gene.end)
+    .filter((v) => v.pos >= geom.viewStart && v.pos <= geom.viewEnd)
     .map((v) => ({ x: bpToX(v.pos), ...v }));
-  // Span overlap, not point containment — a large DEL/COMPLEX that
-  // starts upstream of the gene but extends into the gene body is
-  // biologically interesting and must render. Upstream ranges clamp
-  // to the gene window via `bpToX`'s internal clamp.
   const svGlyphs = svEvents
-    .filter((e) => e.pos + Math.max(1, e.refLen) >= gene.start && e.pos <= gene.end)
+    .filter((e) => {
+      const start = e.svType === 'DEL' ? e.pos - DEL_BREAKPOINT_BP : e.pos;
+      const end =
+        e.svType === 'DEL'
+          ? e.pos + DEL_BREAKPOINT_BP
+          : e.pos + Math.max(1, e.refLen);
+      return end >= geom.viewStart && start <= geom.viewEnd;
+    })
     .map((e) => {
       const xStart = bpToX(e.pos);
       const xEnd = bpToX(e.pos + e.refLen);
@@ -71,16 +89,26 @@ export function GeneModelSvg({
         x2: Math.max(xStart, xEnd),
       };
     });
+  const bandGlyphs = contextBands.map((band) => {
+    const xStart = bpToX(band.start);
+    const xEnd = bpToX(band.end);
+    return {
+      band,
+      x1: Math.min(xStart, xEnd),
+      x2: Math.max(xStart, xEnd),
+    };
+  });
 
   // SV glyphs render in a dedicated lane below the gene body so they
   // never obscure exon structure. 4 px gap between gene body and
   // SV lane; 14 px lane height fits caret/diamond/span comfortably.
+  const TRACK_OFFSET = contextBands.length > 0 ? 32 : 14;
   const SV_GAP = 4;
   const SV_LANE_H = 14;
-  const svLaneTop = 14 + height + SV_GAP;
+  const svLaneTop = TRACK_OFFSET + height + SV_GAP;
   const svLaneBottom = svLaneTop + SV_LANE_H;
   const svLaneMid = (svLaneTop + svLaneBottom) / 2;
-  const totalSvgH = svGlyphs.length > 0 ? svLaneBottom + 2 : height + 14;
+  const totalSvgH = svGlyphs.length > 0 ? svLaneBottom + 2 : TRACK_OFFSET + height;
 
   return (
     <svg
@@ -108,9 +136,47 @@ export function GeneModelSvg({
         fill="#6b7280"
         fontFamily="ui-monospace, monospace"
       >
-        {gene.chr}:{gene.start.toLocaleString()} · {gene.strand} ·{' '}
-        {(gene.end - gene.start).toLocaleString()} bp
+        {gene.chr}:{geom.viewStart.toLocaleString()}-{geom.viewEnd.toLocaleString()} ·{' '}
+        {gene.strand} ·{' '}
+        {(geom.viewEnd - geom.viewStart).toLocaleString()} bp
       </text>
+
+      {bandGlyphs.length > 0 && (
+        <g>
+          {bandGlyphs.map(({ band, x1, x2 }) => {
+            const w = Math.max(1, x2 - x1);
+            return (
+              <g key={band.key}>
+                <rect
+                  x={x1}
+                  y={16}
+                  width={w}
+                  height={9}
+                  fill={bandFill(band.key)}
+                  stroke="#e5e7eb"
+                  strokeWidth={0.5}
+                >
+                  <title>
+                    {band.label} · {band.start.toLocaleString()}-
+                    {band.end.toLocaleString()}
+                  </title>
+                </rect>
+                {w > 56 && (
+                  <text
+                    x={x1 + 3}
+                    y={23}
+                    fontSize={7}
+                    fill="#6b7280"
+                    fontFamily="ui-monospace, monospace"
+                  >
+                    {bandShortLabel(band.key)}
+                  </text>
+                )}
+              </g>
+            );
+          })}
+        </g>
+      )}
 
       {/* intron backbone (drawn first so exons cover it) */}
       {geom.intronLines.map((line, i) => (
@@ -118,8 +184,8 @@ export function GeneModelSvg({
           <line
             x1={line.x1}
             x2={line.x2}
-            y1={line.y + 14}
-            y2={line.y + 14}
+            y1={line.y + TRACK_OFFSET}
+            y2={line.y + TRACK_OFFSET}
             stroke="#d1d5db"
             strokeWidth={1}
           />
@@ -128,7 +194,7 @@ export function GeneModelSvg({
             <polyline
               points={chevronPoints(
                 (line.x1 + line.x2) / 2,
-                line.y + 14,
+                line.y + TRACK_OFFSET,
                 geom.strand,
               )}
               stroke="#9ca3af"
@@ -144,7 +210,7 @@ export function GeneModelSvg({
         <rect
           key={`exon-${i}`}
           x={box.x}
-          y={exonY(box, geom.trackY) + 14}
+          y={exonY(box, geom.trackY) + TRACK_OFFSET}
           width={box.width}
           height={exonHeight(box.type)}
           fill={EXON_COLORS[box.type]}
@@ -185,6 +251,10 @@ export function GeneModelSvg({
         </text>
       )}
       {svGlyphs.map(({ ev, x1, x2 }) => {
+        const isLinked = linkedEventId === ev.eventId;
+        const titleImpact = ev.impactClass
+          ? ` · ${impactClassLabel(ev.impactClass)}`
+          : '';
         if (ev.svType === 'INS') {
           const w = Math.max(2, x2 - x1);
           return (
@@ -195,12 +265,12 @@ export function GeneModelSvg({
               width={w}
               height={SV_LANE_H}
               fill={SV_FILL.INS}
-              fillOpacity={0.25}
+              fillOpacity={isLinked ? 0.38 : 0.25}
               stroke={SV_FILL.INS}
-              strokeWidth={1.5}
+              strokeWidth={isLinked ? 2.5 : 1.5}
             >
               <title>
-                {ev.eventId} · INS · sample carries{' '}
+                {ev.eventId} · INS{titleImpact} · sample carries{' '}
                 {formatBp(ev.refLen)} of novel sequence here (absent
                 in IRGSP reference, canonical alt {formatBp(ev.altLen)})
               </title>
@@ -218,12 +288,22 @@ export function GeneModelSvg({
                 y1={svLaneTop}
                 y2={svLaneBottom}
                 stroke={SV_FILL.DEL}
-                strokeWidth={1.5}
+                strokeWidth={isLinked ? 2.5 : 1.5}
                 strokeDasharray="3,2"
               />
+              {isLinked && (
+                <circle
+                  cx={x1}
+                  cy={svLaneMid}
+                  r={8}
+                  fill="none"
+                  stroke={SV_FILL.DEL}
+                  strokeWidth={1}
+                />
+              )}
               <polygon points={points} fill={SV_FILL.DEL}>
                 <title>
-                  {ev.eventId} · DEL · breakpoint (sample lacks{' '}
+                  {ev.eventId} · DEL{titleImpact} · breakpoint (sample lacks{' '}
                   {formatBp(ev.altLen)} present in other cultivars;
                   sample anchor {formatBp(ev.refLen)})
                 </title>
@@ -242,10 +322,10 @@ export function GeneModelSvg({
             height={SV_LANE_H}
             fill="url(#gene-complex-hatch)"
             stroke={SV_FILL.COMPLEX}
-            strokeWidth={1.5}
+            strokeWidth={isLinked ? 2.5 : 1.5}
           >
             <title>
-              {ev.eventId} · COMPLEX · sample's allele{' '}
+              {ev.eventId} · COMPLEX{titleImpact} · sample's allele{' '}
               {formatBp(ev.refLen)} vs canonical alt{' '}
               {formatBp(ev.altLen)} (region rearranged)
             </title>
@@ -259,15 +339,15 @@ export function GeneModelSvg({
           <line
             x1={t.x}
             x2={t.x}
-            y1={0 + 14}
-            y2={height + 14}
+            y1={TRACK_OFFSET}
+            y2={height + TRACK_OFFSET}
             stroke="#ef4444"
             strokeWidth={1}
             opacity={0.7}
           >
             <title>{t.label ?? `variant @ ${t.pos.toLocaleString()}`}</title>
           </line>
-          <circle cx={t.x} cy={2 + 14} r={2.5} fill="#ef4444">
+          <circle cx={t.x} cy={TRACK_OFFSET - 12} r={2.5} fill="#ef4444">
             <title>{t.label ?? `variant @ ${t.pos.toLocaleString()}`}</title>
           </circle>
         </g>
@@ -280,6 +360,22 @@ function formatBp(bp: number): string {
   if (bp >= 1_000_000) return `${(bp / 1_000_000).toFixed(1)} Mb`;
   if (bp >= 1_000) return `${Math.round(bp / 1_000)} kb`;
   return `${bp} bp`;
+}
+
+function bandFill(key: GeneContextBand['key']): string {
+  if (key === 'gene_body') return '#f3f4f6';
+  if (key === 'promoter_2kb') return '#fef3c7';
+  if (key === 'upstream_2_10kb') return '#ecfdf5';
+  if (key === 'downstream_2kb') return '#eff6ff';
+  return '#f9fafb';
+}
+
+function bandShortLabel(key: GeneContextBand['key']): string {
+  if (key === 'gene_body') return 'gene';
+  if (key === 'promoter_2kb') return 'promoter';
+  if (key === 'upstream_2_10kb') return 'upstream';
+  if (key === 'downstream_2kb') return 'downstream';
+  return key;
 }
 
 function chevronPoints(cx: number, cy: number, strand: '+' | '-'): string {

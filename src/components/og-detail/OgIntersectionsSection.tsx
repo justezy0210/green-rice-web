@@ -98,8 +98,8 @@ export function OgIntersectionsSection({ ogId, intersectionReleaseId }: Props) {
               <TableHead className="pl-3">SV</TableHead>
               <TableHead className="px-3">Type</TableHead>
               <TableHead className="px-3">Impact</TableHead>
-              <TableHead className="px-3">Cultivar</TableHead>
-              <TableHead className="px-3">Gene</TableHead>
+              <TableHead className="px-3">Gene model</TableHead>
+              <TableHead className="px-3">Overlapped gene</TableHead>
               <TableHead className="pl-3 pr-4 text-right">|ΔAF|</TableHead>
             </TableRow>
           </TableHeader>
@@ -112,9 +112,13 @@ export function OgIntersectionsSection({ ogId, intersectionReleaseId }: Props) {
                     className: 'min-w-0 pl-3 font-mono text-[11px] text-gray-800',
                   })}
                 >
-                  <span className="block truncate" title={r.eventId}>
+                  <Link
+                    to={`/sv/${encodeURIComponent(r.eventId)}`}
+                    className="block truncate text-green-700 hover:underline"
+                    title={r.eventId}
+                  >
                     {r.eventId}
-                  </span>
+                  </Link>
                 </TableCell>
                 <TableCell
                   className={ogDetailTableCellClass({
@@ -144,7 +148,7 @@ export function OgIntersectionsSection({ ogId, intersectionReleaseId }: Props) {
                     <Link
                       to={`/genes/${encodeURIComponent(r.geneId)}`}
                       className="block truncate font-mono text-gray-700 hover:text-green-700 hover:underline"
-                      title={r.geneId}
+                      title={`${r.geneId} gene detail`}
                     >
                       {r.geneId}
                     </Link>

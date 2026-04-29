@@ -17,6 +17,7 @@ import { OgPresetButton } from '@/components/explore/OgPresetButton';
 import { OgTraitEvidenceFilter } from '@/components/explore/OgTraitEvidenceFilter';
 import { useOgIndex } from '@/hooks/useOgIndex';
 import { useOgCategories } from '@/hooks/useOgCategories';
+import { useOgDescriptionMatches, useOgDescriptions } from '@/hooks/useOgDescriptions';
 import { useOrthogroupDiff } from '@/hooks/useOrthogroupDiff';
 import { useTraitHits } from '@/hooks/useTraitHits';
 import { DEFAULT_TRAIT_ID, isTraitId } from '@/config/traits';
@@ -77,10 +78,18 @@ export function OrthogroupIndexPage() {
   const category = readCategory(searchParams.get('category'));
   const trait = readTrait(searchParams.get('trait'));
   const query = searchParams.get('q') ?? '';
+  const normalizedQuery = query.trim().toLowerCase();
+  const qOg = normalizedQuery.startsWith('og') ? normalizedQuery.toUpperCase() : '';
+  const shouldSearchDescriptions = normalizedQuery.length >= 2 && !qOg;
   const { doc } = useOrthogroupDiff(DEFAULT_TRAIT_ID);
   const version = doc?.orthofinderVersion ?? null;
   const { bundle, loading, error } = useOgIndex(version);
   const ogCategories = useOgCategories(version);
+  const ogDescriptions = useOgDescriptions(version, shouldSearchDescriptions);
+  const descriptionMatches = useOgDescriptionMatches(
+    ogDescriptions.descriptions,
+    shouldSearchDescriptions ? normalizedQuery : '',
+  );
   const { index: traitHitsIndex } = useTraitHits();
   const traitP = useMemo(() => (
     trait ? traitPValues(traitHitsIndex, trait) : null
@@ -124,12 +133,13 @@ export function OrthogroupIndexPage() {
   const filtered = useMemo<OgIndexRowData[]>(() => {
     let rows = categoryRows;
     if (trait) rows = rows.filter((o) => (o.traits ?? []).includes(trait));
-    const q = query.trim().toLowerCase();
-    const qOg = q.startsWith('og') ? q.toUpperCase() : '';
-    if (q) {
+    if (normalizedQuery) {
       rows = rows.filter((o) => {
         if (qOg) return o.ogId.toUpperCase().includes(qOg);
-        return (o.traits ?? []).some((t) => t.toLowerCase().includes(q));
+        return (
+          descriptionMatches.has(o.ogId) ||
+          (o.traits ?? []).some((t) => t.toLowerCase().includes(normalizedQuery))
+        );
       });
     }
     return [...rows].sort((a, b) => {
@@ -141,7 +151,7 @@ export function OrthogroupIndexPage() {
       if (a.presentCount !== b.presentCount) return a.presentCount - b.presentCount;
       return a.ogId.localeCompare(b.ogId);
     });
-  }, [categoryRows, trait, traitP, query]);
+  }, [categoryRows, trait, traitP, normalizedQuery, qOg, descriptionMatches]);
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   const safePage = Math.min(page, totalPages - 1);
@@ -220,13 +230,21 @@ export function OrthogroupIndexPage() {
           onChange={(e) => {
             updateFilters({ q: e.target.value });
           }}
-          placeholder="Search OG id (e.g. OG0000871) or trait"
+          placeholder='Search OG id, trait, or function (e.g. "bacterial blight")'
           className="ml-auto w-72"
         />
       </div>
 
       {loading && <p className="text-sm text-gray-400">Loading orthogroup index…</p>}
       {error && <p className="text-sm text-red-600">Could not load index: {error.message}</p>}
+      {shouldSearchDescriptions && ogDescriptions.loading && (
+        <p className="text-sm text-gray-400">Loading functional descriptions…</p>
+      )}
+      {shouldSearchDescriptions && !ogDescriptions.loading && !ogDescriptions.available && (
+        <p className="rounded border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-800">
+          Functional description index is unavailable.
+        </p>
+      )}
 
       {bundle && (
         <>
@@ -266,6 +284,7 @@ export function OrthogroupIndexPage() {
                       onClick={() => navigate(ogHref(o))}
                       activeTrait={trait}
                       activeTraitP={traitP?.get(o.ogId)}
+                      description={descriptionMatches.get(o.ogId)}
                     />
                   ))}
                   {pageRows.length === 0 && (

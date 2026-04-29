@@ -96,6 +96,10 @@ export function orthofinderOgCategoriesPath(version: number): string {
   return `orthofinder/v${version}/og_categories.json`;
 }
 
+export function orthofinderOgDescriptionsPath(version: number): string {
+  return `orthofinder/v${version}/og_descriptions.json`;
+}
+
 export function geneIndexManifestPath(version: number): string {
   return `gene_index/v${version}/_manifest.json`;
 }
