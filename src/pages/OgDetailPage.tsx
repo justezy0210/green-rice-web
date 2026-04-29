@@ -5,7 +5,6 @@ import { OgCoreShellBadge } from '@/components/og-detail/OgCoreShellBadge';
 import { OgTraitHitChips } from '@/components/og-detail/OgTraitHitChips';
 import { OgLeadSvCard } from '@/components/og-detail/OgLeadSvCard';
 import { OgMemberGenesTable } from '@/components/og-detail/OgMemberGenesTable';
-import { OgIntersectionsSection } from '@/components/og-detail/OgIntersectionsSection';
 import { CandidateBlocksInAnalysesPanel } from '@/components/entity/CandidateBlocksInAnalysesPanel';
 import { useOrthogroupDiff } from '@/hooks/useOrthogroupDiff';
 import { useOrthogroupDiffEntries } from '@/hooks/useOrthogroupDiffEntries';
@@ -18,8 +17,6 @@ import { classifyCopyArchitecture } from '@/lib/og-copy-architecture';
 import { isReferencePathCultivar } from '@/lib/irgsp-constants';
 import type { TraitId } from '@/types/grouping';
 import type { OrthogroupDiffEntry } from '@/types/orthogroup';
-
-const DEFAULT_INTERSECTION_RELEASE_ID = 'int_v1';
 
 function runIdFor(traitId: string): string {
   return `${traitId}_g4_of6_sv1_gm11_sc1`;
@@ -163,11 +160,6 @@ export function OgDetailPage() {
           presenceByGroup={candidate.presenceByGroup}
         />
       )}
-
-      <OgIntersectionsSection
-        ogId={ogId}
-        intersectionReleaseId={DEFAULT_INTERSECTION_RELEASE_ID}
-      />
 
       <CandidateBlocksInAnalysesPanel entityType="og" entityId={ogId} />
     </div>

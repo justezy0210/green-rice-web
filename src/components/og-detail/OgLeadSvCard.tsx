@@ -1,6 +1,5 @@
 import { Link } from 'react-router-dom';
 import { Card, CardContent } from '@/components/ui/card';
-import { impactClassLabel } from '@/lib/impact-class-label';
 import type { CandidateBestSv } from '@/types/candidate';
 
 interface Props {
@@ -12,9 +11,10 @@ interface Props {
 }
 
 /**
- * Foregrounds the OG's best SV evidence: event id, type, position,
- * impact class, lead cultivar, per-group presence/AF summary, with
- * drill-downs to the region page and (later) SV detail surface.
+ * Foregrounds the OG's trait-linked SV signal. Do not link raw
+ * `bestSv.cultivar`, `bestSv.geneId`, or `bestSv.impactClass` fields from
+ * here: those fields are overlap provenance and may name a REF cultivar. SV
+ * detail chooses an ALT-carrier region from genotype data.
  */
 export function OgLeadSvCard({
   bestSv,
@@ -31,18 +31,12 @@ export function OgLeadSvCard({
       : `${bestSv.start.toLocaleString()}–${bestSv.end.toLocaleString()}`;
   const region = `${bestSv.chr}:${span}`;
 
-  const regionStart = Math.max(0, bestSv.start - 5000);
-  const regionEnd = bestSv.end + 5000;
-  const regionHref = bestSv.cultivar
-    ? `/region/${encodeURIComponent(bestSv.cultivar)}/${encodeURIComponent(bestSv.chr)}/${regionStart}-${regionEnd}`
-    : null;
-
   return (
     <Card>
       <CardContent className="py-3 space-y-1">
         <div className="flex items-baseline justify-between">
           <h3 className="text-xs uppercase tracking-wide text-gray-500">
-            Lead SV evidence
+            Trait-linked SV signal
           </h3>
           {traitId && (
             <span className="text-[10px] font-mono text-gray-400">{traitId}</span>
@@ -59,11 +53,6 @@ export function OgLeadSvCard({
             {bestSv.svType}
           </span>
           <span className="text-[12px] font-mono text-gray-600">{region}</span>
-          {bestSv.impactClass && (
-            <span className="text-[10px] font-mono text-indigo-700 bg-indigo-50 border border-indigo-200 px-1 py-[1px] rounded">
-              {impactClassLabel(bestSv.impactClass)}
-            </span>
-          )}
           {typeof bestSv.absDeltaAf === 'number' && (
             <span className="tabular-nums text-[12px] text-gray-600">
               |ΔAF|{' '}
@@ -73,23 +62,10 @@ export function OgLeadSvCard({
             </span>
           )}
         </div>
-        {bestSv.cultivar && (
-          <p className="text-[11px] text-gray-500">
-            Lead cultivar:{' '}
-            <strong className="text-gray-800">{bestSv.cultivar}</strong>
-            {bestSv.geneId && (
-              <>
-                {' · '}
-                <Link
-                  to={`/genes/${encodeURIComponent(bestSv.geneId)}?sv=${encodeURIComponent(bestSv.eventId)}`}
-                  className="text-green-700 hover:underline font-mono text-[11px]"
-                >
-                  {bestSv.geneId}
-                </Link>
-              </>
-            )}
-          </p>
-        )}
+        <p className="text-[11px] text-gray-500">
+          SV-level signal for this OG and trait. Cultivar/gene/impact overlap
+          provenance is not shown here because it is not carrier-confirmed.
+        </p>
         <SummaryRow
           label="means"
           values={meansByGroup ?? null}
@@ -102,22 +78,14 @@ export function OgLeadSvCard({
           labels={groupLabels}
           format={(v) => `${(v * 100).toFixed(0)}%`}
         />
-        {regionHref && (
-          <div className="flex flex-wrap gap-3 pt-1">
-            <Link
-              to={`/sv/${encodeURIComponent(bestSv.eventId)}`}
-              className="text-[11px] text-green-700 hover:underline"
-            >
-              SV detail →
-            </Link>
-            <Link
-              to={regionHref}
-              className="text-[11px] text-green-700 hover:underline"
-            >
-              Region ±5 kb →
-            </Link>
-          </div>
-        )}
+        <div className="pt-1">
+          <Link
+            to={`/sv/${encodeURIComponent(bestSv.eventId)}`}
+            className="text-[11px] text-green-700 hover:underline"
+          >
+            SV detail →
+          </Link>
+        </div>
       </CardContent>
     </Card>
   );
