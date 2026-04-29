@@ -27,11 +27,11 @@ export function DatabaseNeedFigure() {
     <figure className="rounded-lg border border-gray-200 bg-white p-3 md:p-4">
       <div className="grid grid-cols-1 gap-3 md:grid-cols-[minmax(0,0.95fr)_minmax(0,1.05fr)]">
         <div className="rounded-md border border-gray-200 bg-gray-50 p-3 md:p-4">
-          <FigureTitle label="Problem" title="Important crop, sparse assembly-level comparison" />
+          <FigureTitle label="Crop context" title="Important crop in Korean agriculture" />
           <p className="mt-3 text-xs leading-relaxed text-gray-600">
-            Korean rice has strong production value, but cultivar-specific gene
-            content and large structural differences remain hard to compare from
-            resequencing-style resources alone.
+            Rice remains a major crop in Korea. These production and yield ranks
+            provide the agricultural context for building cultivar-level genome
+            resources.
           </p>
           <div className="mt-4 grid grid-cols-2 gap-2">
             <MiniMetric value="#19" label="production rank" />

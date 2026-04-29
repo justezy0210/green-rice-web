@@ -40,38 +40,38 @@ export function AboutPage() {
     <div className="space-y-12 pb-12">
       <AboutScene
         label="01 / Why This DB Is Needed"
-        title="Why does Korea need a rice pangenome database?"
-        subtitle="Korean rice is agriculturally important, but public assembly-level resources for Korean cultivars are still limited compared with resequencing-based variation data."
+        title="Why Korea Needs a Rice Pangenome Database"
+        subtitle="Korean rice is a major crop, but cultivar diversity is still difficult to inspect at the assembly level."
         figure={<DatabaseNeedFigure />}
         primary
       >
         <p>
-          Korean rice has strong agronomic value, but cultivar diversity is still
-          difficult to inspect through connected assembly-level evidence.
+          Many Korean rice genome resources are still easier to study through
+          short-read resequencing data than through cultivar-specific assemblies.
         </p>
         <p>
-          Green Rice DB focuses on that gap: 11 Korean cultivar assemblies linked
-          with genes, structural variants, and phenotype context.
+          That makes it hard to ask direct questions about gene content,
+          structural differences, and cultivar-level genome organization. Green
+          Rice DB was built to make those comparisons easier to explore.
         </p>
       </AboutScene>
 
       <AboutScene
         label="02 / Background"
-        title="Why assembly-based pan-genome?"
-        subtitle="Rice genomics has many resequencing datasets, but assembly-level Korean cultivar resources are still limited."
+        title="Why Assembly-Based Pangenome?"
+        subtitle="Resequencing is powerful for reference-based variants, but it cannot fully show sequence that is missing from the reference."
         figure={<ReferenceBiasFigure />}
         reverse
       >
         <p>
-          Resequencing is useful for SNPs and short indels, but it usually maps reads
-          to a single reference genome. Reference-missing sequence, cultivar-specific
-          genes, gene presence/absence variation, large insertions or deletions, and
-          complex structural variation can be missed or simplified.
+          Conventional resequencing analysis maps reads to one reference genome.
+          This works well for SNPs, small indels, and other reference-anchored
+          variation.
         </p>
         <p>
-          For Korean rice cultivars, a de novo assembly-based pangenome resource is
-          needed to compare gene content and genome structure more directly across
-          cultivars.
+          The limitation is reference bias. Cultivar-specific sequence, gene
+          presence or absence, and larger structural changes can be missed or
+          simplified. Green Rice DB therefore starts from per-cultivar assemblies.
         </p>
       </AboutScene>
 
@@ -88,9 +88,13 @@ export function AboutPage() {
         reverse
       >
         <p>
-          Green Rice DB is a review space for moving between cultivar assemblies,
-          gene families, structural variants, and phenotype context without treating
-          any single table as causal proof.
+          Green Rice DB is not only a cultivar list or a phenotype table. It is a
+          connected review database where users can move between genome, gene,
+          variant, and phenotype context.
+        </p>
+        <p>
+          The goal is to help researchers inspect evidence across layers rather
+          than treating any single table as final causal proof.
         </p>
       </AboutScene>
 
@@ -107,14 +111,14 @@ export function AboutPage() {
         figure={<ProjectObjectiveFigure />}
       >
         <p>
-          Green Rice DB groups related genes across cultivar assemblies, summarizes
-          structural variants, and overlays phenotype-group information so users
-          can review candidate gene and variant evidence.
+          In practice, the objective is to turn separate genome analysis outputs
+          into a web resource that researchers can search and compare directly.
         </p>
         <p>
-          The database is a hypothesis-generating resource. It helps users find
-          and prioritize candidate loci that require follow-up validation; it does
-          not confirm causal variants.
+          Users can inspect cultivar gene models, gene-family patterns,
+          structural variant context, phenotype overlays, and candidate discovery
+          evidence in one connected interface. The database supports hypothesis
+          generation, not causal confirmation.
         </p>
       </AboutScene>
 
@@ -125,9 +129,13 @@ export function AboutPage() {
         figure={<DataScopeFigure />}
       >
         <p>
-          The release includes cultivar phenotype information, assemblies, gene
-          annotation, gene family groups, phenotype overlays, and structural variant
-          results. Counts in the figure describe the current database scope.
+          This section defines the boundary of the current release: what data are
+          available for browsing, and which results are derived from downstream
+          analysis.
+        </p>
+        <p>
+          Discovery should be read as a separate review layer, not as a validated
+          marker set or final association result.
         </p>
       </AboutScene>
 
@@ -138,14 +146,14 @@ export function AboutPage() {
         figure={<EntityArchitectureFigure />}
       >
         <p>
-          The interface is designed around entities such as cultivars, genes,
-          gene families, structural variants, regions, and discovery candidates.
-          Users can follow those entities across evidence layers instead of seeing
-          only one analysis table.
+          Researchers do not all start from the same question. One user may begin
+          with a cultivar, another with a gene, another with a structural variant,
+          and another with a phenotype-related candidate.
         </p>
         <p>
-          This structure lets users inspect candidate evidence directly and decide
-          whether a locus, gene family, or structural variant is worth deeper validation.
+          Green Rice DB is organized around those entities so users can follow
+          connected evidence across pages instead of being locked into one fixed
+          analysis table.
         </p>
       </AboutScene>
 
@@ -157,14 +165,14 @@ export function AboutPage() {
         reverse
       >
         <p>
-          Cultivars are grouped by trait context, then gene family patterns and
-          structural variant carrier patterns are compared against those groups.
-          Candidate evidence is built where these layers point to the same locus.
+          Unlike the Browse pages, Discovery is a derived layer. It asks whether
+          phenotype-group contrasts are accompanied by gene-family or structural
+          variant differences.
         </p>
         <p>
-          Each candidate is classified by local impact context, such as gene-body
-          or nearby regulatory position, so users can decide which locus needs
-          deeper validation.
+          When multiple evidence layers point to a possible candidate, the result
+          is organized as a reviewable Discovery record. It is meant to help users
+          decide what to inspect next and what may deserve follow-up validation.
         </p>
       </AboutScene>
     </div>
